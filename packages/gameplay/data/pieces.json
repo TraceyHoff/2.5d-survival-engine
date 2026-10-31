@@ -589,6 +589,7 @@
       "solid": false,
       "paintable": true,
       "variants": 3,
+      "variantNames": ["", "small", "large"],
       "ground": true,
       "cost": [
         {

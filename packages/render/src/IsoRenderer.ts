@@ -20,6 +20,7 @@ import { AssetManager, entityIndex, Transform, type World } from "@engine/core";
 import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
 import { BloomPass } from "./bloom.js";
+import { lightningStrikeAnim } from "./frame-select.js";
 import { TileTerrain } from "./terrainTiles.js";
 import { tileHeight } from "./tilemap.js";
 import { parseGradingKeyframes, sampleKeyframes, lutSizeFromImage, type GradingKeyframe } from "./grading.js";
@@ -506,7 +507,10 @@ export class IsoRenderer implements Renderer {
         const r = this.rect; const sx = r.x0 + Math.random() * (r.x1 - r.x0), sy = r.y0 + Math.random() * (r.y1 - r.y0) * 0.6;
         const hw0 = this.iso.tileW / 2, hh0 = this.iso.tileH / 2; const tx = (sx / hw0 + sy / hh0) / 2, ty = (sy / hh0 - sx / hw0) / 2;
         const bolt = this.atlas.registry?.ids.sprites.tryId("fx_lightning");
-        if (bolt !== undefined) this.vfx.spawn({ spriteId: bolt, x: tx, y: ty, lifetime: 0.25, scale: 2 });
+        if (bolt !== undefined) { // ADR-242: random strike_a/b/c variant per bolt
+          let names: string[] = []; try { names = this.atlas.registry!.sprite(bolt).animList.map((a) => a.name ?? ""); } catch { /* unknown sprite */ }
+          this.vfx.spawn({ spriteId: bolt, anim: lightningStrikeAnim(names, Math.random()), x: tx, y: ty, lifetime: 0.25, scale: 2 });
+        }
         this.onLightning?.(tx, ty);
       }
     }

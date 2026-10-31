@@ -6,7 +6,9 @@ import { makeWorld } from "./helpers.js";
 
 const d = G.defaultDefs();
 const manifest = JSON.parse(readFileSync(new URL("../../assets/pack/manifest.json", import.meta.url), "utf8")) as { sprites: { building?: { piece: string } }[] };
-const ART = new Set(manifest.sprites.flatMap((s) => (s.building ? [s.building.piece] : [])));
+// ADR-242: the building pack (lit/unlit hearths, lantern, mirror...) is pack art too, now that their fallbacks are gone
+const building = JSON.parse(readFileSync(new URL("../../assets/pack/building/manifest.building.json", import.meta.url), "utf8")) as typeof manifest;
+const ART = new Set([...manifest.sprites, ...building.sprites].flatMap((s) => (s.building ? [s.building.piece] : [])));
 const raw = JSON.parse(readFileSync(new URL("../data/pieces.json", import.meta.url), "utf8")) as { pieces: { key: string; $decor?: boolean }[] };
 const decor = raw.pieces.filter((p) => p.$decor).map((p) => d.pieces.get(d.pieceId(p.key)!)!);
 function snap(w: World, key: string, x: number, y: number, rot = 0): G.Snapped | number { return G.snapPlacement(w, { piece: d.pieceId(key)!, x, y, level: 0, rot, tier: 1, variant: 0 }); }

@@ -1365,19 +1365,6 @@
       "tint": "#c0a060",
       "scale": 0.6
     },
-    "lantern": {
-      "to": [
-        "bonfire"
-      ],
-      "tint": "#ffd890",
-      "scale": 0.4
-    },
-    "torch_stand": {
-      "to": [
-        "bonfire"
-      ],
-      "scale": 0.6
-    },
     "banner": {
       "to": [
         "painting"
@@ -1389,37 +1376,6 @@
         "painting"
       ],
       "tint": "#c04040"
-    },
-    "windsock": {
-      "to": [
-        "pillar"
-      ],
-      "tint": "#d0d0d0",
-      "scale": 0.8
-    },
-    "mirror": {
-      "to": [
-        "painting"
-      ],
-      "tint": "#d0e0f0"
-    },
-    "wood_stove": {
-      "to": [
-        "furnace"
-      ],
-      "scale": 0.8
-    },
-    "fireplace": {
-      "to": [
-        "furnace"
-      ],
-      "tint": "#c09080"
-    },
-    "campfire": {
-      "to": [
-        "bonfire"
-      ],
-      "scale": 0.55
     },
     "market_counter": {
       "to": [

@@ -65,6 +65,8 @@ const PREFETCH_PRIO_PAD = 64;
 const OPEN = 1e5;
 /** Swim fallback (ADR-107): fraction of the pivot height hidden below the waterline, and the bob amplitude in sprite px. */
 const SWIM_CLIP = 0.45, SWIM_BOB_PX = 1.5;
+/** ADR-242: body cold (0..1) above which characters puff fx_breath_puff even before they shiver (breath shows in cold air). */
+export const COLD_BREATH = 0.4;
 /** Depth-key step between a character's paper-doll layers (10 layers < HELD_BIAS; far below one tile = 1.0). */
 export const LAYER_BIAS = 0.001;
 /** Frame px of slack below the body cell for wear cells / outline that reach lower than the body (see paper-doll depth). */
@@ -793,7 +795,7 @@ export class SpriteBatch {
         ss >= 0 ? sh.data.alpha[ss]! * sAl : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;
-        if (o0[22]) cx.statusFx?.("cold", x, y, z, o0[21]); else if (bt.data.heat[s2]! > 150) cx.statusFx?.("heat", x, y, z, bt.data.heat[s2]! / 255); } }
+        if (o0[22] || o0[21] > COLD_BREATH) cx.statusFx?.("cold", x, y, z, Math.max(o0[21], o0[22] * 0.5)); else if (bt.data.heat[s2]! > 150) cx.statusFx?.("heat", x, y, z, bt.data.heat[s2]! / 255); } }
       if (exh) { const s2 = exh.slot(i); if (s2 >= 0) o0[31] = exh.data.level[s2]! / 255; }
       if (t2s) { const s2 = t2s.slot(i); if (s2 >= 0) writeTint2(o0, t2s.data.tint[s2]! >>> 0); }
       const sw = atlas.swayOf(sid);
