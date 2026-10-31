@@ -1218,6 +1218,120 @@
    "masksKtx2": {
     "tintmask": "atlases/clan_trading_post_tintmask.ktx2"
    }
+  },
+  {
+   "key": "decor_camp_t",
+   "image": "atlases/decor_camp_t.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 5,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_camp_t@2x.png",
+     "ktx2": "atlases/decor_camp_t@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_camp_t.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_camp_t.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_camp_t.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_camp_t.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "hearth_s",
+   "image": "atlases/hearth_s.png",
+   "frameW": 64,
+   "frameH": 88,
+   "columns": 14,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/hearth_s@2x.png",
+     "ktx2": "atlases/hearth_s@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/hearth_s.tintmask@2x.ktx2",
+      "emissive": "atlases/hearth_s_emissive@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/hearth_s.tintmask.png",
+    "emissive": "atlases/hearth_s_emissive.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/hearth_s.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/hearth_s.tintmask.ktx2",
+    "emissive": "atlases/hearth_s_emissive.ktx2"
+   }
+  },
+  {
+   "key": "hearth_t",
+   "image": "atlases/hearth_t.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/hearth_t@2x.png",
+     "ktx2": "atlases/hearth_t@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/hearth_t.tintmask@2x.ktx2",
+      "emissive": "atlases/hearth_t_emissive@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/hearth_t.tintmask.png",
+    "emissive": "atlases/hearth_t_emissive.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/hearth_t.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/hearth_t.tintmask.ktx2",
+    "emissive": "atlases/hearth_t_emissive.ktx2"
+   }
+  },
+  {
+   "key": "hearth_wt",
+   "image": "atlases/hearth_wt.png",
+   "frameW": 104,
+   "frameH": 144,
+   "columns": 9,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/hearth_wt@2x.png",
+     "ktx2": "atlases/hearth_wt@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/hearth_wt.tintmask@2x.ktx2",
+      "emissive": "atlases/hearth_wt_emissive@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/hearth_wt.tintmask.png",
+    "emissive": "atlases/hearth_wt_emissive.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/hearth_wt.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/hearth_wt.tintmask.ktx2",
+    "emissive": "atlases/hearth_wt_emissive.ktx2"
+   }
   }
  ],
  "sprites": [
@@ -49447,6 +49561,551 @@
      }
     }
    }
+  },
+  {
+   "key": "dec_windsock",
+   "category": "building",
+   "atlas": "decor_camp_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "windsock",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_windsock__plain",
+   "category": "building",
+   "atlas": "decor_camp_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "windsock@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_mirror",
+   "category": "building",
+   "atlas": "decor_camp_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror__plain",
+   "category": "building",
+   "atlas": "decor_camp_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "campfire",
+   "category": "building",
+   "atlas": "hearth_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "fps": 10,
+     "loop": true
+    },
+    "unlit": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "campfire",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "states": {
+     "unlit": [
+      [
+       0,
+       0,
+       0,
+       0
+      ]
+     ]
+    },
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lantern",
+   "category": "building",
+   "atlas": "hearth_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ],
+     "fps": 10,
+     "loop": true
+    },
+    "unlit": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lantern",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ]
+    ],
+    "states": {
+     "unlit": [
+      [
+       7,
+       7,
+       7,
+       7
+      ]
+     ]
+    },
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "torch_stand",
+   "category": "building",
+   "atlas": "hearth_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "fps": 10,
+     "loop": true
+    },
+    "unlit": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "torch_stand",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "states": {
+     "unlit": [
+      [
+       0,
+       0,
+       0,
+       0
+      ]
+     ]
+    },
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "wood_stove",
+   "category": "building",
+   "atlas": "hearth_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ],
+     "fps": 10,
+     "loop": true
+    },
+    "unlit": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wood_stove",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ]
+    ],
+    "states": {
+     "unlit": [
+      [
+       7,
+       7,
+       7,
+       7
+      ]
+     ]
+    },
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "fireplace",
+   "category": "building",
+   "atlas": "hearth_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "fps": 10,
+     "loop": true,
+     "rotations": [
+      [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13
+      ],
+      [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13
+      ]
+     ]
+    },
+    "unlit": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "rotations": [
+      [
+       0
+      ],
+      [
+       7
+      ],
+      [
+       0
+      ],
+      [
+       7
+      ]
+     ]
+    }
+   },
+   "building": {
+    "piece": "fireplace",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ]
+    ],
+    "states": {
+     "unlit": [
+      [
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       7,
+       7,
+       7,
+       7
+      ],
+      [
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       7,
+       7,
+       7,
+       7
+      ]
+     ]
+    },
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
   }
  ],
  "clanPalettes": [

@@ -3190,7 +3190,15 @@
     "stall_cart_dark_teal": 3188,
     "stall_cart_pine_red": 3189,
     "stall_cart_sunny": 3190,
-    "watchtower": 3191
+    "watchtower": 3191,
+    "dec_lantern": 3192,
+    "dec_mirror": 3193,
+    "dec_mirror__plain": 3194,
+    "dec_windsock": 3195,
+    "dec_windsock__plain": 3196,
+    "fireplace": 3197,
+    "torch_stand": 3198,
+    "wood_stove": 3199
   },
   "sounds": {
     "amb_rain": 1,
