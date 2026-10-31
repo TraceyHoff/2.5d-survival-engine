@@ -11,6 +11,7 @@ import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallSe
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { giveRandomAppearance } from "./appearance.js";
+export { botAppearance, giveBotAppearance } from "./appearance.js"; // ADR-252: AI humans' looks
 import { SocialSync } from "./social_sync.js";
 import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DevPetKit, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers, setAiHumanPredicate } from "@engine/gameplay";

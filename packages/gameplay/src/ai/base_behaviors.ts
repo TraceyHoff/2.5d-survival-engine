@@ -18,15 +18,19 @@ import { readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { StationKind, type GameDefs } from "../defs.js";
 import { animalDefs } from "../population.js";
-import { BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
+import { plantableBySeed } from "../farming.js";
+/** ADR-252 / ADR-247: a plantable seed / sapling (kept and stashed, never dropped as junk). */
+export const isSeedItem = (defs: GameDefs, item: number): boolean => { const k = defs.items.get(item)?.key; return !!k && plantableBySeed(k) > 0; };
+import { isWinter, BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
 import { stuckOn } from "./autonomy.js";
 
 export interface PlanSensors {
   plan?: Plan; base?: { x: number; y: number }; bs?: BaseState; craftCount?: number; craftTicks?: number;
   huntTarget?: { id: number; x: number; y: number }; panel?: { id: number }; tripWanted?: boolean;
   surplus?: { item: number; count: number }[]; woodTotal?: number; stoneTotal?: number; junk?: { item: number; count: number };
+  /** ADR-252 / ADR-239: winter (the season is mostly winter): fuel and warmth all day */ winter?: boolean;
 }
-export const PLAN_SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk"] as const;
+export const PLAN_SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "winter"] as const;
 type Ctx = AgentContext<AgentWorldView>;
 const hash = (s: string): number => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
 const KEEP_WOOD = 12, KEEP_FOOD = 6;
@@ -53,8 +57,9 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
   const woodId = plannerIndex(defs).item.get("wood")?.id; let woodBag = 0; if (woodId !== undefined) for (let i = 0; i < slots.items.length; i++) if (slots.items[i] === woodId) woodBag += slots.counts[i] ?? 0;
   const body = world.getField(self, Survival, "bodyTemp") ?? 37; const dayT = timeOfDay(world).t;
   const freezing = body < 36.4 && woodBag < 7 && !(bs?.complete) && !(bs?.stations.get(StationKind.Campfire)?.lit);
+  const winter = isWinter(world); if (winter) view.winter = true;
   const evening = dayT >= 0.45 && dayT < 0.66; // h11-h16: stock the night's fuel (NIGHT_WOOD) before the cold sets in
-  const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
+  const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, winter, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
   { // patience: a goal with no step and no leaf gathered for GOAL_PATIENCE ticks is snoozed half a day (persisted), like a player giving up on reeds
     let leafN = 0; for (let i = 0; i < slots.items.length; i++) if (slots.items[i] && plan.leaves.includes(slots.items[i]!)) leafN += slots.counts[i] ?? 0;
     const gs = a.bb.get("goalSeen") as { g: string; last: number; n: number } | undefined;
@@ -96,11 +101,12 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
     const sk = a.bb.get<{ until: number }>("skinAt"); if (sk && tick > sk.until) a.bb.set("skinAt", undefined);
     const vc = world.has(self, Viewing) ? world.getField(self, Viewing, "container") ?? 0 : 0;
     if (vc && world.isAlive(vc as Entity) && world.has(vc as Entity, Container) && readSlots(world, vc as Entity).counts.some((n) => n > 0)) view.panel = { id: vc }; }
-  // junk: with <= 2 free slots, drop a stack nothing on the ladder uses (a player bins seed / grain clutter)
+  // junk: with <= 2 free slots, drop a stack nothing on the ladder uses (grain / scrap clutter). ADR-252 / ADR-247: never seeds
+  // (each species' seed only drops from its own plant): they go to the base box with the other surplus instead
   { let free = 0; for (let i = 0; i < slots.items.length; i++) if (!slots.items[i] || !slots.counts[i]) free++;
     const stages = spoilStages(defs);
     for (let i = 0; i < slots.items.length && !view.junk; i++) { const it = slots.items[i]!; if (it && slots.counts[i] && defs.items.get(it)?.food && stages[spoilStageIndex(slotFreshness(world, self, i), stages)]?.sick) view.junk = { item: it, count: slots.counts[i]! }; }
-    if (free <= 2 && !view.junk) for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it)) continue; view.junk = { item: it, count: slots.counts[i]! }; break; } }
+    if (free <= 2 && !view.junk) for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it) || isSeedItem(defs, it)) continue; view.junk = { item: it, count: slots.counts[i]! }; break; } }
   // stash: bag items the plan does not need (never tools / weapons / worn / food stock / fire wood)
   if (bs?.storage && bs.storage.free > 0) {
     const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
@@ -230,7 +236,7 @@ export function baseBehaviors(): GameBehavior[] {
       } },
     { name: "refuel", inertia: 0.4, considerations: [
         { name: "low", weight: 1.5, curve: step01, input: (c) => { const f = c.world.bs?.stations.get(StationKind.Campfire); return f && f.lit && f.fuelTicks < 2400 && (c.world.woodTotal ?? 0) > 0 && cooled(c, "refuelAt", 200) ? 1 : 0; } },
-        { name: "needed", curve: step01, input: (c) => (night(c.self.phase) > 0 || c.world.cold ? 1 : 0) }],
+        { name: "needed", curve: step01, input: (c) => (night(c.self.phase) > 0 || c.world.cold || c.world.winter ? 1 : 0) }], // ADR-252: winter days need the fire too
       run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
         if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(10, c.world.woodTotal)))) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },

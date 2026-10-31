@@ -92,7 +92,7 @@ function homeScan(world: World, defs: GameDefs, hx: number, hy: number, fireType
   }
   if (m.size > 256) m.clear(); m.set(key, r); return r;
 }
-const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
+const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "winter", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
 const sensed = new WeakMap<Agent, { tick: number; home: string; s: Partial<GoalSensors> }>();
 export function fillGoalSensors(world: World, self: Entity, view: AgentWorldView, a: Agent): void {
   const home = `${view.home.x},${view.home.y}`; const c = sensed.get(a);
@@ -227,7 +227,7 @@ export function autonomyBehaviors(): GameBehavior[] {
     // dusk / night or cold: fuel and light the home campfire (open -> deposit wood -> toggle, the station panel's steps)
     { name: "tend_fire", inertia: 0.4, considerations: [
         { name: "unlit", weight: 1.6, curve: { type: "step", at: 0.5 }, input: (c) => (c.world.fire && !c.world.fire.lit && !(c.world as { base?: unknown }).base && cooled(c.self.tick, c.bb.num("fireAt", -1e9), 150) ? 1 : 0) }, // ADR-216: a base bot's warm_up tends its fires (door-aware)
-        { name: "needed", curve: { type: "step", at: 0.5 }, input: (c) => (night(c.self.phase) > 0 || c.world.cold ? 1 : 0) },
+        { name: "needed", curve: { type: "step", at: 0.5 }, input: (c) => (night(c.self.phase) > 0 || c.world.cold || c.world.winter ? 1 : 0) }, // ADR-252: winter days too
         { name: "hasWood", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.woodSlot !== undefined ? 1 : 0) }],
       run: (c, o) => {
         const f = c.world.fire; if (!f || f.lit) { c.bb.set("fireAt", c.self.tick); c.bb.set("fireStep", 0); return false; }

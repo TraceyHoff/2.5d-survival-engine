@@ -12,7 +12,7 @@ import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetCl
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
 import { MEMORY_BUDGETS } from "./memory-budget.js";
-import { createGameServer, type GameMode, type GameServer } from "@engine/server/game";
+import { createGameServer, giveBotAppearance, type GameMode, type GameServer } from "@engine/server/game";
 import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
 /** Device-scaled default bot cap (ADR-105): phones get far fewer bots than desktops. */
@@ -146,6 +146,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (stopped) { client.close(); controller.remove(agent); return; }
     if (err || !ok) { controller.remove(agent); throw new Error(`virtual player failed to connect: ${String(err ?? "timeout")}`); }
     if (!game.markVirtual(client.clientId)) { controller.remove(agent); client.close(); return; } // refused (multiplayer)
+    if (o.catalog) { const pe = game.players.get(client.clientId)?.entity; if (pe !== undefined) giveBotAppearance(game.world, pe, o.catalog, identity.id); } // ADR-252 / ADR-245: a stable look per AI human (all 18 skin tones), replicated
     client.sendCommand(ClaimAccount, tokenToWords(hex32(identity.id))); // persistent account: inventory/stats saved like a human's
     client.sendCommand(SetName, nameToWords(identity.name));
     game.agents.put(identity.id, { ...identity }); // persisted ("agents" records); gameplay updates relationship / party / clan memory via game.agents.put

@@ -9,7 +9,7 @@
  * Nothing here writes the world. Long-term memory (base anchor, stats) lives in AiMemory on the agent identity and is
  * persisted through game.agents like social memory (flushAiMemory).
  */
-import { Transform, type Agent, type Entity, type World } from "@engine/core";
+import { Transform, seasonAt, type Agent, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { AttachKind, BuildPiece, Container, DoorState, Fuel, ResourceNode, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
@@ -198,7 +198,9 @@ type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "it
 export const GOAL_LADDER: readonly Goal[] = [
   { k: "tool", kind: ToolKind.Axe, tier: 1, name: "axe" }, { k: "tool", kind: ToolKind.Pickaxe, tier: 1, name: "pickaxe" },
   // ADR-252 / ADR-250: campfire -> starter storage box -> workbench (isBaseStoragePiece: any storage piece satisfies the box goal)
-  { k: "piece", key: "campfire" }, { k: "piece", key: STARTER_STORAGE_PIECE }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" }, { k: "base" }, { k: "hearth" },
+  { k: "piece", key: "campfire" }, { k: "piece", key: STARTER_STORAGE_PIECE }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" },
+  { k: "wear", key: "torch" }, // ADR-252 / ADR-217: a held light in the off hand keeps zombies out of its 5.5-tile ring at dusk / night
+  { k: "base" }, { k: "hearth" },
   { k: "bed" }, { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" },
   { k: "cook" }, { k: "wear", key: "straw_hat" }, { k: "wear", key: "reed_sandals" }, { k: "tool", kind: ToolKind.Shovel, tier: 1, name: "shovel" },
   { k: "item", key: "wood", count: 20 }, { k: "item", key: "cooked_meat", count: 2 }, { k: "wear", key: "leather_gloves" }, { k: "wear", key: "leather_boots" },
@@ -212,10 +214,14 @@ export const WOOD_RESERVE = 8;
 const EMERGENCY: readonly Goal[] = [{ k: "item", key: "wood", count: 8 }, { k: "item", key: "stone", count: 4 }];
 /** Late afternoon without a finished, heated base: stock a night of fuel first. */
 export const NIGHT_WOOD = 130; // ADR-216: a campfire burns a wood per 20 s; ~16 cold hours (h16-h8) = ~120 wood
+/** ADR-252 / ADR-239: winter days sit near -6 C (felt cold all day): keep ~2.5 game hours of fuel banked in the fire before other work. */
+export const WINTER_WOOD = 20;
+/** ADR-252: winter = the season blend is mostly winter (seasonAt weights[Winter] >= 0.5). */
+export const isWinter = (world: World): boolean => seasonAt(world).weights[2] >= 0.5;
 const EVENING = (have: number): Goal[] => [{ k: "item", key: "wood", count: Math.max(8, Math.min(150, NIGHT_WOOD - have)) }];
 const spendsFuel = (g: Goal): boolean => (g.k === "item" && (g.key === "wood" || g.key === "stone")) || (g.k === "piece" && g.key === "campfire") || g.k === "hearth" || g.k === "cook";
 
-export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean }
+export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean; /** ADR-252 / ADR-239: winter (cold all day): fire + a day's fuel come first */ winter?: boolean }
 class Resolver {
   avail = new Map<number, number>(); inv = new Map<number, number>(); visiting = new Set<number>();
   step?: Step; leaves = new Set<number>(); hunt = new Set<number>(); keep = new Set<number>(); stuck = false; /** ADR-221: a piece / station not learned yet */ locked?: string;
@@ -291,6 +297,7 @@ export function makePlan(p: PlanInput): Plan {
   const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
   const blocked: string[] = []; const keepAll = new Set<number>();
   const pre: Goal[] = []; if (p.freezing) pre.push(...EMERGENCY); if (p.hungry) pre.push({ k: "cook" });
+  if (p.winter && !p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < WINTER_WOOD) { if (!fire) pre.push(GOAL_LADDER[0]!, { k: "piece", key: "campfire" }); pre.push({ k: "item", key: "wood", count: Math.max(8, WINTER_WOOD - inFire) }); } }
   if (p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < NIGHT_WOOD) { if (!fire) pre.push(GOAL_LADDER[0]!, { k: "piece", key: "campfire" }); pre.push(...EVENING(inFire)); } } // ADR-252: a stone axe and the fire first (5 wood + 4 stone), then its night of fuel
   const ladder = pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
   let held = false; // ADR-252: a locked build goal holds the later ones (campfire -> box -> workbench order); item / tool goals go on

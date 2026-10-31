@@ -16,3 +16,17 @@ export function randomAppearance(cat: CosmeticCatalogLike, rnd: () => number): R
   return validateAppearance(cat, a).value ?? defaultAppearance(cat, bt);
 }
 export function giveRandomAppearance(world: World, e: Entity, cat: CosmeticCatalogLike, rnd: () => number): void { setAppearance(world, e, randomAppearance(cat, rnd)); }
+
+/**
+ * ADR-252 / ADR-245: an AI human's look, derived from its persistent agent id (the same survivor looks the same after a
+ * reload or reconnect). Skin tone is drawn uniformly over the whole current skin_tones.json palette (v2: 18 tones), so a
+ * world's AI humans span light to deep; the rest (body, parts, colours) uses the random-look rules above.
+ */
+export function botAppearance(cat: CosmeticCatalogLike, agentId: string): ReturnType<typeof defaultAppearance> {
+  let h = 0x811c9dc5; for (let i = 0; i < agentId.length; i++) h = Math.imul(h ^ agentId.charCodeAt(i), 0x01000193) >>> 0;
+  let s = h || 1; const rnd = (): number => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const a = randomAppearance(cat, rnd); const n = cat.skinTones.length;
+  if (n > 0) { const v = validateAppearance(cat, { ...a, skinTone: (Math.imul(h, 0x9e3779b1) >>> 0) % n }).value; if (v) return v; }
+  return a;
+}
+export function giveBotAppearance(world: World, e: Entity, cat: CosmeticCatalogLike, agentId: string): void { setAppearance(world, e, botAppearance(cat, agentId)); }
