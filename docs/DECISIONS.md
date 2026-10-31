@@ -2625,3 +2625,21 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - a worldgen sample places a wild node for every plantable;
 - gathering berry bushes and farmed crops gives only their own seeds;
 - berry seeds plant a berry bush and existing kinds keep their indices.
+
+## ADR-245: 18-tone realistic skin palette — save migration, ramp swatches, cosmetics handshake hash
+
+**Context.** Art (e0ea49df) replaced the 12-entry skin palette with 18 realistic human tones, ordered light to deep (`packages/assets/pack/customization/skin_tones.json`, each with a `ramp` {base, shadow, highlight}), and removed `goblin`. Stored `Appearance.skinTone` indices point into the old order.
+
+**Decision.**
+- **Migration.** `LEGACY_SKIN_TONE_MAP = [0,2,3,6,9,10,12,13,15,16,8,8]` (kept equal to the JSON `legacyMap` by a test). `migrateSkinTone()` remaps an index once and stamps a new per-row `Appearance.skinScheme` u8 = `SKIN_TONE_SCHEME` (2). A row that is already stamped is left alone, so the migration is idempotent. Migrating bumps the (wrapping u16) appearance version, so clients redraw. Out-of-range legacy indices map to 0. Old index 9 (ebony) → 16 (ebony); goblin 11 → 8 (olive).
+  - Persisted chunk entities are migrated in `WorldPersistence.fromRecord`. The chunk is marked dirty *deferred* (`skinDirty`, flushed in `track()` after `membership.update()`), so the re-save includes the loaded entities. Unloading a chunk drops its pending mark.
+  - Players and AI humans (virtual players that claim accounts) are migrated in `restorePlayer` before `ensureAppearance` (`stats.skinTonesMigrated`).
+  - Client localStorage characters are remapped on read (`migrateStoredSkin`) and re-saved with `skinScheme`.
+  - `persist` AddedFields zero-fill `skinScheme`, so every old save reads as legacy scheme 0.
+- **Swatches.** The character creator (18-chip radiogroup, `data-role=creator-skin-swatches`) and the wardrobe use `ramp.base` (`swatchColor()`), falling back to `color`.
+- **Shader: keep the multiply.** The WebGL instance layout is full (`INSTANCE_FLOATS=40`, slots 33–39 used). A per-instance shadow/highlight ramp needs 6 more floats and a stride change on the shared hot path, and changing only Canvas2D would make the two renderers diverge. `ramp.base` is the multiply colour, so the tint is already calibrated to the new art. Revisit when the instance layout is next reworked.
+- **Handshake.** The cosmetics catalog hash changes (now `0x5591b294` for the shipped pack). `cosmeticsHashes(catalog)` is offered by the client and checked by the server through a new `NetServer` option `hashesIfSent`: a client that sends `cosmetics` with a different value gets `HashMismatch`; a client that sends none (Canvas2D debug, bots) is accepted. The schema hash also changes because of `skinScheme`, so pre-245 clients already fail with `SchemaMismatch`. `direct.ts` uses the same offered hashes.
+
+**Limitations.** The dedicated server (`apps/server/src/main.ts`) builds from `loadDefaultManifest()`, which has no cosmetics fragment. As before this ADR, customization is disabled there and no cosmetics hash is checked. The embedded/client-hosted path has the catalog.
+
+**Tests.** `packages/persist/test/adr245_skin_tones.test.ts` (map ≡ JSON, idempotence, restorePlayer 9→16 / 11→8, chunk re-save and reload), `packages/net/test/adr245_hashes_if_sent.test.ts`, `apps/client/test/adr245_skin_tones.test.ts` (localStorage remap, 18 ramp.base chips, snapshot keeps hash), and `packages/assets/test/cosmetics.test.ts` "ADR-245 skin ramps".
