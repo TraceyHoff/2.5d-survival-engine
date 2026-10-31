@@ -26,6 +26,7 @@ import { reportRenderError } from "../report.js";
  * - Runtime switching: swapAtlas()/setTheme() replace atlas images (same layout & sprite keys -> same
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
+import { isV2BodyKey, isV2WearKey } from "../character/charArt.js";
 import { AnimState as CoreAnimState, ANIM_STATE_NAMES } from "@engine/core";
 import { FRAME_ANIM } from "../frame-select.js";
 import { AssetRegistry, type Animation, type Atlas, type DirFrameRect, type FrameRef } from "@engine/assets";
@@ -124,7 +125,7 @@ export function isBodyAtlasKey(key: string): boolean { return /^body_/.test(key)
 export function bodyAtlasKeys(registry: AssetRegistry): Set<string> {
   const cat = registry.cosmetics as unknown as { bodySprite?: (b: string) => { sprite: number } | undefined } | undefined;
   const out = new Set<string>(); const ids = new Set<number>();
-  for (const s of registry.allSprites()) if (isBodyAtlasKey(s.atlas.key)) ids.add(s.id);
+  for (const s of registry.allSprites()) if (isBodyAtlasKey(s.atlas.key) || isV2BodyKey(s.key)) ids.add(s.id); // ADR-239: v2 body sheets
   try { for (const b of ["male", "female"]) { const x = cat?.bodySprite?.(b); if (x) ids.add(x.sprite); } } catch { /* catalog shape differs: key rule only */ }
   for (const s of registry.allSprites()) if (ids.has(s.id)) { out.add(s.atlas.key); for (const a of s.animList) for (const d of a.dirFrames ?? []) out.add(d.atlas.key); }
   return out;
@@ -689,7 +690,8 @@ export class AtlasManager {
     const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
     // bodies (page geometry from the manifest: columns x rows x frame size per page, any number of pages) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
     // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
-    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
+    const bodyPages0 = bodyAtlasKeys(registry); // ADR-239: body sheets (v2 sample ships them "stream") stay in the character pools
+    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !bodyPages0.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
     this.placeholderCache.clear();
     const bodyPages = bodyAtlasKeys(registry); this.bodyPageKeys = bodyPages;
     const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !streamKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
@@ -1809,6 +1811,7 @@ export function wearableSpriteIds(registry: AssetRegistry): Set<number> {
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
   };
   for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes", "hands"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  for (const s of registry.allSprites()) if (isV2WearKey(s.key)) wear.add(s.id); // ADR-239: v2 wearables (not in the v1 catalog) use the wear pool
   return wear;
 }
 
@@ -1821,6 +1824,7 @@ export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
   };
   for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes", "hands"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  for (const s of registry.allSprites()) if (isV2WearKey(s.key)) wear.add(s.id); // ADR-239: v2 wearables (not in the v1 catalog) use the wear pool
   // every page a sprite draws from: sprite.atlas plus multi-page anims' dirFrames pages (swim/punch wear pages)
   const pagesOf = (s: { atlas: { key: string }; animList: { dirFrames?: { atlas: { key: string } }[] }[] }): string[] => { const k = new Set([s.atlas.key]); for (const a of s.animList) for (const d of a.dirFrames ?? []) k.add(d.atlas.key); return [...k]; };
   for (const s of registry.allSprites()) if (wear.has(s.id)) for (const k of pagesOf(s)) out.add(k);

@@ -283,7 +283,7 @@ export class Canvas2DRenderer {
       // paper doll (same layer list + per-frame anchors as the creator's 2D preview; head layers follow the body's head anchor)
       const apB = this.bindings.appearance; const look = apB && world.has(it.e, apB.def) ? getAppearance(world, it.e) : undefined;
       if (look && apB) {
-        let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
+        let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB.mapLayers ? { ...apB, resolve: (a, fa, o) => apB.mapLayers!(it.e, apB.resolve(a, fa, o)) } : apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
         if (ls.length) {
           for (const p of ls) { const li = this.layerImage(p); if (!li) continue; const r = p.ref;
             g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (r.flipX) g.scale(-1, 1);

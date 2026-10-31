@@ -746,6 +746,7 @@ export class SpriteBatch {
         else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, ver, f, read, ro(bodyL.animName)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } }
       }
+      if (bodyL && atlas.isStreamed(sid)) atlas.pageReady(sid, 0); // ADR-239: request a streamed (v2) body page at top priority (v1 body pages are paged in eagerly)
       if (bodyL) atlas.markUsed(sid); // the paper-doll body sheet is visible art too: keep it in the hot (full-res) tier
       let ok: boolean;
       const as = an ? an.slot(i) : -1;

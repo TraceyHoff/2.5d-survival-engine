@@ -18,7 +18,7 @@ import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
 import { CorrectionSampler, type CorrectionSource } from "./correction-sampler.js";
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } from "@engine/world";
-import { setDayFraction, resolveOffHandSprite } from "@engine/render";
+import { setDayFraction, resolveOffHandSprite, CharArtMapper, parseCharArt, type CharArt } from "@engine/render";
 import { clanPieceTint, clanPieceTintPair } from "./clan-tint.js";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
@@ -159,7 +159,17 @@ export class IsoView {
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
-      ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => this.gearOf.get(ve) ?? null } } : {}) });
+      ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => { const g = this.gearOf.get(ve) ?? null; return this.charArtOn(ve) ? { salt: (g?.salt ?? 0) + 7919, parts: g?.parts ?? [] } : g; }, mapLayers: <L extends { sprite: number; slot: string; layerName?: string }>(ve: number, ls: readonly L[]): L[] => this.charArtLayers(ve, ls) } } : {}) });
+  }
+  /** ADR-239: `charArt` setting (?charArt= / localStorage): v1 (default), v2s = local player only, v2s-all = every character. */
+  charArt: CharArt = parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
+  private charArtMapper?: CharArtMapper;
+  /** v2 hits by twin (`v2s_`+key) / slot alias, and v1 fallbacks (diagnostics). */
+  get charArtStats(): { twin: number; alias: number; v1: number } { return this.charArtMapper?.stats ?? { twin: 0, alias: 0, v1: 0 }; }
+  private charArtOn(ve: number): boolean { return this.charArt === "v2s-all" || (this.charArt === "v2s" && ve === this.focusVe); }
+  private charArtLayers<L extends { sprite: number; slot: string; layerName?: string }>(ve: number, ls: readonly L[]): L[] {
+    if (!this.charArtOn(ve)) return [...ls];
+    return (this.charArtMapper ??= new CharArtMapper(this.registry.ids.sprites)).map(ls);
   }
   /** ADR-135: view entity -> worn-gear paper-doll overrides (salt = hash of the worn items). */
   private gearOf = new Map<number, { salt: number; parts: Array<[number, number]> }>();

@@ -15,7 +15,7 @@ import { servedManifestIndex } from "./src/manifest-index.js";
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
-  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|(?:vehicles|building|items|nature|vehicle_items)\/(?:manifest\.\w+\.json|atlases\/[^/]+\.(?:png|json|ktx2))|customization\/strings\/en\.json|customization\/manifest\.customization(?:\.[\w-]+)*\.json|audio\/(?:sfx|ambience|ui|music|voice)\/[\w-]+\.(?:ogg|opus|m4a|mp3))$/.test(r)],
+  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|(?:vehicles|building|items|nature|vehicle_items|customization_v2_sample)\/(?:manifest\.\w+\.json|atlases\/[^/]+\.(?:png|json|ktx2))|customization\/strings\/en\.json|customization\/manifest\.customization(?:\.[\w-]+)*\.json|audio\/(?:sfx|ambience|ui|music|voice)\/[\w-]+\.(?:ogg|opus|m4a|mp3))$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
   ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|screen\.schema\.json|fonts\/(?:sdf\/)?[^/]+\.(ttf|txt|png|json)|atlas\/ui_atlas(@2x)?\.(png|json)|(?:kit|screens|strings|branding|creator|hooks\/atlas|input|input\/atlas)\/(?:[\w-]+\/)*[^/]+\.(png|webp|svg|json))$/.test(r) && !/\/frames\//.test(r)],
 ];

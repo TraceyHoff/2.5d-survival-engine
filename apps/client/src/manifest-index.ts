@@ -14,6 +14,8 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   { name: "vehicle_items", url: "pack/vehicle_items/manifest.vehicle_items.json", optional: true },
   { name: "building", url: "pack/building/manifest.building.json", optional: true },
   { name: "nature", url: "pack/nature/manifest.nature.json", optional: true },
+  // ADR-239: player v2 sample (spec §11.1), drawn only with the charArt setting (v2s / v2s-all; v1 default)
+  { name: "customization_v2_sample", url: "pack/customization_v2_sample/manifest.customization_v2_sample.json", optional: true },
 ];
 /** The served subset: required fragments always, optional ones only when `served(url)`. */
 export const servedManifestIndex = (served: (url: string) => boolean): { fragments: ManifestFragmentRef[] } =>

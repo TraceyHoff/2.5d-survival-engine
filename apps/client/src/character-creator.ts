@@ -16,7 +16,7 @@ import { markNavFocus } from "./back-history.js";
 import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
 import { UINav } from "./ui-nav.js";
-import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, type AtlasSource, type CharacterPreview } from "@engine/render";
+import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, parseCharArt, withCharArt, type AtlasSource, type CharacterPreview } from "@engine/render";
 import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, slotIndex, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
 
 export type CharacterSaveKind = "singleplayer" | "hosted" | "remote";
@@ -178,7 +178,7 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
     const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "webgl2"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px;display:block`;
     host.append(cv);
     try {
-      const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false, ...(freeze ? { freeze: true } : {}) });
+      const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, ...(cat && charArt() !== "v1" ? { binding: withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites) } : {}), sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false, ...(freeze ? { freeze: true } : {}) });
       pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr);
       return { kind: "webgl2", set: (a) => { void pv.setAppearance(a); }, facing: (k) => pv.setFacing(k), frame: () => undefined, dispose: () => { pv.dispose(); cv.remove(); } };
     } catch (e) { cv.remove(); if (src.mode === "webgl2") return undefined; console.info("[creator] WebGL2 preview unavailable, Canvas2D:", e); }
@@ -186,12 +186,14 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
   if (!cat) return undefined;
   const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "canvas2d"; cv.style.cssText = "border-radius:12px;display:block;image-rendering:pixelated;touch-action:none";
   try {
-    const o = { registry: src.registry, binding: coreAppearanceBinding(cat), appearance: look, sources: src.sources, facing, backdrop };
+    const o = { registry: src.registry, binding: withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites), appearance: look, sources: src.sources, facing, backdrop };
     const pv = src.create2d ? src.create2d(cv, o) : new CharacterPreview2D(cv, o); pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr); host.append(cv);
     let cur = look; const loaded = pv.setAppearance(look);
     return { kind: "canvas2d", loaded, set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };
   } catch (e) { console.warn("[creator] Canvas2D preview failed:", e); cv.remove(); return undefined; }
 }
+/** ADR-239: the creator previews the same doll art as in-game (`charArt` setting; v2s/v2s-all = the v2 sample). */
+const charArt = () => parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
 /** Opens the creator; resolves with the character, or undefined on Back. */
 export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter | undefined> {
   const cat = o.catalog; const doc = o.root.ownerDocument;

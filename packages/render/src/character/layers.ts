@@ -54,6 +54,8 @@ export interface AppearanceBinding {
    * Appearance.parts before resolve. `salt` must change whenever the overrides change (mixed into the cache key).
    */
   override?: (world: unknown, e: number) => { salt: number; parts: ReadonlyArray<readonly [number, number]> } | null;
+  /** Player v2 (ADR-239, spec §12): swap resolved layer sprites per entity (charArt resolver). Clear the cache when it changes. */
+  mapLayers?: <L extends { sprite: number; slot: string; layerName?: string }>(e: number, layers: readonly L[]) => L[];
 }
 
 /** Active face expression of `e` from binding.expression (undefined when absent, id 0 or untilTick has passed). */
@@ -115,7 +117,8 @@ export class LayerCache {
     const bucket = facingBucket(facing); const anim = opts.anim ?? "", expr = opts.expression ?? ""; let en = this.m.get(i);
     if (en && en.entity === e && en.version === version && en.bucket === bucket && en.anim === anim && en.expr === expr) return en.layers;
     this.resolves++;
-    const layers = toCachedLayers(this.binding.resolve(read(), facing, opts), this.binding);
+    const l0 = toCachedLayers(this.binding.resolve(read(), facing, opts), this.binding);
+    const layers = this.binding.mapLayers ? this.binding.mapLayers(e, l0) : l0;
     this.onLayers?.(en ? en.layers : null, layers);
     if (!en) { en = { entity: e, version, bucket, anim, expr, layers }; this.m.set(i, en); } else { en.entity = e; en.version = version; en.bucket = bucket; en.anim = anim; en.expr = expr; en.layers = layers; }
     return layers;
