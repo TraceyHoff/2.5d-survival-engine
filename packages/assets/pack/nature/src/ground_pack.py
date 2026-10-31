@@ -52,7 +52,7 @@ def plan():
             for se in SEAS: S.append((base + TW[se], se, [f'base|{mat}|{se}|{v}'], 1, PH[mat]))
     for w in ('gt_water', 'gt_water_shallow'):
         ph = w.replace('gt_', 'tile_')
-        S.append((w, 'summer', [f'w|summer|{f}' for f in range(4)], 4, ph))
+        S.append((w, 'summer', [f'{"ws" if w.endswith("shallow") else "w"}|summer|{f}' for f in range(4)], 4, ph))   # fall draws these too (no _fall twin)
         S.append((w + '_winter', 'winter', ['ice|0'], 1, ph))
     for v in range(6): S.append((f'gt_ice{SUF[v]}', 'winter', [f'ice|{v}'], 1, 'tile_water'))
     for v in range(3): S.append((f'gt_water_leaves_{"abc"[v]}', 'fall', [f'lv|{v}'], 1, 'gt_water'))
@@ -89,7 +89,7 @@ def main():
                 im = Image.new('RGBA', (cols * CW * sc, rows * CH * sc), (0, 0, 0, 0))
                 for i, k in enumerate(chunk):
                     t = np.asarray(GPV.get(k, sc)).copy(); t[..., 3] = np.where(t[..., 3] >= 128, 255, 0); t[t[..., 3] == 0] = 0
-                    if k.startswith(('ice|', 'base|', 'w|')): im.paste(Image.fromarray(bleed(t, sc), 'RGBA'), (i % cols * CW * sc, i // cols * CH * sc)); continue
+                    if k.startswith(('ice|', 'base|', 'w|', 'ws|')): im.paste(Image.fromarray(bleed(t, sc), 'RGBA'), (i % cols * CW * sc, i // cols * CH * sc)); continue
                     im.paste(Image.fromarray(t, 'RGBA'), ((i % cols * CW + PAD) * sc, (i // cols * CH + PAD) * sc))
                 im = dilate(im); im.save(R + f'atlases/{name}{"" if sc == 1 else "@2x"}.png', optimize=True)
             atlases.append({'key': name, 'image': f'atlases/{name}.png', 'frameW': CW, 'frameH': CH, 'columns': cols, 'rows': rows,
