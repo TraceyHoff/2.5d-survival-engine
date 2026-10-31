@@ -21,7 +21,7 @@ import { animalDefs } from "../population.js";
 import { plantableBySeed } from "../farming.js";
 /** ADR-252 / ADR-247: a plantable seed / sapling (kept and stashed, never dropped as junk). */
 export const isSeedItem = (defs: GameDefs, item: number): boolean => { const k = defs.items.get(item)?.key; return !!k && plantableBySeed(k) > 0; };
-import { isWinter, BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
+import { isWinter, BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, claimBaseSite, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
 import { stuckOn } from "./autonomy.js";
 
 export interface PlanSensors {
@@ -46,11 +46,12 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
     a.bb.set("sitePickAt", tick); const s = pickBaseSite(world, self, view.home, hash(a.identity.id) + mem.stats.relocations * 0.37);
     if (s) { mem.base = s; markAiDirty(a, tick); }
   }
+  claimBaseSite(world, self, mem.base); // ADR-252: keep other agents' new sites SITE_SPACING away
   const base = mem.base; const bs = base ? scanBase(world, defs, base) : undefined;
   if (base && bs) {
     for (const sl of BASE_SLOTS) if (bs.pieces.has(sl.id) && mem.fails[sl.id]) delete mem.fails[sl.id];
     const n = bs.pieces.size + bs.stations.size + (bs.storage ? 1 : 0); if (n > mem.stats.built) { mem.stats.built = n; markAiDirty(a, tick); }
-    if (n === 0 && (mem.fails["f00"] ?? 0) >= 4) { delete mem.base; mem.fails = {}; mem.stats.relocations++; markAiDirty(a, tick); return undefined; } // the site is unusable: pick another
+    if (n === 0 && (mem.fails["f00"] ?? 0) >= 4) { delete mem.base; claimBaseSite(world, self, undefined); mem.fails = {}; mem.stats.relocations++; markAiDirty(a, tick); return undefined; } // the site is unusable: pick another
     view.base = base; view.bs = bs;
   }
   const hungry = (view as { self?: unknown }) && a.bb.num("hungerSeen", 1) < 0.5;

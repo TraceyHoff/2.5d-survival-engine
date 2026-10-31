@@ -165,3 +165,17 @@ describe("ADR-252 ADR-239 winter, ADR-217 held light, ADR-247 seeds", () => {
     expect(G.isSeedItem(d, iid("berry_seeds"))).toBe(true); expect(G.isSeedItem(d, iid("wood"))).toBe(false); expect(G.isSeedItem(d, iid("blueberry"))).toBe(false);
   });
 });
+
+describe("ADR-252 base site claims (two bots picking in the same window)", () => {
+  it("a second agent never settles within SITE_SPACING of a site another agent claimed (no pieces down yet)", () => {
+    const { w, p } = fresh(); const q = spawnLearned(w, { x: BASE.x + 1, y: BASE.y + 3.3, maxWeight: 0, clientId: 2 }); steps(w, 1);
+    const near = { x: BASE.x + 1, y: BASE.y + 3.3 };
+    const a = G.pickBaseSite(w, p, near, 0.25)!; expect(a).toBeDefined();
+    expect(G.pickBaseSite(w, q, near, 0.25)).toEqual(a); // unclaimed: the same empty spot looks fine to both
+    G.claimBaseSite(w, p, a);
+    const b = G.pickBaseSite(w, q, near, 0.25);
+    expect(b).toBeDefined(); expect(Math.hypot(b!.x - a.x, b!.y - a.y)).toBeGreaterThanOrEqual(G.SITE_SPACING);
+    expect(G.pickBaseSite(w, p, near, 0.25)).toEqual(a); // the owner's own claim never blocks it
+    G.claimBaseSite(w, p, undefined); expect(G.pickBaseSite(w, q, near, 0.25)).toEqual(a); // released (relocation)
+  });
+});

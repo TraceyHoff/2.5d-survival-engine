@@ -2791,12 +2791,13 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - **Seasons / warmth** (ADR-239). `isWinter` (winter weight ≥ 0.5) makes the planner bank `WINTER_WOOD` (20) in the fire during the day (axe + campfire first if there is none). `tend_fire` and `refuel` count winter as need, and evenings still bank `NIGHT_WOOD`.
 - **Lights** (ADR-217). The torch goal makes bots wear a held light; the server light grid keeps zombies out of its radius, exactly as for players.
 - **Collision** (ADR-215). Bots move only through movement input, so body collision applies. The live test asserts that no per-tick bot step crosses a structure (`movementBlocked`).
+- **Base sites** (follow-up). `pickBaseSite` also skips any spot within `SITE_SPACING` (10) of a site another living agent has claimed (`claimBaseSite`, refreshed on every planner pass, released on relocation). Before this, two bots picking in the same window (no piece down yet) could settle side by side, and one wall blocked the other's build stand, so the roof, hearth and bed never came (seen in the browser sandbox with `bots=2`).
 - **Looks** (ADR-245). `botAppearance(catalog, agentId)` (server `appearance.ts`) is a deterministic, validated random look per agent id. The skin tone spreads across all 18 tones. It is stamped on join and replicated like a player's appearance.
 
 **Performance.** Think every 10 ticks with outputs replayed in between. Planner and base scans run once per think. Sensor fills are cheap reads, and the LOD path refreshes only the stance sensors.
 
 **Tests.**
-- `packages/gameplay/test/adr252_ai_humans.test.ts` (16): ladder order and the planner walk, alternate storage pieces, ADR-221 gating, storage API sequences, stance inputs, the defend rhythm, sneak crouch, sleep stillness, the bed slot and `bedNear`, the bed goal, winter wood and fire, the torch goal, seeds.
+- `packages/gameplay/test/adr252_ai_humans.test.ts` (17): ladder order and the planner walk, alternate storage pieces, ADR-221 gating, storage API sequences, stance inputs, the defend rhythm, sneak crouch, sleep stillness, the bed slot and `bedNear`, the bed goal, winter wood and fire, the torch goal, seeds, base-site claim spacing.
 - `apps/client/test/adr252_ai_humans_live.test.ts` (7): live bots build campfire → box → workbench in order; one container event per bot per tick (and they do store); no wall crossings; valid looks; base + bed built; asleep in a bed at night and still; a zombie at the door is blocked and killed.
 - `apps/server/test/adr252_bot_appearance.test.ts` (3): looks are deterministic, valid, cover all 18 tones, and differ between agents.
 

@@ -163,13 +163,27 @@ export function scanBase(world: World, defs: GameDefs, b: { x: number; y: number
   if (m.size > 512) m.clear(); m.set(key, { tick: world.tick, s }); return s;
 }
 
-/** Pick a base anchor 5..9 tiles from `near`: all four foundations must preview as placeable (the green ghost a player sees), no water / nodes / pieces around. */
+/** ADR-252: base sites claimed by living agents (per world). Two bots picking in the same window would otherwise both see an empty
+ *  spot (no piece is down yet) and settle side by side, walling off each other's build stand. */
+const siteClaims = new WeakMap<World, Map<Entity, { x: number; y: number }>>();
+export const SITE_SPACING = 10;
+export function claimBaseSite(world: World, self: Entity, b: { x: number; y: number } | undefined): void {
+  let m = siteClaims.get(world); if (!m) siteClaims.set(world, (m = new Map()));
+  if (b) m.set(self, { x: b.x, y: b.y }); else m.delete(self);
+}
+const claimedNear = (world: World, self: Entity, bx: number, by: number): boolean => {
+  const m = siteClaims.get(world); if (!m) return false;
+  for (const [e, c] of m) { if (e === self) continue; if (!world.has(e, Transform)) { m.delete(e); continue; } if (Math.hypot(c.x - bx, c.y - by) < SITE_SPACING) return true; }
+  return false;
+};
+/** Pick a base anchor 5..9 tiles from `near`: all four foundations must preview as placeable (the green ghost a player sees), no water / nodes / pieces around, and no other agent's claimed site within SITE_SPACING. */
 export function pickBaseSite(world: World, self: Entity, near: { x: number; y: number }, salt: number): { x: number; y: number } | undefined {
   const defs = gameplayDefsOf(world); if (!defs) return undefined; const ix = plannerIndex(defs); const f = ix.piece.get("foundation"); if (!f) return undefined;
   const sp = installSpatialIndex(world);
   for (let i = 0; i < 24; i++) {
     const a = ((salt * 0.6180339887 + i * 0.2618) % 1) * Math.PI * 2, r = 5 + (i % 3) * 2;
     const bx = Math.floor(near.x + Math.cos(a) * r), by = Math.floor(near.y + Math.sin(a) * r);
+    if (claimedNear(world, self, bx, by)) continue;
     let ok = true;
     for (let y = -1; y <= 4 && ok; y++) for (let x = -2; x <= 4 && ok; x++) if (nearWater(world, bx + x + 0.5, by + y + 0.5)) ok = false;
     if (!ok) continue;
