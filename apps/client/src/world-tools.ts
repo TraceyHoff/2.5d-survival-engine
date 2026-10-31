@@ -14,7 +14,7 @@
  */
 import { setAttr, setDisabled, setText } from "./dom-diff.js";
 import { Transform, type Entity, type World } from "@engine/core";
-import { worldToScreen, DEFAULT_ISO } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO, type IsoConfig } from "@engine/world";
 import {
   Sign, HordeStatus, HordePhase, PlaceRoadCmd, PlaceSignCmd, SetSignTextCmd, SIGNS, ROADS, countItem, gameplayDefs,
   signText, signDef, homesteads, classifySettlements, settlementNear, type MenuIntent,
@@ -22,7 +22,10 @@ import {
 import { RoadTool, lineTiles, type RoadDevice, type RoadLine, type Tile } from "./road-tool.js";
 import { buildSignEditor } from "./sign-editor.js";
 
-export interface CameraLike { x: number; y: number; viewW: number; viewH: number; dpr: number; readonly drawZoom: number; cssToWorld(x: number, y: number): { x: number; y: number } }
+export interface CameraLike { x: number; y: number; viewW: number; viewH: number; dpr: number; readonly drawZoom: number; cssToWorld(x: number, y: number): { x: number; y: number };
+  /** ADR-253: the renderer camera's projection (carries the view rotation); absent = DEFAULT_ISO (q0). */ readonly iso?: IsoConfig }
+/** ADR-253: the projection a CameraLike draws with (its view-rotated IsoConfig, else the default q0 projection). */
+export const camIso = (cam: { readonly iso?: IsoConfig }): IsoConfig => cam.iso ?? DEFAULT_ISO;
 export interface WorldToolsDeps {
   world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; send(i: MenuIntent): boolean;
   hidden(): boolean; sound?(key: string): void; canvas?: HTMLElement;
@@ -40,6 +43,8 @@ export interface WorldToolsDeps {
  * ADR-133: the Road / Sign HUD buttons are context-only. Road shows while the road tool is on (it cycles the surface /
  * turns the tool off); Sign shows in road mode or when a sign is in reach (edit). Entering the tool is the Build panel's
  * "Roads & signs" row, G or N, so nothing sits on screen when it does nothing.
+ * ADR-253: the column starts at 108 px (below the ⟲ / ⟳ camera-rotate pair under the menu bar) and hides while driving
+ * (the drive layout's Engine / Lights buttons sit at the right edge lower down).
  */
 export function worldToolBarState(s: { active: boolean; nearSign: boolean; hidden: boolean }): { bar: boolean; road: boolean; sign: boolean } {
   const road = !s.hidden && s.active, sign = !s.hidden && (s.active || s.nearSign); return { bar: road || sign, road, sign };
@@ -56,7 +61,7 @@ font:600 12px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;bord
 #world-labels .sign-label[data-kind="5"]{background:#2f6b3a;color:#fff;border-color:#e8f0e8}
 #settlement-label,#road-tool{position:absolute;left:50%;transform:translateX(-50%);z-index:5;font:600 13px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:rgba(59,36,51,.75);border-radius:10px;padding:2px 10px;pointer-events:none}
 #settlement-label{top:calc(6px + var(--sat,0px))}#road-tool{bottom:calc(90px + var(--sab,0px))}
-#world-tool-bar{position:absolute;right:calc(8px + var(--sar,0px));top:calc(58px + var(--sat,0px));z-index:6;display:flex;flex-direction:column;gap:6px}
+#world-tool-bar{position:absolute;right:calc(8px + var(--sar,0px));top:calc(108px + var(--sat,0px));z-index:6;display:flex;flex-direction:column;gap:6px}
 #world-tool-bar button,#road-confirm button{min-width:52px;min-height:44px;font:600 13px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;cursor:pointer;touch-action:manipulation}
 #world-tool-bar button[aria-pressed=true]{background:#ffd45a}#world-tool-bar button:disabled{opacity:.5}
 #road-confirm{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sab,0px));z-index:6;display:flex;gap:10px}
@@ -68,7 +73,7 @@ font:600 12px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;bord
 #horde-toast{position:absolute;left:50%;top:calc(26% + var(--sat,0px));transform:translateX(-50%);z-index:6;font:700 15px Fredoka,system-ui,sans-serif;color:#FFE0D8;background:rgba(110,20,20,.88);border:2px solid #3B2433;border-radius:12px;padding:6px 14px;transition:opacity .4s;pointer-events:none}`;
 
 export function isoToCss(cam: CameraLike, wx: number, wy: number): { x: number; y: number } {
-  const s = worldToScreen(wx, wy, 0, DEFAULT_ISO); const z = cam.drawZoom;
+  const s = worldToScreen(wx, wy, 0, camIso(cam)); const z = cam.drawZoom;
   return { x: (s.sx - cam.x) * z + cam.viewW / cam.dpr / 2, y: (s.sy - cam.y) * z + cam.viewH / cam.dpr / 2 };
 }
 /** Horde HUD state machine (pure, tested): returns the cue for a HordeStatus change. */

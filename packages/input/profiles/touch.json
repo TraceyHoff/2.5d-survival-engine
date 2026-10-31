@@ -162,6 +162,14 @@
    {
     "action": "Vehicle.Lights",
     "control": "touch.btn.lights"
+   },
+   {
+    "action": "Camera.RotateCCW",
+    "control": "touch.btn.camccw"
+   },
+   {
+    "action": "Camera.RotateCW",
+    "control": "touch.btn.camcw"
    }
   ],
   "Building": [

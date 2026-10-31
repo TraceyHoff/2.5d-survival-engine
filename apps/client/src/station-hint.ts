@@ -11,10 +11,10 @@
  */
 import { Transform, type Entity, type World } from "@engine/core";
 import { CraftingStation, STATION_NAMES } from "@engine/gameplay";
-import { DEFAULT_ISO, worldToScreen } from "@engine/world";
+import { worldToScreen } from "@engine/world";
 import { setAttr, setData } from "./dom-diff.js";
 import { drawToolPlaceholder, type ArtFrame } from "./tool-hint.js";
-import type { CameraLike } from "./world-tools.js";
+import { camIso, type CameraLike } from "./world-tools.js";
 import type { PromptDevice } from "./farm-prompt.js";
 
 export const STATION_HINT = { exitSlack: 0.35, graceMs: 350, scanMs: 120 } as const;
@@ -84,7 +84,7 @@ export function mountStationHint(root: HTMLElement, d: StationHintDeps): { destr
       const name = STATION_NAMES[shown.kind] ?? "Station"; const txt = stationPrompt(dev, d.key());
       if (pill.textContent !== txt) pill.textContent = txt;
       setAttr(el, "aria-label", `${txt} ${name}`); setAttr(el, "title", name);
-      const s = worldToScreen(tx, ty, w.getField(shown.station, Transform, "z") ?? 0, DEFAULT_ISO); const z = cam.drawZoom;
+      const s = worldToScreen(tx, ty, w.getField(shown.station, Transform, "z") ?? 0, camIso(cam)); const z = cam.drawZoom;
       const x = (s.sx - cam.x) * z + cam.viewW / cam.dpr / 2, y = (s.sy - cam.y) * z + cam.viewH / cam.dpr / 2;
       const lift = 52 * Math.max(0.6, Math.min(2, z));
       const tf = `translate(${Math.round(x - size / 2)}px,${Math.round(y - lift - size - (dev === "touch" ? 30 : 22))}px)`; if (tf !== lastTf) { lastTf = tf; el.style.transform = tf; } // pill sits above the sprite top

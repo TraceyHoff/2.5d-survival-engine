@@ -8,7 +8,7 @@
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { carriedBags, gameplayDefs, LOOT_LABEL, lootLabelText, LootBag, LootSummary, mergeLabels, type LabelPoint } from "@engine/gameplay";
 import { DEFAULT_ISO, screenToWorld, worldToScreen } from "@engine/world";
-import type { CameraLike } from "./world-tools.js";
+import { camIso, type CameraLike } from "./world-tools.js";
 import type { PromptDevice } from "./farm-prompt.js";
 
 export interface LootLabelDeps {
@@ -31,7 +31,7 @@ export function lootLabelPoints(w: World, p: Entity, cam: CameraLike): (LabelPoi
     const s = w.get(e, LootSummary)!; if (!s.stacks) continue;
     const owner = w.getField(e, LootBag, "owner") ?? 0;
     const text = lootLabelText(s, (id) => defs.items.get(id)?.name, !!owner && owner === myId);
-    const g = worldToScreen(t.x, t.y, t.z ?? 0, DEFAULT_ISO); const gx = (g.sx - cam.x) * z + hw, gy = (g.sy - cam.y) * z + hh;
+    const g = worldToScreen(t.x, t.y, t.z ?? 0, camIso(cam)); const gx = (g.sx - cam.x) * z + hw, gy = (g.sy - cam.y) * z + hh;
     if (gx < -80 || gy < -80 || gx > hw * 2 + 80 || gy > hh * 2 + 80) continue;
     out.push({ key: e, x: gx, y: gy - 30 * Math.max(0.7, Math.min(1.6, z)), dist, text, gx, gy });
   }

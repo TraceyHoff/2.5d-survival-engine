@@ -8,7 +8,9 @@ import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
 import { LoadProgress } from "./load-progress.js";
 import { attachZoom, type ZoomControl } from "./camera-zoom.js";
+import { attachCameraRotate, screenDirToWorld, type CameraRotateControl } from "./camera-rotate.js";
 let camZoom: ZoomControl | undefined; let padZoomT = 0; // ADR-177
+let camRot: CameraRotateControl | undefined; // ADR-253
 import { mountUi } from "./ui-root.js";
 import { showRenderError, glInfo } from "./glcheck.js";
 import { errorLog, installGlobalErrorCapture, logRecoverable } from "./error-log.js";
@@ -236,7 +238,8 @@ function quitToMenu(): void {
   });
 }
 let cam = { sx: 0, sy: 0 }; // camera offset from render(), for mouse aim
-const aim = new AimResolver(input, { screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy) });
+const aim = new AimResolver(input, { screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy),
+  dirToWorld: (x, y) => screenDirToWorld(x, y, input.viewQuarter) }); // ADR-253: stick / touch aim is camera-relative
 /** Input actions -> InputFrame (frame-mapping.ts, ADR-180); `inGameplay` is set by onUiFrame (runs first) so sim edges only fire in plain gameplay. */
 let inGameplay = false;
 const inputState = new InputState();
@@ -286,7 +289,7 @@ const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_
     if (!warned && (trend.leaking(prof) || m.usedJSHeapSize / 1048576 > prof.jsHeapSoftMB)) { warned = true; console.warn(`[memory] ${prof.name} budget: heap ${(m.usedJSHeapSize / 1048576).toFixed(0)} MB, floor slope ${trend.slopeMBPerMin().toFixed(2)} MB/min`); } }, 5000);
   (window as { __survivazMem?: unknown }).__survivazMem = () => ({ profile: prof.name, budget: prof, usedMB: (pm()?.usedJSHeapSize ?? 0) / 1048576, floorMB: trend.lastFloorMB, slopeMBPerMin: trend.slopeMBPerMin(), windows: trend.windows, leaking: trend.leaking(prof), domNodes: document.getElementsByTagName("*").length });
 }
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { input, G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), session: () => session, buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], net: () => session.client ? { ...session.client.stats, pending: (session.client as unknown as { pending?: unknown[] }).pending?.length } : undefined, zoom: () => ({ user: camZoom?.user, indoor: camZoom?.indoor, cam: iso?.renderer.camera.zoom, cut: iso?.renderer.indoor }), pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { input, G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, view: () => camRot?.view, setView: (q: number) => camRot?.set(q), tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), session: () => session, buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], net: () => session.client ? { ...session.client.stats, pending: (session.client as unknown as { pending?: unknown[] }).pending?.length } : undefined, zoom: () => ({ user: camZoom?.user, indoor: camZoom?.indoor, cam: iso?.renderer.camera.zoom, cut: iso?.renderer.indoor }), pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** ADR-179/180: Hotbar1..8 (1-8 keys / D-pad, LB+D-pad / touch "Slot" radial) now reach the sim as frame edges; only the
  * pad RB/LB tap cycle (HotbarNext/Prev, which needs the filled-slot list) is sent from here, so nothing fires twice. */
 function hotbarInput(): void {
@@ -304,6 +307,7 @@ function onUiFrame(): void {
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
   lootAutoOpen(); // ADR-160 (tracks the open bag even while a menu is up, so closing the panel does not reopen it)
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
+  camRot?.poll(); // ADR-253: gameplay, build mode and the road tool all rotate (menus own the D-pad / brackets)
   if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
   buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
@@ -606,7 +610,12 @@ input.onDeviceChange(() => tutorialUi?.update());
 // ADR-153: death screen + Respawn (mouse / touch / keyboard / gamepad) and the death-bag compass; above the tutorial and menus.
 deathUi = mountDeathScreen(root, { world: () => world, player: () => session.player,
   respawn: () => { const c = session.client; if (!c?.connected) return false; try { return c.sendCommand(gameplayNet(RespawnCmd), {} as never) !== false; } catch { return false; } },
-  onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); } });
+  onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); }, view: () => input.viewQuarter });
+// ADR-253: four 90° views (KBM [ / ], pad RB + D-pad ←/→ or LT + D-pad ←/→ in build mode, ⟲ / ⟳ HUD for mouse / touch)
+camRot = attachCameraRotate({ target: () => iso?.renderer, input, root,
+  pivot: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y, z: t.z ?? 0 } : undefined; },
+  onChange: (q) => { audio.mixer.view = q; },
+  hidden: () => !!document.querySelector("[data-boot=menu]") || !!deathUi?.dead || !!menus?.nav.isOpen || session.player === undefined });
 farm = mountFarmPrompt(root, {
   world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
@@ -621,7 +630,7 @@ const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !bu
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
 vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
   toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });
-worldTools = mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active, sound: (k) => audio.mixer.play(k),
+worldTools = mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, sound: (k) => audio.mixer.play(k),
   input, device: promptDevice, canvas,
   openModal: (id, el, onClose) => menus ? menus.nav.open(id, el, onClose) : (root.append(el), { close: () => el.remove() }),
   onControl: (x, y) => { const r = canvas.getBoundingClientRect(); return !!browserInput.controls?.geometry().some((g) => g.visible && Math.hypot(g.x - (x - r.left), g.y - (y - r.top)) <= g.r + 8); } });

@@ -33,6 +33,7 @@ export class AudioMixer {
   readonly voices: Voice[] = []; private pool: Chain[] = []; private nextId = 1;
   private buffers = new Map<string, AudioBuffer | null | Promise<AudioBuffer | null>>();
   listener: Vec2 = { x: 0, y: 0 }; indoors = false;
+  /** ADR-253 camera quarter turn: stereo pan follows the rotated view. */ view = 0;
   constructor(json: SoundBankJson, private deps: MixerDeps = {}) {
     this.settings = loadAudioSettings(deps.storage);
     this.bank = new SoundBank(json, json.formats, deps.rng);
@@ -151,7 +152,7 @@ export class AudioMixer {
   }
   private spatial(v: { opts: PlayOpts; def?: { maxDist?: number | undefined } }): { gain: number; pan: number; hz: number } {
     if (!v.opts.pos) return { gain: 1, pan: 0, hz: OPEN_HZ };
-    const s = spatialize(v.opts.pos, this.listener, { maxDist: v.opts.maxDist ?? v.def?.maxDist ?? 18, indoors: this.indoors, sourceIndoors: v.opts.indoors ?? false });
+    const s = spatialize(v.opts.pos, this.listener, { maxDist: v.opts.maxDist ?? v.def?.maxDist ?? 18, indoors: this.indoors, sourceIndoors: v.opts.indoors ?? false, view: this.view });
     return { gain: s.gain, pan: s.pan, hz: s.lowpassHz };
   }
   /** Play an event key. Returns a voice id (0 = dropped: missing key, locked, inaudible, over budget or loading). */

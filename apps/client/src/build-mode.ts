@@ -16,9 +16,11 @@
 import { BuildPiece, buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, structures, upgradeIntent,
   type BuildPreview, type BuildSelection, type MenuCtx, type MenuIntent, type PieceTarget, type PlacementAim } from "@engine/gameplay";
 import { Transform } from "@engine/core";
+import { rotateScreenVec } from "@engine/input";
 
 export type BuildDevice = "keyboardMouse" | "gamepad" | "touch";
-export interface BuildModeInput { pressed(action: string): boolean; /** held state (ADR-222 confirm latch); optional for older fakes */ down?(action: string): boolean; push(context: string): void; pop(context?: string): void; vector?(action: string): readonly number[] }
+export interface BuildModeInput { pressed(action: string): boolean; /** held state (ADR-222 confirm latch); optional for older fakes */ down?(action: string): boolean; push(context: string): void; pop(context?: string): void; vector?(action: string): readonly number[];
+  /** ADR-253 camera view quarter: the pad cursor moves camera-relative (stick up = up on screen in every view). */ readonly viewQuarter?: number }
 export interface BuildModeOptions {
   input: BuildModeInput;
   ctx(): MenuCtx | undefined;
@@ -176,7 +178,7 @@ export class BuildMode {
     const v = this.o.input.vector?.("Build.Nudge"); const t = this.now(); const dt = this.lastT === undefined ? 0 : Math.min(0.1, (t - this.lastT) / 1000); this.lastT = t;
     if (!v || Math.hypot(v[0] ?? 0, v[1] ?? 0) < 0.2) return;
     if (!this.padOffset) { const pt = c.world.get(c.player, Transform); const at = placementTarget(c.world, c.player, this.o.aim()); this.padOffset = pt && at ? { x: at.x - pt.x, y: at.y - pt.y } : { x: 0, y: 0 }; }
-    const m = moveVector(0, { x: v[0], y: v[1] }); const reach = gameplayDefs(c.world).building.buildReach;
+    const r = rotateScreenVec([v[0] ?? 0, v[1] ?? 0], this.o.input.viewQuarter ?? 0); const m = moveVector(0, { x: r[0], y: r[1] }); const reach = gameplayDefs(c.world).building.buildReach;
     let x = this.padOffset.x + m.dx * PAD_CURSOR_SPEED * dt, y = this.padOffset.y + m.dy * PAD_CURSOR_SPEED * dt; const d = Math.hypot(x, y); if (d > reach) { x *= reach / d; y *= reach / d; }
     this.padOffset = { x, y };
   }

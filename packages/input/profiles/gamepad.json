@@ -232,6 +232,20 @@
     "modifiers": [
      "pad.rb"
     ]
+   },
+   {
+    "action": "Camera.RotateCCW",
+    "control": "pad.dleft",
+    "modifiers": [
+     "pad.rb"
+    ]
+   },
+   {
+    "action": "Camera.RotateCW",
+    "control": "pad.dright",
+    "modifiers": [
+     "pad.rb"
+    ]
    }
   ],
   "Building": [
@@ -345,6 +359,20 @@
     "control": "pad.y",
     "modifiers": [
      "pad.lb"
+    ]
+   },
+   {
+    "action": "Camera.RotateCCW",
+    "control": "pad.dleft",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Camera.RotateCW",
+    "control": "pad.dright",
+    "modifiers": [
+     "pad.lt"
     ]
    }
   ],

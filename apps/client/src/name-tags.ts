@@ -9,8 +9,8 @@
  */
 import { Membership, PlayerId, PrevTransform, Transform, lerp, type Entity, type World } from "@engine/core";
 import { Dead } from "@engine/gameplay";
-import { DEFAULT_ISO, worldToScreen } from "@engine/world";
-import type { CameraLike } from "./world-tools.js";
+import { worldToScreen } from "@engine/world";
+import { camIso, type CameraLike } from "./world-tools.js";
 
 export const NAME_TAG = { range: 22, fullUntil: 8, minAlpha: 0.25, font: 12, lift: 78 } as const;
 export const TAG_COLORS = { other: "#FFFAF0", party: "#8EF08A", clan: "#8CC8FF" } as const;
@@ -42,14 +42,14 @@ export interface NameLookupLike { get(id: number): string | undefined }
 export function nameTagPoints(w: World, p: Entity, cam: CameraLike, names: NameLookupLike, alpha = 1): NameTagPoint[] {
   const me = w.get(p, Transform); if (!me) return [];
   const myParty = w.getField(p, Membership, "partyId") ?? 0, myClan = w.getField(p, Membership, "clanId") ?? 0;
-  const z = cam.drawZoom; const hw = cam.viewW / cam.dpr / 2, hh = cam.viewH / cam.dpr / 2;
+  const z = cam.drawZoom; const hw = cam.viewW / cam.dpr / 2, hh = cam.viewH / cam.dpr / 2; const iso = camIso(cam);
   const dead = w.isRegistered(Dead); const out: NameTagPoint[] = [];
   for (const e of w.query([PlayerId, Transform])) {
     if (e === p || (dead && w.has(e, Dead))) continue;
     const t = w.get(e, Transform)!; const pv = w.get(e, PrevTransform) ?? t;
     const x = lerp(pv.x, t.x, alpha), y = lerp(pv.y, t.y, alpha); const dist = Math.hypot(x - me.x, y - me.y); if (dist > NAME_TAG.range) continue;
     const id = w.getField(e, PlayerId, "id") ?? 0; const name = (id && names.get(id)) || ""; if (!name) continue;
-    const g = worldToScreen(x, y, t.z ?? 0, DEFAULT_ISO); const sx = (g.sx - cam.x) * z + hw, sy = (g.sy - cam.y) * z + hh - NAME_TAG.lift * z; // sprite scales with drawZoom, so the lift must too
+    const g = worldToScreen(x, y, t.z ?? 0, iso); const sx = (g.sx - cam.x) * z + hw, sy = (g.sy - cam.y) * z + hh - NAME_TAG.lift * z; // sprite scales with drawZoom, so the lift must too
     if (sx < -60 || sy < -30 || sx > hw * 2 + 60 || sy > hh * 2 + 30) continue;
     const party = w.getField(e, Membership, "partyId") ?? 0, clan = w.getField(e, Membership, "clanId") ?? 0;
     const kind: TagKind = myParty && party === myParty ? "party" : myClan && clan === myClan ? "clan" : "other";

@@ -199,6 +199,14 @@
    {
     "action": "Vehicle.Lights",
     "control": "key.KeyF"
+   },
+   {
+    "action": "Camera.RotateCCW",
+    "control": "key.BracketLeft"
+   },
+   {
+    "action": "Camera.RotateCW",
+    "control": "key.BracketRight"
    }
   ],
   "Building": [

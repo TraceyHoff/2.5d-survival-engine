@@ -27,7 +27,11 @@ export type ScreenToWorld = (sx: number, sy: number) => { x: number; y: number }
  */
 export class AimResolver<W = unknown, E = number> {
   private lastDir = { x: 1, y: 0 }; private touchTarget: { x: number; y: number } | undefined;
-  constructor(private input: InputSystem, private opts: { screenToWorld?: ScreenToWorld; hooks?: GameplayInputHooks<W, E>; aimAction?: string; moveAction?: string } = {}) {}
+  /**
+   * @param opts.dirToWorld ADR-253: maps a screen-space stick direction to a world direction (the client passes the
+   * camera-view-aware iso map). Omitted: the direction is returned as read (legacy).
+   */
+  constructor(private input: InputSystem, private opts: { screenToWorld?: ScreenToWorld; hooks?: GameplayInputHooks<W, E>; aimAction?: string; moveAction?: string; dirToWorld?: (x: number, y: number) => { x: number; y: number } } = {}) {}
   /** Touch: tap-to-target (world point). */
   setTouchTarget(p: { x: number; y: number } | undefined): void { this.touchTarget = p; }
   resolve(world: W, actor: E, actorPos: { x: number; y: number }): AimTarget {
@@ -36,15 +40,16 @@ export class AimResolver<W = unknown, E = number> {
     if (cls === "keyboardMouse" && dev && this.opts.screenToWorld) { const p = this.opts.screenToWorld(dev.read("mouse.x"), dev.read("mouse.y")); return { x: p.x, y: p.y, mode: AimMode.WorldPoint }; }
     if (cls === "touch") {
       if (this.touchTarget) return { ...this.touchTarget, mode: AimMode.WorldPoint };
-      const dir = Math.hypot(aim[0], aim[1]) > 0.1 ? aim : move; if (Math.hypot(dir[0], dir[1]) > 0.1) this.lastDir = norm(dir[0], dir[1]);
+      const dir = Math.hypot(aim[0], aim[1]) > 0.1 ? aim : move; if (Math.hypot(dir[0], dir[1]) > 0.1) this.lastDir = this.world(dir[0], dir[1]);
       const t = this.opts.hooks?.autoTarget?.(world, actor, { ...this.lastDir, mode: AimMode.Direction }, ctx);
       return t ? { ...t, mode: AimMode.WorldPoint } : { ...this.lastDir, mode: AimMode.Direction };
     }
     const dir = Math.hypot(aim[0], aim[1]) > 0.05 ? aim : Math.hypot(move[0], move[1]) > 0.05 ? move : undefined;
-    if (dir) this.lastDir = norm(dir[0], dir[1]);
+    if (dir) this.lastDir = this.world(dir[0], dir[1]);
     let d = this.lastDir; if (cls === "gamepad" && this.opts.hooks?.aimAssist) d = norm(...vec(this.opts.hooks.aimAssist(world, actor, d, { ...ctx, device: "gamepad" })));
     void actorPos; return { x: d.x, y: d.y, mode: AimMode.Direction };
   }
+  private world(x: number, y: number): { x: number; y: number } { const f = this.opts.dirToWorld; if (!f) return norm(x, y); const w = f(x, y); return norm(w.x, w.y); }
   contextAction(world: W, actor: E): ReturnType<NonNullable<GameplayInputHooks<W, E>["contextAction"]>> {
     const dev = this.input.activeDevice; return this.opts.hooks?.contextAction?.(world, actor, { device: dev?.deviceClass ?? "keyboardMouse", activeDevice: dev });
   }

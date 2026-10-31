@@ -47,6 +47,12 @@ export class InputSystem {
   activeDevice: Device | undefined;
   lastUsedDeviceClass: DeviceClass | undefined;
   storage: StorageAdapter | undefined;
+  /**
+   * ADR-253 camera view quarter (0..3, the renderer's `viewRotation`). Move / ghost-nudge vectors are screen-relative;
+   * writeFrame turns them back into the q0 screen frame the sim's `moveVector` expects, so movement stays camera-relative
+   * in every view without any protocol or server change. 0 = unchanged.
+   */
+  viewQuarter = 0;
   constructor(readonly clock: Clock, opts: { actions?: readonly ActionDef[]; contexts?: readonly ContextDef[]; profiles?: readonly BindingProfile[] } = {}) {
     for (const a of opts.actions ?? []) this.defineAction(a);
     for (const c of opts.contexts ?? []) this.defineContext(c);
@@ -228,14 +234,24 @@ export class InputSystem {
     let bits = 0;
     for (const [a, m] of Object.entries(map.holdBits)) if (this.down(a)) bits |= m;
     if (map.move) {
-      const [x, y] = this.vector(map.move.action); state.moveX = x; state.moveY = y;
+      const [x, y] = rotateScreenVec(this.vector(map.move.action), this.viewQuarter); state.moveX = x; state.moveY = y;
       if (x < -0.5) bits |= map.move.left; if (x > 0.5) bits |= map.move.right; if (y < -0.5) bits |= map.move.up; if (y > 0.5) bits |= map.move.down;
     }
     for (const [c, m] of Object.entries(map.contextBits ?? {})) if (this.isActive(c)) bits |= m;
     state.setActions(bits >>> 0);
     for (const [a, m] of Object.entries(map.edgeBits ?? {})) if (this.pressed(a)) state.pulse(m);
-    if (map.ghostNudge) { const [x, y] = this.vector(map.ghostNudge); state.ghostNudgeX = x; state.ghostNudgeY = y; }
+    if (map.ghostNudge) { const [x, y] = rotateScreenVec(this.vector(map.ghostNudge), this.viewQuarter); state.ghostNudgeX = x; state.ghostNudgeY = y; }
     if (aim) { state.aimX = aim.x; state.aimY = aim.y; state.aimMode = aim.mode; }
   }
+}
+/**
+ * ADR-253: a screen-space vector seen in camera view quarter `q` -> the same world direction expressed in the q0 screen
+ * frame (the frame the sim's screen->iso map assumes). The q0 screen->world map is a pure 45° rotation, so a world
+ * rotation by -q·90° (view -> world) is the same rotation of the screen vector: x' = c·x + s·y, y' = -s·x + c·y.
+ * Exact for the integer quarter turns (no float drift; q0 returns the input unchanged).
+ */
+export function rotateScreenVec(v: Readonly<Vec2> | readonly [number, number], q: number): Vec2 {
+  const k = ((Math.round(q) % 4) + 4) % 4; const x = v[0], y = v[1];
+  return k === 0 ? [x, y] : k === 1 ? [y, 0 - x] : k === 2 ? [0 - x, 0 - y] : [0 - y, x];
 }
 function rm<T>(a: T[], v: T): void { const i = a.indexOf(v); if (i >= 0) a.splice(i, 1); }

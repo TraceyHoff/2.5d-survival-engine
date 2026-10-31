@@ -9,7 +9,7 @@
 import { navPad, padHeld, padKeyEdge } from "./pad-input.js";
 import { setData, setDisabled, setHidden, setStyle, setText } from "./dom-diff.js";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
-import { worldToScreen } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO } from "@engine/world";
 import { Dead, PVP, deathBagsOf } from "@engine/gameplay";
 
 /** Seconds after death before the button unlocks (server rule + a little slack for tick / latency skew). */
@@ -25,9 +25,10 @@ export function deathUiState(dead: boolean, deadAtMs: number, nowMs: number, sen
   const pending = sentAtMs !== undefined && nowMs - sentAtMs < RESPAWN_RETRY_MS;
   return { dead, secondsLeft, ready: secondsLeft === 0 && !pending, pending };
 }
-/** Pure: screen-space bearing (radians, 0 = right, +y down) and distance (tiles) from `p` to `bag`. */
-export function bagBearing(p: { x: number; y: number }, bag: { x: number; y: number }): { angle: number; dist: number } {
-  const s = worldToScreen(bag.x - p.x, bag.y - p.y); return { angle: Math.atan2(s.sy, s.sx), dist: Math.hypot(bag.x - p.x, bag.y - p.y) };
+/** Pure: screen-space bearing (radians, 0 = right, +y down) and distance (tiles) from `p` to `bag`; `view` = the camera's
+ *  ADR-253 quarter turn so the arrow points where the bag is on screen. */
+export function bagBearing(p: { x: number; y: number }, bag: { x: number; y: number }, view = 0): { angle: number; dist: number } {
+  const s = worldToScreen(bag.x - p.x, bag.y - p.y, 0, view ? { ...DEFAULT_ISO, view } : DEFAULT_ISO); return { angle: Math.atan2(s.sy, s.sx), dist: Math.hypot(bag.x - p.x, bag.y - p.y) };
 }
 
 export interface DeathScreenOptions {
@@ -38,6 +39,8 @@ export interface DeathScreenOptions {
   onDeath?: () => void;
   now?: () => number;
   getGamepads?: () => readonly (Gamepad | null)[];
+  /** ADR-253: camera view quarter (0..3) for the bag compass arrow. */
+  view?: () => number;
 }
 export interface DeathScreen { frame(): void; readonly dead: boolean; readonly el: HTMLElement; readonly compass: HTMLElement; press(): boolean }
 
@@ -104,7 +107,7 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
     if (!seen && deathSpot && t && Math.hypot(t.x - deathSpot.x, t.y - deathSpot.y) < 12 && !dead) deathSpot = undefined;
     const bag = seen ?? deathSpot;
     if (!t || !bag) { setHidden(compass, true); return; }
-    const b = bagBearing(t, bag); const d = Math.round(b.dist);
+    const b = bagBearing(t, bag, o.view?.() ?? 0); const d = Math.round(b.dist);
     setHidden(compass, d < 2 && !dead); setData(compass, "dist", String(d));
     setText(compass.querySelector(".dist")!, `${d} m`); setText(compass.querySelector(".lbl")!, seen ? "Your bag" : "Where you fell");
     setStyle(compass.querySelector(".arrow") as HTMLElement, "transform", `rotate(${b.angle}rad)`);
