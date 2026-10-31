@@ -265,7 +265,15 @@ vec3 crispUv(vec3 uv, vec2 w) {
   vec2 p = uv.xy * sz, d = w * sz; if (max(d.x, d.y) >= 1.0) return uv;
   vec2 f = fract(p) - 0.5; p = floor(p) + 0.5 + clamp(f / max(d, vec2(1e-4)), -0.5, 0.5); return vec3(p / sz, uv.z);
 }
-float alphaAt(vec2 uv) { return atlasAt(vec3(uv, vUv.z)).a * inRect(uv); }
+// ADR-251 bleed fix: sample inside the frame rect inset by half a texel of the sampled footprint (>= half a base texel), so
+// bilinear / mip taps never reach a neighbouring slot or frame (the magenta fringes); inRect still masks the unclamped uv.
+vec2 rectClamp(vec2 uv, int l, vec2 fw) {
+  vec2 sz = vec2(l >= uPoolFirst ? textureSize(uPoolTex, 0).xy : textureSize(uAtlas, 0).xy);
+  vec2 h = min(max(0.5 / sz, 0.5 * fw), 0.5 * max(vRect.zw - vRect.xy, vec2(0.0)));
+  return clamp(uv, vRect.xy + h, vRect.zw - h);
+}
+vec3 inUv(vec3 uv, vec2 fw) { return vec3(rectClamp(uv.xy, int(uv.z + 0.5), fw), uv.z); }
+float alphaAt(vec2 uv) { return atlasAt(vec3(rectClamp(uv, int(vUv.z + 0.5), vec2(0.0)), vUv.z)).a * inRect(uv); }
 ${SEASON_SPRITE_GLSL}
 // status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
 vec3 statusTint(vec3 c, int idx, float amount) {
@@ -324,7 +332,7 @@ void main() {
     if ((sh.x != 0.0 || sh.y != 0.0) && abs(det) > 1e-12) uv.xy += deckJu * (inverse(deckJd) * sh);
   }
   if ((vFlags & 1024) != 0) uv = crispUv(uv, cw);
-  vec4 t = ((vFlags & 512) != 0 ? atlasAtBias(uv, uFaceBias) : atlasAt(uv)) * inRect(uv.xy);
+  vec3 su = inUv(uv, cw); vec4 t = ((vFlags & 512) != 0 ? atlasAtBias(su, uFaceBias) : atlasAt(su)) * inRect(uv.xy);
   if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
     if (t.a < 0.35) discard;
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
@@ -336,11 +344,11 @@ void main() {
   }
   vec3 col; float a = t.a;
   if (vLT.y > 0.5) { // character layer: tintmask R <- primary (vTint), G <- secondary (vTint2); no mask = whole frame primary
-    vec4 tm = (vFB.x & 8) != 0 ? texture(uTintM, uv) : vec4(1.0, 0.0, 0.0, 1.0); int mode = int(vLT.y - 0.5);
+    vec4 tm = (vFB.x & 8) != 0 ? texture(uTintM, su) : vec4(1.0, 0.0, 0.0, 1.0); int mode = int(vLT.y - 0.5);
     col = layerTint(t.rgb, vTint, mode, vLT.z * tm.r, vLT.w);
     if (dot(vTint2.rgb, vec3(1.0)) > 0.0) col = layerTint(col, vTint2.rgb, mode, vLT.z * tm.g, vLT.w);
   } else if ((vFB.x & 8) != 0) { // two-tone tint mask: R = primary (Sprite.tint), G = secondary (aH rgb)
-    vec4 tm = texture(uTintM, uv); vec3 t2 = dot(vTint2.rgb, vec3(1.0)) > 0.0 ? vTint2.rgb : vTint;
+    vec4 tm = texture(uTintM, su); vec3 t2 = dot(vTint2.rgb, vec3(1.0)) > 0.0 ? vTint2.rgb : vTint;
     col = t.rgb * mix(vec3(1.0), vTint, tm.r) * mix(vec3(1.0), t2, tm.g);
   } else col = t.rgb * vTint;
   if (a < 0.5 && uOutline > 0.0 && (vFlags & 16) == 0) {
@@ -362,7 +370,7 @@ void main() {
   }
   // survival FX: wetness (darken + sheen + drips), frost rim (cold), flush (heat)
   if (vFx.x > 0.003) {
-    vec4 sm = (vFB.x & 2) != 0 ? texture(uSheenM, uv) : vec4(-1.0); // sheen mask: R sheen, G darken, B drip
+    vec4 sm = (vFB.x & 2) != 0 ? texture(uSheenM, su) : vec4(-1.0); // sheen mask: R sheen, G darken, B drip
     col *= mix(1.0, uWetDarken, vFx.x * (sm.g >= 0.0 ? sm.g : 1.0));
     float sheen = sm.r >= 0.0 ? sm.r : pow(max(0.0, 1.0 - length((vLocal - vec2(-0.35, -0.45)) * vec2(1.2, 0.9))), 3.0);
     vec2 px = vUv.xy / uTexel;

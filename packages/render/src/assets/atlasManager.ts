@@ -160,6 +160,14 @@ const WEAR_1X_SLOTS_LOWMEM = 18, WEAR_1X_SLOTS_DESKTOP = 32;
  *  of the 2x2 the largest (1016px hair/coat) pages force on everyone. Split only when each side has >= WEAR_SPLIT_MIN pages and layers are >= 2048 (at 1024 every slot is one layer, so splitting
  *  only shrinks the large pool and thrashes it: spMobile 146.2 MB / 256 misses vs 140.5 MB / 85). */
 export const WEAR_SMALL_PX = 672, WEAR_SPLIT_MIN = 4;
+/** ADR-251: the streamed wearables pools together never take more than this share of the atlas budget (they page by
+ *  distance priority / LRU instead); the visible pools (buildings, vehicles, stream sheets incl. furniture-tier and gt
+ *  ground pages) keep their 1x working set reserved ahead of them. */
+export const WEAR_BUDGET_SHARE = 0.3;
+/** ADR-251: the 1x wear floor kept even when the cap is tight: one fully dressed character (a worn set is ~8 pages). */
+export const WEAR_FLOOR_SLOTS = 8;
+/** ADR-251: budget share of the stream-sheet pool's 1x working set, and its floor (slots). */
+export const STREAM_BUDGET_SHARE = 0.25, STREAM_FLOOR_SLOTS = 4;
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
 /** Read optional per-sprite `sway: {amp, freq, stiffness}` blocks from raw manifest JSON (loadManifest ignores them). */
@@ -255,6 +263,9 @@ export const RESIDENT_GROUND_RE = /^gt_/;
  *  budget halves the hot tier: the rest of the hot art takes the x0.5, these never become 2x-magnified mush (mobile only
  *  ever ran them at x0.5 / the stream pool's x0.25 - "animals blurry on mobile, sharp on desktop"). */
 /** ADR-240: + the v2 character sheets (v2s_* sample, v2_* full set): same x1 pin as the v1 characters. */
+/** ADR-251: hot resident art pinned at 1x like FIDELITY_ATLAS_RE while the rest of the hot tier is halved: furniture (bed +
+ *  sleeper read as a blurred quarter-size smear) and the gt ground pages (ADR-246 wanted them 1x; fitBudget halved them). */
+export const VISIBLE_PIN_RE = /^(gt_|furniture(_|$))/;
 export const FIDELITY_ATLAS_RE = /^(animals|pets|nature_critters|characters|zombies|v2s?)(_|$)/;
 /** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
 export const PET_SHEET_RE = /^pets_/;
@@ -759,7 +770,15 @@ export class AtlasManager {
     // vehicles: compressed tail
     if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
     // manifest stream sheets: visible art (kept at 1x, counted in keepVis like vehicles), a small LRU working set
-    if (strm.length) groups.push({ cls: "stream", lazy: strm, minSlots: Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), cap: true });
+    if (strm.length) {
+      // ADR-251: stream sheets are mostly whole 2048 pages (one slot per layer at 1x): 24 slots asked ~640 MB, which the
+      // planner met by downscaling every resident atlas (furniture x0.125). The 1x working set is capped at
+      // STREAM_BUDGET_SHARE of the budget (LRU pages the rest), never below STREAM_FLOOR_SLOTS
+      const want = Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), g1 = this.poolGeom(strm, 1);
+      const layerCost = g1.perLayer > 0 ? this.poolReserveBytes(strm, g1.perLayer, list, 1) : 0;
+      const fit = layerCost > 0 ? Math.floor(this.textureBudgetMB * 1048576 * STREAM_BUDGET_SHARE / layerCost) * g1.perLayer : want;
+      groups.push({ cls: "stream", lazy: strm, minSlots: Math.max(Math.min(want, fit), Math.min(want, STREAM_FLOOR_SLOTS)), cap: true });
+    }
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
     // wear is never planned below wearScale and always keeps its 1x working set (planPool forces it even over budget), so
@@ -770,9 +789,19 @@ export class AtlasManager {
     const keepWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, Math.min(g.minSlots, Math.ceil(w1x * (g.share ?? 1))), list, wk), 0);
     const wantWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, wk), 0);
     const keepVis = groups.filter((g) => g.cls !== "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, 1), 0);
-    const keep = keepVis + Math.min(keepWear, wantWear) / 2, reserve = keepVis + Math.max(keepWear, wantWear);
+    // ADR-251: wear never asks for more than its budget share (it streams / LRU-pages the rest), so resident art (furniture,
+    // props) is not downscaled to make room for a wardrobe that only planPool's cap would refuse anyway
+    const wearCap = this.textureBudgetMB * 1048576 * WEAR_BUDGET_SHARE;
+    // the wear floor planPool forces (WEAR_FLOOR_SLOTS at wearScale, split by share) is the least wear ever takes
+    const wearFloor = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, Math.min(g.minSlots, Math.ceil(WEAR_FLOOR_SLOTS * (g.share ?? 1))), list, wk), 0);
+    const wearRes = Math.max(wearFloor, Math.min(Math.max(keepWear, wantWear), wearCap));
+    const keep = keepVis + Math.max(wearFloor, Math.min(keepWear, wantWear, wearCap) / 2), reserve = keepVis + wearRes;
+    // 1x working set of each visible (non-char) pool, held free while the earlier (character) pools are planned
+    const visHold = groups.map((g) => (CHAR_POOL_CLS.has(g.cls) ? 0 : this.poolReserveBytes(g.lazy, g.minSlots, list, 1)));
+    // buildings must not starve vehicles / the stream floor (furniture, decor): they hold veh 1x + STREAM_FLOOR_SLOTS at 1x
+    const bldHold = groups.reduce((t, g, i) => t + (g.cls === "veh" ? visHold[i]! : g.cls === "stream" ? this.poolReserveBytes(g.lazy, Math.min(g.minSlots, STREAM_FLOOR_SLOTS), list, 1) : 0), 0);
     this.registryForTier = registry; await this.fitBudget(list, reserve, keep); this.sideScale = (await halveSide(list, this.sideShift)) ? 1 / (1 << this.sideShift) : 1;
-    const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap, g.share); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
+    const layout = (): void => { this.pack(list); this.pools = []; groups.forEach((g, i) => this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap, g.share, g.cls === "wear" ? visHold.slice(i + 1).reduce((t, b) => t + b, 0) : g.cls === "bld" ? bldHold : 0)); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     this.planningRebuild = false;
     this.gen++; this.queue = []; this.layoutVersion++; this.fallbackCache.clear(); this.lArmCache.clear();
     layout();
@@ -832,6 +861,8 @@ export class AtlasManager {
   /** ADR-220: a rebuild is planning its new layout; the live pools still serve the renderer and are not planner input. */
   private planningRebuild = false;
 
+  /** ADR-251 diagnostics: approximate MB held by one pool's layers. */
+  private poolMB(p: Pool): number { const res = this.atlases.filter((a) => !a.lazy); return Math.round(p.layers * (p.own ? this.poolLayerBytes(res, p.tint, p.emis) : this.layerBytes(res)) / 1048576); }
   private gpuMB(): number { return Math.round(this.gpuBytes / 1048576); }
   /** Estimated bytes of the atlas arrays for a packing (colour + emissive + present masks, full mip chains). */
   private estimate(list: AtlasRT[]): number {
@@ -859,7 +890,11 @@ export class AtlasManager {
     const sw = al4(Math.max(1, Math.ceil(w1 * k))), sh = al4(Math.max(1, Math.ceil(h1 * k)));
     // slot pitch on 16px: mip l of a compressed page lands at (px >> l, py >> l), block-aligned for l <= 2 (OWN_MAX_LEVELS);
     // the last slot of a row/column needs no gap after it (1020px sheets: pitch 1024 -> 2x2 per 2048 layer)
-    const al16 = (v: number) => Math.ceil(v / 16) * 16; const pw = al16(sw + POOL_GAP), ph = al16(sh + POOL_GAP);
+    // ADR-251: a power-of-two page that tiles the layer exactly (1024 in 2048) needs no gap: its mips never share a texel
+    // with a neighbour, and the sprite shader clamps bilinear taps inside the frame rect (rectClamp). With the gap a
+    // 1024 stream page took a whole 2048 layer (one slot instead of four)
+    const tiles = (v: number) => v >= 16 && (v & (v - 1)) === 0 && S % v === 0;
+    const al16 = (v: number) => Math.ceil(v / 16) * 16; const pw = tiles(sw) ? sw : al16(sw + POOL_GAP), ph = tiles(sh) ? sh : al16(sh + POOL_GAP);
     const cols = S >= sw ? Math.floor((S - sw) / pw) + 1 : 0, rows = S >= sh ? Math.floor((S - sh) / ph) + 1 : 0;
     return { sw, sh, pw, ph, cols, perLayer: cols * rows };
   }
@@ -881,29 +916,42 @@ export class AtlasManager {
     const tint = (!this.planningRebuild && this.pools.some((p) => p.tint)) || lazy.some((a) => a.source.masks?.tintmask), emis = lazy.some((a) => a.source.emissiveUrl);
     const ks = this.poolScales(lazy); if (!ks.length) return 0;
     const g = this.poolGeom(lazy, k !== undefined && ks.includes(k) ? k : ks.includes(0.5) ? 0.5 : ks[ks.length - 1]!);
-    return Math.ceil(minSlots / g.perLayer) * this.poolLayerBytes(resident, tint, emis);
+    const char = losslessCharPools(this.textureBudgetMB) && lazy.length > 0 && (lazy[0]!.lazy!.pool === 0 || lazy[0]!.lazy!.pool === 3);
+    return Math.ceil(minSlots / g.perLayer) * (char ? this.layerBytes(resident, tint, emis) : this.poolLayerBytes(resident, tint, emis)); // ADR-251: lossless char pools are RGBA8
   }
   /**
    * Choose pool scale + layer count from the budget left after the packed resident layers (and earlier pools); appends
    * the pool layers. `cap`: never more layers than minSlots needs (vehicles: a small working set, refcounted per
    * vehicle; the 2x page only when that still leaves half the free layers).
    */
-  private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], cls: PoolClass = "wear", cap = false, share = 1): void {
+  private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], cls: PoolClass = "wear", cap = false, share = 1, holdBytes = 0): void {
     if (!lazy.length) return;
     const tint = lazy.some((a) => a.source.masks?.tintmask), emis = cls !== "wear" && lazy.some((a) => a.source.emissiveUrl);
     const anyTint = tint || this.pools.some((p) => p.tint), anyEmis = emis || this.pools.some((p) => p.emis);
     const per = this.layerBytes(resident, anyTint, anyEmis); const budget = this.textureBudgetMB * 1048576;
     // resident layers at RGBA8 cost, pool layers (earlier pools and this one) at their compressed cost
     const pper = this.poolLayerBytes(resident, anyTint, anyEmis); const poolL = this.pools.reduce((t, p) => t + p.layers, 0);
-    const resL = this.planLayers + (this.layers - poolL - this.packedLayers); // planner: shelf count for the packed atlases
-    const freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * resL - pper * poolL) / pper)));
+    const resL = this.layers - poolL; // ADR-251: the real packed layer count (pack() ran just before; the shelf estimate planLayers left ~2 layers idle on Xbox)
+    // ADR-251: lossless character pools live in the main RGBA8 array (ADR-220), so a layer costs `per`, not the compressed
+    // tail cost (charging pper let wear coverAll take ~27 layers = 1.1 GB on a 1 GB budget); `holdBytes` is the 1x
+    // working set of the visible pools planned after this one (bld / veh / stream), which wear must leave free
+    const lossless = losslessCharPools(this.textureBudgetMB);
+    const costOf = (p: { cls: PoolClass }) => (lossless && CHAR_POOL_CLS.has(p.cls) ? per : pper);
+    const lcost = costOf({ cls }); const used = this.pools.reduce((t, p) => t + p.layers * costOf(p), 0);
+    let freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * resL - used - holdBytes) / lcost)));
+    if (cls === "wear") {
+      const wearUsed = this.pools.reduce((t, p) => t + (p.cls === "wear" ? p.layers * costOf(p) : 0), 0);
+      freeLayers = Math.max(0, Math.min(freeLayers, Math.floor((budget * WEAR_BUDGET_SHARE * (share + (wearUsed > 0 ? 1 - share : 0)) - wearUsed) / lcost)));
+    }
     const sh = this.sideShift; const slotBytes = (g: { sw: number; sh: number }) => rgbaBytes(g.sw, g.sh, true) + rgbaBytes(Math.max(1, g.sw >> sh), Math.max(1, g.sh >> sh), true) * ((tint ? 1 : 0) + (emis ? 1 : 0)); // side arrays at layerSize >> sideShift
     const mk = (k: number, g: ReturnType<AtlasManager["poolGeom"]>, layers: number): Pool => ({ k, ...g, first: this.layers, layers, lru: new PageLRU<string>(layers * g.perLayer, POOL_PROTECT_FRAMES), slotBytes: slotBytes(g), tint, emis, cls });
     let pick: Pool | null = null;
     if (cap) {
       for (const k of this.poolScales(lazy)) {
         const g = this.poolGeom(lazy, k); const layers = Math.ceil(minSlots / g.perLayer);
-        if (layers > (k > 1 ? Math.floor(freeLayers / 2) : freeLayers)) continue;
+        const room = k > 1 ? Math.floor(freeLayers / 2) : freeLayers;
+        // ADR-251: a visible stream pool keeps full res with fewer slots (LRU) down to STREAM_FLOOR_SLOTS before it blurs
+        if (layers > room) { if (cls === "stream" && room > 0 && room * g.perLayer >= Math.min(minSlots, STREAM_FLOOR_SLOTS)) { pick = mk(k, g, room); break; } continue; }
         pick = mk(k, g, layers); break;
       }
     } else {
@@ -925,7 +973,9 @@ export class AtlasManager {
       if (cls === "wear" && (!pick || pick.lru.capacity < minSlots)) {
         // 1x wear pool holding minSlots even over budget (reported by vramStats.withinBudget) - the local player and
         // nearby characters must always be fully dressed at full res
-        const k1 = ks.includes(wk) ? wk : 1; const g = this.poolGeom(lazy, k1); const n = Math.min(minSlots, Math.ceil((this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP) * share));
+        // ADR-251: the floor is what the wear cap holds at 1x, never below one dressed character (WEAR_FLOOR_SLOTS)
+        const k1 = ks.includes(wk) ? wk : 1; const g = this.poolGeom(lazy, k1); const fit = Math.max(freeLayers, 0) * g.perLayer;
+        const n = Math.min(minSlots, lazy.length, Math.max(Math.ceil(WEAR_FLOOR_SLOTS * share), Math.min(fit, Math.ceil((this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP) * share))));
         if (!pick || pick.k < wk || pick.lru.capacity < n) pick = mk(k1, g, Math.max(1, Math.ceil(n / g.perLayer)));
       }
     }
@@ -951,7 +1001,7 @@ export class AtlasManager {
     // ADR-237: hot creature/character/zombie sheets (drawn recently; before anything was drawn every one but the 62 small
     // resident creature sheets, which follow once drawn via retier) stay x1 while
     // the rest of the hot tier is halved - tried first at every hot scale, dropped only when even that does not fit
-    const pinned = list.map((a) => !a.cold && FIDELITY_ATLAS_RE.test(a.key) && (this.recentlyUsed.size ? this.recentlyUsed.has(a.key) : !RESIDENT_CREATURE_RE.test(a.key)));
+    const pinned = list.map((a) => !a.cold && ((FIDELITY_ATLAS_RE.test(a.key) && (this.recentlyUsed.size ? this.recentlyUsed.has(a.key) : !RESIDENT_CREATURE_RE.test(a.key))) || VISIBLE_PIN_RE.test(a.key)));
     let pin = false;
     const scaleOf = (i: number, h: number, c: number): number => { const a = list[i]!; return Math.min(caps[i]!, a.cold ? c : pin && pinned[i] ? 1 : h); };
     const dims = (h: number, c: number) => list.map((a, i) => { const k = scaleOf(i, h, c); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
@@ -978,7 +1028,12 @@ export class AtlasManager {
       // the whole budget only appended those pools over it (mobile: 187 MB of arrays at a 128 MB budget -> fbo OOM)
       keptReserve = keepBytes;
       for (let h = 0.5; h >= MIN_ATLAS_DOWNSCALE && !best; h /= 2) { const c = fits(h, full - keepBytes); if (c !== null) best = [h, c]; }
-      if (!best) { keptReserve = 0; for (let h = 0.5; h >= MIN_ATLAS_DOWNSCALE && !best; h /= 2) { const c = fits(h, full); if (c !== null) best = [h, c]; } }
+      // ADR-251: the pools are forced to their floor anyway (body, wear floor, one layer per visible pool), so a smaller
+      // share of that floor is still held before resident art takes the whole budget (mobile ended 25 MB over 128)
+      for (const r of [keepBytes / 2, keepBytes / 4, 0]) {
+        if (best) break; keptReserve = r;
+        for (let h = 0.5; h >= MIN_ATLAS_DOWNSCALE && !best; h /= 2) { const c = fits(h, full - r); if (c !== null) best = [h, c]; }
+      }
     }
     const [h, c] = best ?? [MIN_ATLAS_DOWNSCALE, MIN_ATLAS_DOWNSCALE];
     this.downscale = h; this.coldDownscale = c;
@@ -1353,8 +1408,8 @@ export class AtlasManager {
   pageKey(spriteId: number): string | null { return this.lazyOf(spriteId)?.key ?? null; }
   /** Streamed wearable atlases resident / known. */
   isStreamed(spriteId: number): boolean { return !!this.lazyOf(spriteId); }
-  get vramStats(): VramStats & { pools: { cls: PoolClass; scale: number; slots: number; layers: number; resident: number; slotMB: number }[]; poolScale: number; layerSize: number; downscale: number; coldDownscale: number; hotAtlases: number; coldAtlases: number } {
-    return { ...this.vram.stats(), poolScale: this.pools[0]?.k ?? 0, pools: this.pools.map((p) => ({ cls: p.cls, scale: p.k, slots: p.lru.capacity, layers: p.layers, resident: p.lru.size, slotMB: +(p.slotBytes / 1048576).toFixed(1) })), layerSize: this.layerSize, downscale: this.downscale, coldDownscale: this.coldDownscale, hotAtlases: this.tiers.hot.length, coldAtlases: this.tiers.cold.length };
+  get vramStats(): VramStats & { pools: { cls: PoolClass; scale: number; slots: number; layers: number; resident: number; slotMB: number; /** ADR-251: approx. MB of the pool's layers (compressed own array or RGBA8 + side arrays) */ mb: number }[]; poolScale: number; layerSize: number; downscale: number; coldDownscale: number; hotAtlases: number; coldAtlases: number } {
+    return { ...this.vram.stats(), poolScale: this.pools[0]?.k ?? 0, pools: this.pools.map((p) => ({ cls: p.cls, scale: p.k, slots: p.lru.capacity, layers: p.layers, resident: p.lru.size, slotMB: +(p.slotBytes / 1048576).toFixed(1), mb: this.poolMB(p) })), layerSize: this.layerSize, downscale: this.downscale, coldDownscale: this.coldDownscale, hotAtlases: this.tiers.hot.length, coldAtlases: this.tiers.cold.length };
   }
   private request(a: AtlasRT, prio = Infinity): void {
     if (this.ctxLost) return;
