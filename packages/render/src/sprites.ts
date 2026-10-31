@@ -12,7 +12,7 @@
  *   split into per-column slices, each keyed by its front-most footprint tile.
  */
 import { fireAnimTime } from "./fire-anim.js";
-import { SEASON_SPRITE_GLSL, SEASON_FOLIAGE, SEASON_SNOWCAP, SUMMER_VISUAL, SeasonArt, type SeasonVisual } from "./season.js";
+import { SEASON_SPRITE_GLSL, SEASON_FOLIAGE, SEASON_SNOWCAP, SEASON_GROUND, SUMMER_VISUAL, SeasonArt, type SeasonVisual } from "./season.js";
 import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
@@ -347,7 +347,7 @@ void main() {
     if (ringAt(vUv.xy) > 0.5) { col = uOutlineColor.rgb; a = uOutlineColor.a; }
   }
   if (a < 0.35) discard;
-  if ((vFlags & ${SEASON_FOLIAGE | SEASON_SNOWCAP}) != 0 && t.a >= 0.5) col = seasonSprite(col, vFlags, uv.xy, vSeed, vUv.xy / uTexel); // ADR-239
+  if ((vFlags & ${SEASON_FOLIAGE | SEASON_SNOWCAP | SEASON_GROUND}) != 0 && t.a >= 0.5) col = seasonSprite(col, vFlags, uv.xy, vSeed, vUv.xy / uTexel); // ADR-239
   if (vOcc > 0.001 && uOccMode == 1) { // dithered circle cut around the focus
     float d = length((vScr - uFocusScr) * vec2(1.0, 1.15)) / uOccRadius;
     ivec2 p = ivec2(gl_FragCoord.xy) & 3;
@@ -733,7 +733,7 @@ export class SpriteBatch {
       else if (ps >= 0) { x = px[ps]! + (x - px[ps]!) * alpha; y = py[ps]! + (y - py[ps]!) * alpha; z = pz[ps]! + (z - pz[ps]!) * alpha; f = lerpAngle(pf[ps]!, f, alpha); }
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
       let sid = sp.data.spriteId[k]!;
-      const spk = this.seasonPick(atlas, sid); sid = spk.sid; const seasonFl = spk.flags; // ADR-239
+      const spk = this.seasonPick(atlas, sid); const seasonGr = spk.sid === sid && this.season.fall + this.season.winter > 0.002 ? SEASON_GROUND : 0; sid = spk.sid; const seasonFl = spk.flags; // ADR-239 (ADR-246: flat decals w/o season art get the ground pass)
       // manifest "stream" sheets: page in inside view + margin (animals: wider, they walk into view), keep resident inside
       // margin x STREAM_KEEP_FACTOR (hysteresis); outside both the page times out (AtlasManager.unloadIdleStream)
       const sprio = hasFocus ? (x - fwx) * (x - fwx) + (y - fwy) * (y - fwy) : Infinity;
@@ -835,7 +835,7 @@ export class SpriteBatch {
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
       else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot
       let sAl = 1; if (sa) { const s2 = sa.slot(i); if (s2 >= 0) { sAl = Math.max(0, Math.min(1, sa.data.alpha[s2]!)); fade *= sAl; } } // ADR-238: whole-sprite fade
-      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0) | ((sp.data.flags[k]! & SpriteFlag.Flat) ? 0 : seasonFl), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
+      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0) | ((sp.data.flags[k]! & SpriteFlag.Flat) ? seasonGr : seasonFl), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
         ss >= 0 ? sh.data.alpha[ss]! * sAl : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;

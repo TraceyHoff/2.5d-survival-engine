@@ -25,8 +25,10 @@ import { GroundArt, groundLayers, type GroundLayer } from "./groundArt.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
-import { SeasonArt, seasonGroundRgb, seasonSpritePixels, seasonVisual, SUMMER_VISUAL, type SeasonVisual } from "./season.js";
-import { readDayFraction, readDayNumber, readWeather } from "./env.js";
+import { SEASON_GROUND, SeasonArt, seasonGroundRgb, seasonSpritePixels, seasonVisual, SUMMER_VISUAL, type SeasonVisual } from "./season.js";
+import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js";
+import { VfxLayer } from "./vfx.js";
+import { WeatherFx } from "./weatherFx.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
 import { DeckNeighbors, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
@@ -216,6 +218,22 @@ export class Canvas2DRenderer {
     if (this.gBlocks.size > cap) { const old = [...this.gBlocks.entries()].sort((a, b) => a[1].used - b[1].used); for (let i = 0; i < old.length - cap; i++) this.gBlocks.delete(old[i]![0]); }
     return true;
   }
+  private wvfx = new VfxLayer(); readonly weatherFx = new WeatherFx();
+  private drawWeatherFx(world: World, reg: AssetRegistry, kind: number, wt: { snow: number; wind: number }, daylight: number, time: number, s: number, ox: number, oy: number, stats: FrameStats): void {
+    const dt = Math.max(0, Math.min(0.1, time - this.wvfx.now)); this.wvfx.update(time); this.weatherFx.scale = 0.5;
+    const w = readWind(world); const wv = Math.min(2, (w.speed > 0 ? w.speed : DEFAULT_STYLE.wind.defaultSpeed * (1 + 3 * wt.wind)) / Math.max(0.1, DEFAULT_STYLE.wind.refSpeed)); const dir = w.speed > 0 ? w.dir : DEFAULT_STYLE.wind.defaultDir;
+    const iso = DEFAULT_ISO, hw = iso.tileW / 2, hh = iso.tileH / 2; const sx0 = -ox / s, sx1 = (this.w - ox) / s, sy0 = -oy / s, sy1 = (this.h - oy) / s;
+    const t = (a: number, b: number): [number, number] => [(a / hw + b / hh) / 2, (b / hh - a / hw) / 2]; const A = t(sx0, sy0), B = t(sx1, sy0), C = t(sx0, sy1), D = t(sx1, sy1);
+    this.weatherFx.update(this.wvfx, (k) => reg.ids.sprites.tryId(k), kind, wt, daylight, { x: Math.cos(dir) * wv, y: Math.sin(dir) * wv },
+      { x0: Math.min(A[0], B[0], C[0], D[0]), x1: Math.max(A[0], B[0], C[0], D[0]), y0: Math.min(A[1], B[1], C[1], D[1]), y1: Math.max(A[1], B[1], C[1], D[1]), tiles: ((sx1 - sx0) * (sy1 - sy0)) / (2 * hw * hh) }, dt);
+    const g = this.ctx;
+    for (const v of this.wvfx.active) {
+      const age = time - v.born; let f; try { f = reg.dirFrame(v.spriteId, "idle", 0, age); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
+      const p = worldToScreen(v.x, v.y, v.z, iso); const k = v.scale; g.globalAlpha = Math.max(0, Math.min(1, v.alpha * (v.fade ? 1 - age / v.lifetime : 1)));
+      g.drawImage(img, f.x, f.y, f.w, f.h, p.sx - f.anchorX * k, p.sy - f.anchorY * k, f.w * k, f.h * k); stats.drawCalls++;
+    }
+    g.globalAlpha = 1;
+  }
   /** Legacy flat land diamonds for an n x n tile square (water: the gradient image below). */
   private flatTiles(tm: TileMap, x0: number, y0: number, n: number, stats: FrameStats): void {
     const g = this.ctx, tw = DEFAULT_ISO.tileW, th = DEFAULT_ISO.tileH;
@@ -393,7 +411,8 @@ export class Canvas2DRenderer {
       const flatS = (sp.flags & SpriteFlag.Flat) !== 0; const spk = this.seasonPick(reg!, sp.spriteId); // ADR-239: <key>_<season> art first
       let f; try { f = reg!.dirFrame(spk.sid, anim, facing, tAnim); } catch { try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; } }
       let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
-      if (spk.flags && !flatS) { const sc = this.seasonFrame(img, f, spk.flags, entityIndex(it.e)); if (sc) { img = sc; f = { ...f, x: 0, y: 0 }; } }
+      const sFl = flatS ? (spk.sid === sp.spriteId && this.sv.fall + this.sv.winter > 0.002 ? SEASON_GROUND : 0) : spk.flags; // ADR-246: seasonal roads
+      if (sFl) { const sc = this.seasonFrame(img, f, sFl, entityIndex(it.e)); if (sc) { img = sc; f = { ...f, x: 0, y: 0 }; } }
       const dw = f.w * k, dh = f.h * k;
       const sAl = world.isRegistered(SpriteAlpha) ? world.getField(it.e, SpriteAlpha, "alpha") : undefined; // ADR-238 despawn fade
       if (sAl !== undefined && sAl <= 0.01) continue;
@@ -401,6 +420,8 @@ export class Canvas2DRenderer {
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
       if (hearth) this.drawHearth(it.sx, it.sy, time, entityIndex(it.e), s, ox, oy, k);
     }
+    // ADR-246: weather sprites (same spawner as WebGL2, half the rate), over the scene and under the lightmap
+    if (reg) this.drawWeatherFx(world, reg, wr.kind, wt, day.daylight, time, s, ox, oy, stats);
     // ADR-216: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
     g.setTransform(1, 0, 0, 1, 0, 0);
     const a = day.ambient;

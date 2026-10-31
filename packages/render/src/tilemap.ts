@@ -21,7 +21,7 @@ export function tileHeight(map: TileMap, tx: number, ty: number): number {
 // Base palette (sRGB 0..255) per TileId: Art & Assets palette.json base tones (used under/without the tile atlas).
 const PALETTE: Record<number, [number, number, number]> = {
   [TileId.Water]: [0x34, 0x84, 0xbc], [TileId.ShallowWater]: [0x4a, 0x9c, 0xc8], [TileId.Sand]: [0xf6, 0xdf, 0xa4], [TileId.Grass]: [0x8f, 0xd1, 0x5c],
-  [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a],
+  [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a], [TileId.Mud]: [0x7a, 0x5c, 0x3e], // mud: ADR-246
 };
 const SHALLOW_RGB = [0x5c, 0xd0, 0xd0] as const, DEEP_RGB = [0x18, 0x46, 0x90] as const; // ADR-184: turquoise shore -> deep blue
 const SIDE: Record<number, [number, number, number]> = {

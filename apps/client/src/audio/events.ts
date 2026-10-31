@@ -32,7 +32,7 @@ export const isRanged = (cls: string): boolean => RANGED.has(cls);
 /** Terrain tile id (1 water, 2 sand, 3 grass, 4 dirt/forest floor, 5 stone) -> footstep surface. */
 export function surfaceOf(tile: number, floorMaterial?: string): string {
   if (floorMaterial) return floorMaterial === "stone" || floorMaterial === "metal" ? "stone" : "wood";
-  return tile === 1 ? "water" : tile === 2 ? "sand" : tile === 3 ? "grass" : tile === 4 ? "dirt" : tile === 5 ? "stone" : "grass";
+  return tile === 1 || tile === 8 ? "water" : tile === 2 ? "sand" : tile === 3 ? "grass" : tile === 4 || tile === 7 || tile === 9 ? "dirt" : tile === 5 ? "stone" : "grass"; // 9 = mud (ADR-246)
 }
 /** Tier index (twig wood stone metal reinforced) -> material. */
 export const tierMaterial = (tier: number): string => (tier <= 1 ? "wood" : tier === 2 ? "stone" : "metal");

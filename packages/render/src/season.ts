@@ -13,6 +13,8 @@ import { Season, SEASON_NAMES, seasonAt, type SeasonInfo, type World } from "@en
 
 /** Instance flag bits (sprite shader; above SpriteFlag u8 + CRISP 1024). */
 export const SEASON_FOLIAGE = 2048, SEASON_SNOWCAP = 4096;
+/** ADR-246: flat ground decals (roads, paths, soil) without `_fall`/`_winter` art: fallen-leaf speckle + snow dusting. */
+export const SEASON_GROUND = 8192;
 
 const override = new WeakMap<World, SeasonInfo>();
 /** Host-supplied season (client: from the smoothed server-tick day count, since the view world's tick is not the server's). */
@@ -58,6 +60,8 @@ export function seasonClassOf(key: string | undefined, rules: readonly SeasonCla
   return 0;
 }
 
+/** ADR-246: explicit per-season art for keys that are themselves season art without twins: [summer, fall, winter]. */
+export const SEASON_ALIASES: Readonly<Record<string, readonly (string | undefined)[]>> = { tree_autumn: [undefined, undefined, "tree_winter"] };
 /** Suffixes tried for `<key>_<season>` art (first hit wins). */
 export const SEASON_SUFFIXES: readonly (readonly string[])[] = [["summer"], ["fall", "autumn"], ["winter"]];
 interface SpriteIds { ids: { sprites: { tryId(k: string): number | undefined } }; sprite(id: number): { key: string } }
@@ -77,6 +81,8 @@ export class SeasonArt {
     if (!v) {
       v = new Int32Array(3).fill(-1); const k = this.keyOf(sid);
       if (k) for (let s = 0; s < 3; s++) for (const suf of SEASON_SUFFIXES[s]!) { const id = this.reg.ids.sprites.tryId(`${k}_${suf}`); if (id !== undefined) { v[s] = id; break; } }
+      const al = k ? SEASON_ALIASES[k] : undefined; // ADR-246: e.g. tree_autumn (maple) has no own winter art -> tree_winter
+      if (al) for (let s = 0; s < 3; s++) { const a = al[s]; if (v[s]! < 0 && a) { const id = this.reg.ids.sprites.tryId(a); if (id !== undefined) v[s] = id; } }
       this.vars.set(sid, v);
     }
     return v[season] ?? -1;
@@ -138,6 +144,13 @@ vec3 seasonSprite(vec3 c, int fl, vec2 uv, float seed, vec2 px) {
   }
   float g2 = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(c, vec3(g2) * vec3(0.93, 0.98, 1.08), uSeason.y * 0.22);
+  if ((fl & ${SEASON_GROUND}) != 0) { // ADR-246: seasonal roads (no road art variants): leaves in fall, dusting in winter
+    vec2 cell = floor(px / 2.0); float lh = sHash(cell + seed * 3.0);
+    vec3 leaf = lh < 0.5 ? vec3(0.86, 0.48, 0.14) : lh < 0.8 ? vec3(0.74, 0.26, 0.12) : vec3(0.90, 0.70, 0.22);
+    c = mix(c, leaf * (0.75 + 0.5 * lum), step(1.0 - 0.16 * uSeason.x, sHash(cell + 41.0)));
+    float dust = max(uSeason.y * 0.5, uSeason.z * 0.55); float n = sHash(floor(px / 3.0) + 7.0) * 0.6 + sHash(cell + 13.0) * 0.4;
+    c = mix(c, vec3(0.90, 0.93, 0.98) * (0.94 + 0.06 * sHash(floor(px))), smoothstep(1.0 - dust, 1.0 - dust + 0.12, n));
+  }
   if ((fl & ${SEASON_SNOWCAP}) != 0 && uSeason.z > 0.001) {
     float up1 = 1.0 - alphaAt(uv - vec2(0.0, uTexel * 2.0)), up2 = 1.0 - alphaAt(uv - vec2(0.0, uTexel * 4.5));
     float edge = max(up1, up2 * 0.85) * (0.75 + 0.25 * sHash(floor(px / 2.0) + seed));
@@ -168,6 +181,14 @@ export function seasonSpritePixels(px: Uint8ClampedArray, w: number, h: number, 
     }
     const g2 = 0.299 * r + 0.587 * g + 0.114 * b; const cw = winter * 0.22;
     r += (g2 * 0.93 - r) * cw; g += (g2 * 0.98 - g) * cw; b += (g2 * 1.08 - b) * cw;
+    if (flags & SEASON_GROUND) { // ADR-246 (mirror of the GLSL road pass)
+      const cx = Math.floor(x / 2), cy = Math.floor(y / 2); const lh = hash(cx + seed * 3, cy + seed * 3);
+      const lc = lh < 0.5 ? [0.86, 0.48, 0.14] : lh < 0.8 ? [0.74, 0.26, 0.12] : [0.9, 0.7, 0.22]; const lm = 0.75 + 0.5 * lum;
+      if (hash(cx + 41, cy + 41) >= 1 - 0.16 * fall) { r = lc[0]! * lm; g = lc[1]! * lm; b = lc[2]! * lm; }
+      const dust = Math.max(winter * 0.5, snowCap * 0.55); const n = hash(Math.floor(x / 3) + 7, Math.floor(y / 3) + 7) * 0.6 + hash(cx + 13, cy + 13) * 0.4;
+      const cv = smooth(1 - dust, 1 - dust + 0.12, n); const sn = 0.94 + 0.06 * hash(x, y);
+      r += (0.9 * sn - r) * cv; g += (0.93 * sn - g) * cv; b += (0.98 * sn - b) * cv;
+    }
     if ((flags & SEASON_SNOWCAP) && snowCap > 0.001) {
       const up1 = 1 - alpha0(x, y - 2), up2 = 1 - alpha0(x, y - 5);
       const edge = Math.max(up1, up2 * 0.85) * (0.75 + 0.25 * hash(Math.floor(x / 2) + seed, Math.floor(y / 2) + seed));

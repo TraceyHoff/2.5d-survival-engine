@@ -38,7 +38,13 @@ export interface ProceduralOptions {
   bands?: { max: number; tile: number; nodeKinds?: number[]; nodeChance?: number; /** °C baseline */ temp?: number; /** 0..1 */ humidity?: number }[];
   /** Large-scale temperature variation amplitude in °C (default 8) over `climateScale` tiles (default 512). */
   climateAmplitude?: number; climateScale?: number;
+  /** ADR-246: wet lowland mud (tile 9) on the grass/dirt band just above the shore band where a moisture field is high.
+   *  false = off. Defaults: MUD_DEFAULTS. */
+  mud?: false | { tile?: number; band?: number; moisture?: number; scale?: number };
 }
+/** ADR-246 mud: tile, noise width above the sand band, moisture threshold (0..1), moisture noise scale (tiles). */
+export const MUD_DEFAULTS = { tile: 9, band: 0.045, moisture: 0.56, scale: 9 } as const;
+const MUD_SALT = 0x6d7564;
 export const DEFAULT_BANDS = [
   { max: 0.3, tile: 1, temp: 16, humidity: 0.9 },                                   // water
   { max: 0.36, tile: 2, nodeKinds: [4], nodeChance: 0.01, temp: 22, humidity: 0.5 }, // sand: loose rocks
@@ -54,8 +60,17 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     const seed = this.opts.seed >>> 0;
     return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
   }
-  /** Generated tile id at (tx,ty) (pure; no chunk load). */
-  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return (this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!).tile; }
+  /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). */
+  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return this.mudOr(tx, ty, n, this.bandOf(n)); }
+  private bandOf(n: number): NonNullable<ProceduralOptions["bands"]>[number] { return this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!; }
+  /** ADR-246: grass / dirt (3, 4) tiles within `band` noise of a shore (sand, 2) band below turn to mud where wet. */
+  private mudOr(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number]): number {
+    const m = this.opts.mud; if (m === false || (band.tile !== 3 && band.tile !== 4)) return band.tile;
+    const bi = this.bands.indexOf(band); const below = this.bands[bi - 1]; if (!below || below.tile !== 2) return band.tile;
+    const o = { ...MUD_DEFAULTS, ...(m ?? {}) }; if (n - below.max >= o.band) return band.tile;
+    const wet = valueNoise(((this.opts.seed >>> 0) ^ MUD_SALT) >>> 0, tx, ty, o.scale) * 0.85 + hash2((this.opts.seed >>> 0) ^ MUD_SALT, tx, ty) * 0.15;
+    return wet > o.moisture ? o.tile : band.tile;
+  }
   /** Deterministic base climate for a tile (no chunk needs to be loaded). Altitude matches generated tile height. */
   baseClimate(tx: number, ty: number): BaseClimate {
     const n = this.noiseAt(tx, ty); const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;
@@ -75,8 +90,8 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
       const n = this.noiseAt(tx, ty);
-      const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;
-      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = band.tile; c.height[i] = Math.floor(n * 4);
+      const band = this.bandOf(n);
+      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.mudOr(tx, ty, n, band); c.height[i] = Math.floor(n * 4);
       if (band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) });
     }
     c.dirty = false; return { chunk: c, nodes };

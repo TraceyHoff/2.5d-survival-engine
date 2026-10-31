@@ -25,7 +25,7 @@ export interface FxFrame {
   view: FxView; weather: FxWeather; ambient: boolean;
   /** ADR-239 season weights (fall: drifting autumn leaves; winter: no leaves) */ season?: { fall: number; winter: number };
 }
-export const surfaceOfTile = (t: number): Surface => (t === 1 || t === 8 ? "water" : t === 2 ? "sand" : t === 5 ? "stone" : t === 6 ? "dirt" : t === 7 ? "snow" : "grass");
+export const surfaceOfTile = (t: number): Surface => (t === 1 || t === 8 ? "water" : t === 2 ? "sand" : t === 5 ? "stone" : t === 6 ? "snow" : t === 4 || t === 7 || t === 9 ? "dirt" : "grass"); // TileId: 6 snow, 7 forest floor, 9 mud (ADR-246)
 const BIG_FIRE = /campfire|bonfire|fire_?pit|brazier|hearth|fireplace/;
 const SMALL_FIRE = /torch|candle|furnace|forge|kiln|smelter|stove|oven|grill/;
 

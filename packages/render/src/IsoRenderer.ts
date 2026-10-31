@@ -43,6 +43,7 @@ import { clampDrawingBuffer, detectCapabilities, parseGlFlags, type GlFlag, type
 import { RENDER_COMPONENTS } from "./components.js";
 import { DEFAULT_STYLE, mergeStyle, type StyleConfig, type StylePatch } from "./style.js";
 import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js";
+import { WeatherFx } from "./weatherFx.js";
 import { seasonVisual } from "./season.js";
 import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
@@ -128,6 +129,8 @@ export class IsoRenderer implements Renderer {
   private applyQuality(): void { this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]); }
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
+  /** ADR-246: weather sprite spawner (fx_snowflake / fx_blizzard / fx_heat_haze). */
+  readonly weatherFx = new WeatherFx();
   /** Burning -> fire/ember/smoke VFX (keys in burning.cfg). */
   readonly burning = new BurningFx();
   /** ADR-218: embers + smoke over lit hearths (litPieces binding) and lit fire stations. */
@@ -522,6 +525,12 @@ export class IsoRenderer implements Renderer {
         this.onLightning?.(tx, ty);
       }
     }
+    // ADR-246: Art's weather sprites (snowflakes, blizzard gusts, heat haze) from the ADR-239 weather
+    { const r = this.rect, hw0 = this.iso.tileW / 2, hh0 = this.iso.tileH / 2; const t = (sx: number, sy: number): [number, number] => [(sx / hw0 + sy / hh0) / 2, (sy / hh0 - sx / hw0) / 2];
+      const a = t(r.x0, r.y0), b = t(r.x1, r.y0), c = t(r.x0, r.y1), d = t(r.x1, r.y1); const reg = this.atlas.registry;
+      const wv = Math.min(2, wSpeed / Math.max(0.1, style.wind.refSpeed)); this.weatherFx.scale = this.quality.tier.particles;
+      this.weatherFx.update(this.vfx, (k) => reg?.ids.sprites.tryId(k), wr.kind, ws, day.daylight, { x: Math.cos(wDir) * wv, y: Math.sin(wDir) * wv },
+        { x0: Math.min(a[0], b[0], c[0], d[0]), x1: Math.max(a[0], b[0], c[0], d[0]), y0: Math.min(a[1], b[1], c[1], d[1]), y1: Math.max(a[1], b[1], c[1], d[1]), tiles: ((r.x1 - r.x0) * (r.y1 - r.y0)) / (2 * hw0 * hh0) }, dt); }
 
     { const up = this.fallback.recover(this.totalFrames); if (up !== null) this.recoverFallback(up); }
     // texel footprint from zoom x device DPR, not the governor's resScale: a quality tier change must never trigger an atlas re-tier
