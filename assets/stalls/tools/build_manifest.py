@@ -17,6 +17,16 @@ frag = {"version": 1, "name": "stalls", "$comment": "Trade stalls (player + clan
         "atlases": b["atlases"] + p["atlases"], "sprites": b["sprites"] + p["sprites"], "vfx": [
           {"key": "stall_sale_coins", "sprite": "coin", "anim": "idle", "lifetime": 0.8, "blend": "normal",
            "particles": {"rate": 0, "count": 5, "speed": [0.8, 1.6], "spread": 1.2, "gravity": 1.4, "fade": True, "scaleCurve": [0.6, 1, 0.8]}}]}
+# KTX2 twins (assets/tools/ktx2.py naming) are recorded for every atlas whose encoded files exist next to the PNGs
+A = os.path.dirname(R); kp = lambda p: os.path.splitext(p)[0] + ".ktx2"; has = lambda p: os.path.exists(os.path.join(A, kp(p)))
+for at in frag["atlases"]:
+    if not has(at["image"]): continue
+    at["ktx2"] = kp(at["image"]); mk = {k: kp(v) for k, v in (at.get("masks") or {}).items() if isinstance(v, str) and has(v)}
+    for pg in at.get("pages", []):
+        if has(pg["image"]): pg["ktx2"] = kp(pg["image"])
+        pm = {k: kp(v.replace(".png", f"@{pg['scale']}x.png")) for k, v in (at.get("masks") or {}).items() if isinstance(v, str) and has(v.replace(".png", f"@{pg['scale']}x.png"))}
+        if pm: pg["masksKtx2"] = pm
+    if mk: at["masksKtx2"] = mk
 json.dump(frag, open(os.path.join(R, "manifest.fragment.json"), "w"), indent=1)
 # pieces.proposed.json: empty (market_counter landed in ab09fa3)
 print(len(frag["atlases"]), "atlases", len(frag["sprites"]), "sprites")

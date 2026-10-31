@@ -6,7 +6,7 @@
    "frameW": 96,
    "frameH": 80,
    "columns": 8,
-   "rows": 3,
+   "rows": 9,
    "pages": [
     {
      "scale": 2,
@@ -132,7 +132,9 @@
      "frames": [
       4
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     }
    }
   },
@@ -149,7 +151,9 @@
      "frames": [
       5
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     },
     "tip": {
      "frames": [
@@ -158,7 +162,9 @@
       5
      ],
      "fps": 6,
-     "loop": false
+     "loop": false,
+     "directions": 4,
+     "dirStride": 16
     }
    },
    "attach": {
@@ -173,6 +179,64 @@
      "y": -32,
      "w": 14,
      "h": 14
+    }
+   },
+   "frameAttach": {
+    "21": {
+     "pan_l": {
+      "x": 20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     },
+     "pan_r": {
+      "x": -20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     }
+    },
+    "22": {
+     "pan_l": {
+      "x": 20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     },
+     "pan_r": {
+      "x": -20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     }
+    },
+    "37": {
+     "pan_l": {
+      "x": 20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     },
+     "pan_r": {
+      "x": -20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     }
+    },
+    "38": {
+     "pan_l": {
+      "x": 20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     },
+     "pan_r": {
+      "x": -20,
+      "y": -32,
+      "w": 14,
+      "h": 14
+     }
     }
    }
   },
@@ -189,7 +253,9 @@
      "frames": [
       7
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     }
    },
    "attach": {
@@ -214,7 +280,9 @@
      "frames": [
       9
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     },
     "lit": {
      "frames": [
@@ -223,13 +291,17 @@
       11,
       12
      ],
-     "fps": 4
+     "fps": 4,
+     "directions": 4,
+     "dirStride": 16
     },
     "off": {
      "frames": [
       8
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     }
    },
    "sway": {
@@ -251,7 +323,9 @@
      "frames": [
       13
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     },
     "ring": {
      "frames": [
@@ -263,7 +337,9 @@
       18
      ],
      "fps": 12,
-     "loop": false
+     "loop": false,
+     "directions": 4,
+     "dirStride": 16
     }
    }
   },
@@ -280,7 +356,9 @@
      "frames": [
       19
      ],
-     "fps": 1
+     "fps": 1,
+     "directions": 4,
+     "dirStride": 16
     }
    },
    "sway": {

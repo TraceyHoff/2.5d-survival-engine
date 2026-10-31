@@ -58,35 +58,56 @@ def sign_board(shape):
         c.part(i, NEUTRAL, lw=0.5, shade=0.1); T(c, i, 0)
     return out(c)
 
-def pouch():
+# ADR-253 facings (directions:4, dirStride DIR): d0 = authored front (pixel-identical), d1 = front seen with the side items
+# swapped (prop turned a quarter), d2/d3 = drawn back views (d2 swapped). Light stays upper-left on every facing.
+DIR = 16; SIDE = (1, -1, -1, 1)
+
+def pouch(d=0):
+    sd, front = SIDE[d], d < 2; X = lambda x: 24 + sd * (x - 24)
     c = C(48, 48); c.shadow(24, 42, 13, 3.5)
+    if not front:   # coins lie on the pouch's front side: from behind they peek out past the bag, further back
+        coin_disc(c, X(39), 32, 4.5, 4.2); coin_disc(c, X(35), 29, 4, 3.8)
     b = wobbly(24, 30, 14, 12, seed=4, wob=0.06); c.part(b, RP("leather"), lw=1.0, shade=0.25, hl=0.15)
     c.part([(16, 18), (32, 18), (36, 12), (24, 15), (12, 12)], RP("leather"), lw=0.8, shade=0.2)
     c.line([(15, 19), (33, 19)], H(RAMPS["cloth_red"][1]), 1.6)
-    coin_disc(c, 37, 38, 5, 4.6); coin_disc(c, 31, 41, 4.5, 4.2)
-    c.fill(rstar(24, 31, 4.5, 2.2, 5), H(RAMPS["leather"][0]))
+    if front:
+        coin_disc(c, X(37), 38, 5, 4.6); coin_disc(c, X(31), 41, 4.5, 4.2)
+        c.fill(rstar(24, 31, 4.5, 2.2, 5), H(RAMPS["leather"][0]))
+    else:           # back: stitched leather patch, drawstring tails with beads
+        x0, x1 = sorted((X(18), X(29))); pt = rrect(x0, 26, x1, 35, 2.2)
+        c.part(pt, shade_ramp(RP("leather"), 0.18), lw=0.6, shade=0.15, hl=0.0)
+        for j in range(5): xx = x0 + 1.6 + j * (x1 - x0 - 3.2) / 4; c.line([(xx, 25.4), (xx + 0.6, 26.6)], CREAM[1], 0.5); c.line([(xx, 34.4), (xx + 0.6, 35.6)], CREAM[1], 0.5)
+        for (tx, ty) in ((X(29), 26), (X(32), 24.5)):
+            c.line([(X(27), 19.5), (tx, ty)], H(RAMPS["cloth_red"][1]), 0.9); c.part(circle(tx, ty + 1, 1.4, 10), RP("cloth_red"), lw=0.4)
     return out(c)
 
-def scale(tilt=0.0):
+def scale(tilt=0.0, d=0):
+    sd, front = SIDE[d], d < 2; tilt = tilt * sd   # pan_l stays the one that dips; it sits on the screen right on d1/d2
     c = C(64, 64); c.shadow(32, 58, 12, 3)
     c.part(rrect(22, 52, 42, 58, 2), RP("wood_dark"), lw=0.8)
+    if not front:   # back of the base: little coin drawer with a brass pull
+        c.part(rrect(27, 53.2, 37, 57, 0.8), shade_ramp(RP("wood_dark"), 0.12), lw=0.5, shade=0.1, hl=0.0); c.fill(circle(32, 55.1, 0.9, 10), H(RAMPS["gold"][1]))
     c.part(capsule_pts(32, 52, 32, 16, 1.6), RP("gold"), lw=0.6)
+    if not front:   # ledger tag tied round the post at the back
+        tx = 32 + sd * 5; c.line([(32, 31), (tx, 34)], H(RAMPS["leather"][2]), 0.5); c.part(rrect(tx - 3, 34, tx + 3, 39, 0.8), CREAM, lw=0.5, shade=0.15, hl=0.0)
+        c.line([(tx - 1.6, 36), (tx + 1.6, 36)], INKC, 0.4); c.line([(tx - 1.6, 37.5), (tx + 0.8, 37.5)], INKC, 0.4)
     a, b = (12, 18 + tilt * 6), (52, 18 - tilt * 6)
     c.part(capsule_pts(a[0], a[1], b[0], b[1], 1.3), RP("gold"), lw=0.6)
     for (x, y) in (a, b):
         c.line([(x, y), (x - 7, y + 14)], H(RAMPS["iron"][2]), 0.5); c.line([(x, y), (x + 7, y + 14)], H(RAMPS["iron"][2]), 0.5)
         c.part(circle(x, y + 15, 9, 24, 3), RP("gold"), lw=0.7, shade=0.25, hl=0.2)
     c.part(circle(32, 15, 3, 14), RP("gold"), lw=0.6, hl=0.3)
-    c.part(rstar(32, 15, 1.6, 0.7, 4), [(255, 255, 255)] * 4, outline=False)
+    if front: c.part(rstar(32, 15, 1.6, 0.7, 4), [(255, 255, 255)] * 4, outline=False)
+    else: c.line([(30.6, 15.6), (33.4, 14.4)], H(RAMPS["gold"][3]), 0.6)   # pivot screw head (back)
     return out(c)
 
-def display_slot():
+def display_slot(d=0):   # square mat, rotationally symmetric: every facing is the same art
     c = C(48, 32); q = [(24, 8), (44, 18), (24, 28), (4, 18)]
     c.part(q, CREAM, lw=0.9, shade=0.15, hl=0.15)
     c.part([(24, 12), (36, 18), (24, 24), (12, 18)], RP("cloth_red"), lw=0.4, shade=0.1, flat=True)
     return out(c)
 
-def lantern(lit=True, k=0):
+def lantern(lit=True, k=0, d=0):   # four-sided: d1 = d0; back (d2 = d3) has the iron reflector plate
     c = C(32, 64); sw = math.sin(k / 4 * 2 * math.pi) * 1.2
     c.line([(16, 2), (16 + sw * 0.3, 12)], H(RAMPS["iron"][3]), 0.9)
     cx = 16 + sw
@@ -99,44 +120,65 @@ def lantern(lit=True, k=0):
     c.part(body, glass, lw=0.9, shade=0.2, hl=0.25, gloss=[(cx - 4, 24, 1.4, 4)])
     if lit:
         fl = wobbly(cx, 31, 3.2, 5, seed=k + 2); c.part(fl, [(255, 255, 230)] * 4, outline=False, flat=True)
-        c.em.fill(body, H(RAMPS["fire"][1])); c.em.fill(fl, (255, 252, 220))
+        if d < 2: c.em.fill(body, H(RAMPS["fire"][1])); c.em.fill(fl, (255, 252, 220))
+    if d >= 2:      # reflector plate riveted over the back glass; fire glows only past its edges
+        pl = [(cx - 4.6, 19), (cx + 4.6, 19), (cx + 5.1, 39), (cx - 5.1, 39)]
+        c.part(pl, RP("iron"), lw=0.6, shade=0.2, hl=0.15)
+        for (rx, ry) in ((cx - 3.0, 21.6), (cx + 3.0, 21.6), (cx - 3.4, 36.4), (cx + 3.4, 36.4)): c.fill(circle(rx, ry, 0.75, 8), H(RAMPS["iron"][0]))
+        c.part(rrect(cx - 1.6, 27, cx + 1.6, 31, 0.8), shade_ramp(RP("iron"), 0.2), lw=0.4, shade=0.0, hl=0.0)   # vent slot
+        if lit:
+            for q in ([(cx - 8, 18), (cx - 4.6, 18), (cx - 5.1, 40), (cx - 9, 40)], [(cx + 4.6, 18), (cx + 8, 18), (cx + 9, 40), (cx + 5.1, 40)]): c.em.fill(q, H(RAMPS["fire"][1]))
     for x in (cx - 8.5, cx + 8.5): c.part(capsule_pts(x, 18, x, 40, 0.9), RP("iron"), lw=0.4)
     c.part(rrect(cx - 9, 39, cx + 9, 44, 2), RP("iron"), lw=0.6)
     c.part(circle(cx, 47, 2.5, 12), RP("cloth_red"), lw=0.5); S(c, [(0, 10), (32, 10), (32, 60), (0, 60)], 255)
     return out(c)
 
-def bell(k=0, n=6):
-    c = C(48, 64); ang = math.sin(k / n * 2 * math.pi) * 0.5 if k else 0
+def bell(k=0, n=6, d=0):
+    sd, front = SIDE[d], d < 2
+    c = C(48, 64); ang = math.sin(k / n * 2 * math.pi) * 0.5 * sd if k else 0
     c.part(rrect(6, 6, 42, 11, 2.5), RP("wood"), lw=0.8)                       # bracket
+    if not front:   # back of the bracket: the bolts that hold it to the post
+        for bx in (11, 37): c.part(circle(bx, 8.5, 1.5, 10), RP("iron"), lw=0.4, hl=0.3)
     c.part(capsule_pts(24, 8, 24, 16, 1.2), RP("iron"), lw=0.5)
     hp = (24, 16)
     pts = [(hp[0] - 3, hp[1])] + [(hp[0] - 3 - 9 * t ** 1.4, hp[1] + 20 * t) for t in np.linspace(0, 1, 12)] + [(hp[0] + 3 + 9 * t ** 1.4, hp[1] + 20 * t) for t in np.linspace(1, 0, 12)]
     pts = rot_pts(pts, ang, *hp); cl = rot_pts([(24, 39)], ang * 1.5, *hp)[0]
     c.part(circle(cl[0], cl[1], 2.6, 12), RP("iron"), lw=0.6)
     c.part(pts, RP("gold"), lw=1.0, shade=0.25, hl=0.25, gloss=[(hp[0] - 4, hp[1] + 8, 1.5, 3)])
-    # cute face
-    f = rot_pts([(20.5, 27), (27.5, 27), (24, 30.5)], ang, *hp)
-    for e in f[:2]: c.fill(circle(e[0], e[1], 1.1, 10), INKC)
-    c.line([(f[2][0] - 1.6, f[2][1] - 0.4), (f[2][0], f[2][1] + 0.8), (f[2][0] + 1.6, f[2][1] - 0.4)], INKC, 0.7)
-    for e in f[:2]: c.fill(circle(e[0] + (-2 if e is f[0] else 2), e[1] + 2.2, 1.5, 10, 0.9), H(RAMPS["berry"][0]), alpha=180)
+    if front:   # cute face
+        f = rot_pts([(20.5, 27), (27.5, 27), (24, 30.5)], ang, *hp)
+        for e in f[:2]: c.fill(circle(e[0], e[1], 1.1, 10), INKC)
+        c.line([(f[2][0] - 1.6, f[2][1] - 0.4), (f[2][0], f[2][1] + 0.8), (f[2][0] + 1.6, f[2][1] - 0.4)], INKC, 0.7)
+        for e in f[:2]: c.fill(circle(e[0] + (-2 if e is f[0] else 2), e[1] + 2.2, 1.5, 10, 0.9), H(RAMPS["berry"][0]), alpha=180)
+    else:       # back: embossed maker's star + a cast seam line
+        c.fill(rot_pts(rstar(24, 28.5, 3.4, 1.5, 5, -math.pi / 2, p=1.2), ang, *hp), H(RAMPS["gold"][2]))
+        c.line(rot_pts([(24, 18.5), (24, 23.5)], ang, *hp), H(RAMPS["gold"][2]), 0.5)
     c.part(rot_pts(rrect(10.5, 34.5, 37.5, 37.5, 1.5), ang, *hp), RP("gold"), lw=0.7, shade=0.2)
     if k in (1, 2, 4, 5):
-        side = 1 if k in (1, 2) else -1
+        side = (1 if k in (1, 2) else -1) * sd
         for j in range(3):
             a = -0.7 + j * 0.7; r0, r1 = 15 + (k % 3), 20 + (k % 3)
             c.line([(24 + side * math.cos(a) * r0, 26 + math.sin(a) * r0), (24 + side * math.cos(a) * r1, 26 + math.sin(a) * r1)], (255, 226, 120), 1.4)
         nx = 24 + side * 18; c.fill(circle(nx, 50, 2, 10), INKC); c.line([(nx + 1.8, 50), (nx + 1.8, 43), (nx + 4, 44)], INKC, 0.8)
     return out(c)
 
-def rent_marker():
+def rent_marker(d=0):
+    sd, front = SIDE[d], d < 2; X = lambda x: 32 + sd * (x - 32)
     c = C(64, 80); c.shadow(32, 74, 12, 3.5)
-    c.part(capsule_pts(32, 74, 32, 22, 2.2), RP("wood_dark"), lw=0.8)
+    if front: c.part(capsule_pts(32, 74, 32, 22, 2.2), RP("wood_dark"), lw=0.8)
     b = rrect(10, 20, 54, 44, 4); c.part(b, LWOOD, lw=1.0, shade=0.2, hl=0.2)
-    # big friendly key + "+" (claim)
-    c.part(circle(22, 32, 5, 18), GOLD, lw=0.7, hl=0.25); c.fill(circle(22, 32, 2, 10), LWOOD[1])
-    c.part([(26, 30.5), (42, 30.5), (42, 33.5), (40, 33.5), (40, 37), (37.5, 37), (37.5, 33.5), (26, 33.5)], GOLD, lw=0.6)
-    c.part([(44, 12), (56, 4), (56, 20)], NEUTRAL, lw=0.6, shade=0.1); mask_paint(c.tm, [[(44, 12), (56, 4), (56, 20)]], 255, 0, 0.35)
-    c.line([(44, 20), (44, 4)], H(RAMPS["wood_dark"][2]), 1.0); S(c, [(44, 2), (60, 2), (60, 22), (44, 22)])
+    if front:   # big friendly key + "+" (claim)
+        c.part(circle(22, 32, 5, 18), GOLD, lw=0.7, hl=0.25); c.fill(circle(22, 32, 2, 10), LWOOD[1])
+        c.part([(26, 30.5), (42, 30.5), (42, 33.5), (40, 33.5), (40, 37), (37.5, 37), (37.5, 33.5), (26, 33.5)], GOLD, lw=0.6)
+    else:       # back: plank seams, diagonal brace, corner nails, then the post in front of the board
+        for y in (28, 36): c.line([(11.5, y), (52.5, y)], H(RAMPS["wood"][2]), 0.6)
+        c.part(capsule_pts(X(15), 40, X(49), 24, 1.7), WOOD, lw=0.6, shade=0.2, hl=0.15)
+        for (nx, ny) in ((14, 23.5), (50, 23.5), (14, 40.5), (50, 40.5)): c.fill(circle(nx, ny, 0.9, 8), H(RAMPS["iron"][1]))
+        c.part(capsule_pts(32, 74, 32, 22, 2.2), RP("wood_dark"), lw=0.8)
+        for y in (26, 38): c.part(rrect(29, y - 1.2, 35, y + 1.2, 0.6), RP("iron"), lw=0.4, shade=0.1)   # post straps
+    fl = [(X(44), 12), (X(56), 4), (X(56), 20)]
+    c.part(fl, NEUTRAL, lw=0.6, shade=0.1); mask_paint(c.tm, [fl], 255, 0, 0.35)
+    c.line([(X(44), 20), (X(44), 4)], H(RAMPS["wood_dark"][2]), 1.0); S(c, [(min(X(44), X(60)), 2), (max(X(44), X(60)), 2), (max(X(44), X(60)), 22), (min(X(44), X(60)), 22)])
     # dotted claim footprint ring on ground
     for a in np.linspace(0, 2 * math.pi, 14, endpoint=False):
         x, y = 32 + 26 * math.cos(a), 72 + 6 * math.sin(a); c.fill(circle(x, y, 1.4, 8), (255, 250, 240), alpha=220)
@@ -219,16 +261,28 @@ def build():
     for k in range(4): add(f"stall_lantern_{k}", lantern(True, k))
     for k in range(6): add(f"shop_bell_{k}", bell(k))
     add("stall_rent_marker", rent_marker())
+    for d in (1, 2, 3):   # facing rows: same order as frames 4..19, at +DIR*d
+        idx = rec["coin_pouch"] + DIR * d
+        add(f"coin_pouch_d{d}", pouch(d)); add(f"barter_scale_d{d}", scale(0, d)); add(f"barter_scale_tip_d{d}", scale(0.6, d)); add(f"display_slot_d{d}", display_slot(d))
+        add(f"stall_lantern_off_d{d}", lantern(False, 0, d))
+        for k in range(4): add(f"stall_lantern_{k}_d{d}", lantern(True, k, d))
+        for k in range(6): add(f"shop_bell_{k}_d{d}", bell(k, 6, d))
+        add(f"stall_rent_marker_d{d}", rent_marker(d))
+        assert idx == rec["stall_rent_marker"] + 1 + DIR * d
     sh.save(); sheets.append(sh)
     piv = {"x": 0.5, "y": 0.9}
     def spr(key, cat, anims, extra=None):
+        if cat == "building":   # ADR-253: 4 facings (rows at +DIR); resolved from (rotation + view) & 3
+            anims = {k: {**a, "directions": 4, "dirStride": DIR} for k, a in anims.items()}
         s = {"key": key, "category": cat, "atlas": "stall_props", "anchor": piv, "animations": anims}; s.update(extra or {}); sprites.append(s)
     spr("stall_price_tag", "ui", {"idle": {"frames": [rec["price_tag"]], "fps": 1}}, {"attach": {"text": {"x": 1.5, "y": -9, "w": 14, "h": 6}}})
     spr("stall_shop_sign", "ui", {"idle": {"frames": [rec["shop_sign_0"]], "fps": 1}, "scroll": {"frames": [rec["shop_sign_1"]], "fps": 1}, "aframe": {"frames": [rec["shop_sign_2"]], "fps": 1}},
         {"attach": {"sign": {"x": 0, "y": -21, "w": 68, "h": 16}}, "sway": {"amp": 0.8, "freq": 0.6, "stiffness": 0.7}})
     spr("stall_coin_pouch", "building", {"idle": {"frames": [rec["coin_pouch"]], "fps": 1}})
     spr("stall_barter_scale", "building", {"idle": {"frames": [rec["barter_scale"]], "fps": 1}, "tip": {"frames": [rec["barter_scale"], rec["barter_scale_tip"], rec["barter_scale"]], "fps": 6, "loop": False}},
-        {"attach": {"pan_l": {"x": -20, "y": -32, "w": 14, "h": 14}, "pan_r": {"x": 20, "y": -32, "w": 14, "h": 14}}})
+        {"attach": {"pan_l": {"x": -20, "y": -32, "w": 14, "h": 14}, "pan_r": {"x": 20, "y": -32, "w": 14, "h": 14}},
+         "frameAttach": {str(rec[f] + DIR * d): {"pan_l": {"x": 20, "y": -32, "w": 14, "h": 14}, "pan_r": {"x": -20, "y": -32, "w": 14, "h": 14}}
+                         for d in (1, 2) for f in ("barter_scale", "barter_scale_tip")}})
     spr("stall_display_slot", "building", {"idle": {"frames": [rec["display_slot"]], "fps": 1}}, {"attach": {"slot0": {"x": 0, "y": -14, "w": 18, "h": 18}}})
     spr("stall_lantern", "building", {"idle": {"frames": [rec["stall_lantern_0"]], "fps": 1}, "lit": {"frames": [rec[f"stall_lantern_{k}"] for k in range(4)], "fps": 4}, "off": {"frames": [rec["stall_lantern_off"]], "fps": 1}},
         {"sway": {"amp": 1.2, "freq": 0.5, "stiffness": 0.4}})
