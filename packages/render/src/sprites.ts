@@ -645,7 +645,7 @@ export class SpriteBatch {
     const r = this.heldRes; const hfa = atlas.fireAnim(hid); if (!atlas.resolve(hid, hfa >= 0 ? hfa : 0, facing, hfa >= 0 ? animT : 0, 0, r)) return; st[2]++; // ADR-218: held torches flicker (render clock)
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
-    const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+    const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline | (atlas.isCrisp(r.atlas) ? CRISP : 0), 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
     // anchor (pivot) height above the body pivot keeps the item's depth on the body's column
     o[15] = (body.ay - h.y) * scale + lift; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
     this.pushOcc(o, 0, occT, mode);
@@ -1145,7 +1145,9 @@ export class SpriteBatch {
         const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
         const sx = (pu - pv) * hw, sy = (pu + pv) * hh - z * zs - lift;
         const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
-        const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0) | (flat || cutaway ? 0 : spk.flags);
+        // Build pieces were never crisp-sampled (only the character doll path set CRISP, and only for creatures):
+        // walls at ~3x phone magnification were plain LINEAR, i.e. blurry on every preset. Same flag as the doll path.
+        const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0) | (flat || cutaway ? 0 : spk.flags) | (atlas.isCrisp(res.atlas) ? CRISP : 0);
         // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
         // damage frame. Where bld_crack covers the stage, no procedural shader crack at all (a not-yet-resident page just
         // shows the bare damage frame for a moment); the procedural crack is kept only for sets with no overlay declared

@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import { atlasPageScaleForPreset, QualityController, parsePreset, QUALITY_PRESETS } from "../src/quality.js";
 import { clampDrawingBuffer, detectCapabilities } from "../src/gl/capabilities.js";
 import { Canvas2DRenderer } from "../src/canvas2d.js";
-import { AtlasManager } from "../src/assets/atlasManager.js";
+import { AtlasManager, NON_CRISP_ATLAS_RE, VISIBLE_PIN_RE } from "../src/assets/atlasManager.js";
 
 const ANDROID_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36";
 // Same mock shape as capabilities.test.ts (constants carried on the context object).
@@ -74,6 +74,19 @@ describe("Full Resolution preset", () => {
     expect(am.pickScale(atlas("season_res"), src("season_res"))).toBe(2);
     am.pageScale = 1;
     expect(am.pickScale(atlas("gt_summer_p0"), src("gt_summer_p0"))).toBe(1);
+  });
+  it("crisp sampling covers ground, characters and buildings on every preset; soft art stays bilinear", () => {
+    const am = Object.create(AtlasManager.prototype) as any;
+    const keys = ["gt_summer_p0", "characters", "characters_b", "zombies", "buildings", "buildings_twig", "furniture", "resources_tall", "ui", "fog", "vfx", "se_fx_puff", "season_snowflake"];
+    am.atlases = keys.map((key) => ({ key })); am.crispMark = [];
+    const crisp = (k: string) => am.isCrisp(keys.indexOf(k));
+    for (const k of ["gt_summer_p0", "characters", "characters_b", "zombies", "buildings", "buildings_twig", "furniture", "resources_tall"]) expect(crisp(k)).toBe(true);
+    for (const k of ["ui", "fog", "vfx", "se_fx_puff", "season_snowflake"]) expect(crisp(k)).toBe(false);
+    expect(NON_CRISP_ATLAS_RE.test("ui_icons")).toBe(true);
+  });
+  it("building pieces are pinned at 1x like ground and furniture, so fitBudget does not halve walls first", () => {
+    for (const k of ["buildings", "buildings_twig", "buildings_stone", "openings", "defenses", "gt_summer_p0", "furniture"]) expect(VISIBLE_PIN_RE.test(k)).toBe(true);
+    for (const k of ["buildingsx", "decor", "ui_icons", "zombies"]) expect(VISIBLE_PIN_RE.test(k)).toBe(false);
   });
   it("Canvas2D fallback uses full DPR only on Full, and keeps the 1.5x cap otherwise", () => {
     const canvas = { width: 0, height: 0 } as unknown as HTMLCanvasElement;

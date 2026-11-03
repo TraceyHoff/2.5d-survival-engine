@@ -246,6 +246,11 @@ export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|i
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
 /** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
 export const CRISP_ATLAS_RE = /^(animals|pets|nature_critters)_/;
+/** Crisp sampling for all world art (not just creatures): the style guide's art is "crisp at 1x (close to
+ *  pixel-art clarity)", but on a DPR 2-3 phone a 1x frame is magnified ~3x, so plain LINEAR magnification smears
+ *  ground, characters and buildings into the blur in the screenshot -- on every preset, not just Full. Only soft
+ *  art stays bilinear: UI, fog, and particle FX (vfx / se_fx / weather flakes), which must stay soft when scaled. */
+export const NON_CRISP_ATLAS_RE = /^(ui|fog|vfx|se_fx|season_(snowflake|blizzard|heat_haze))(_|$)/;
 /** ADR-211: player-built art (resident building tiers, openings, furniture, defenses). Demoted to the cold tier last:
  *  the idle demotion ran before any base was on screen and stored them at x0.125 (walls drawn as orange blobs). */
 export const BUILD_ATLAS_RE = /^(buildings?(_[a-z0-9]+)?|openings|furniture|defenses)$/;
@@ -264,8 +269,10 @@ export const RESIDENT_GROUND_RE = /^gt_/;
  *  ever ran them at x0.5 / the stream pool's x0.25 - "animals blurry on mobile, sharp on desktop"). */
 /** ADR-240: + the v2 character sheets (v2s_* sample, v2_* full set): same x1 pin as the v1 characters. */
 /** ADR-251: hot resident art pinned at 1x like FIDELITY_ATLAS_RE while the rest of the hot tier is halved: furniture (bed +
- *  sleeper read as a blurred quarter-size smear) and the gt ground pages (ADR-246 wanted them 1x; fitBudget halved them). */
-export const VISIBLE_PIN_RE = /^(gt_|furniture(_|$))/;
+ *  sleeper read as a blurred quarter-size smear) and the gt ground pages (ADR-246 wanted them 1x; fitBudget halved them).
+ *  Base building pieces join them: a halved buildings atlas is the blurry-wall complaint, and walls are what the
+ *  camera sits on just as much as the ground under them. */
+export const VISIBLE_PIN_RE = /^(gt_|furniture(_|$)|buildings?(_|$)|openings(_|$)|defenses(_|$))/;
 export const FIDELITY_ATLAS_RE = /^(animals|pets|nature_critters|characters|zombies|v2s?)(_|$)/;
 /** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
 export const PET_SHEET_RE = /^pets_/;
@@ -1399,8 +1406,10 @@ export class AtlasManager {
   releaseSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (a && p) p.lru.release(a.key); }
   /** Mark a drawn sprite's atlas as recently used: it is classified hot at the next rebuild (budget / fallback refit). */
   /** markUsed() for a resolved page (multi-page sprites: the anim's own page is hot too). */
-  /** ADR-145: atlas drawn with crisp (sharp bilinear) sampling: pixel-art creatures (CRISP_ATLAS_RE). */
-  isCrisp(atlasIdx: number): boolean { let c = this.crispMark[atlasIdx]; if (c === undefined) { const a = this.atlases[atlasIdx]; if (!a) return false; c = this.crispMark[atlasIdx] = CRISP_ATLAS_RE.test(a.key) ? 1 : 0; } return c === 1; }
+  /** Atlas drawn with crisp (sharp bilinear) sampling: all world art except the soft NON_CRISP set (ADR-145
+   *  creatures were the only crisp ones before; characters, buildings and ground were plain LINEAR, hence blurry
+   *  at phone magnification on every preset). Minified art is untouched: crispUv is a no-op at >= 1 texel/px. */
+  isCrisp(atlasIdx: number): boolean { let c = this.crispMark[atlasIdx]; if (c === undefined) { const a = this.atlases[atlasIdx]; if (!a) return false; c = this.crispMark[atlasIdx] = NON_CRISP_ATLAS_RE.test(a.key) ? 0 : 1; } return c === 1; }
   private crispMark: (0 | 1)[] = [];
   markUsedAt(atlasIdx: number): void { const a = this.atlases[atlasIdx]; if (a && !a.lazy && this.usedMark[atlasIdx] !== 1) { this.usedMark[atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   markUsed(spriteId: number): void { const s = this.sprites[spriteId]; if (!s) return; const a = this.atlases[s.atlasIdx]; if (a && !a.lazy && this.usedMark[s.atlasIdx] !== 1) { this.usedMark[s.atlasIdx] = 1; this.recentlyUsed.add(a.key); } }

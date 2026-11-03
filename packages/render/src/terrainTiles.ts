@@ -64,8 +64,16 @@ float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 ${SEASON_GROUND_GLSL}
+// Sharp bilinear, same as the sprite shader's crispUv (ADR-145): ground was the one world surface with no
+// crisp path at all -- plain LINEAR magnification of a 68x52 cell at ~3x phone scale is the smeared ground
+// in the screenshot, on every preset. Minified (>= 1 texel/px) it is a no-op, so zoomed-out ground is unchanged.
+vec3 crispUv(vec3 uv, vec2 w) {
+  vec2 sz = vec2(textureSize(uAtlas, 0).xy);
+  vec2 p = uv.xy * sz, d = w * sz; if (max(d.x, d.y) >= 1.0) return uv;
+  vec2 f = fract(p) - 0.5; p = floor(p) + 0.5 + clamp(f / max(d, vec2(1e-4)), -0.5, 0.5); return vec3(p / sz, uv.z);
+}
 void main() {
-  vec2 uv = clamp(vUv.xy, vRect.xy, vRect.zw);
+  vec2 uv = clamp(crispUv(vec3(vUv.xy, vUv.z), fwidth(vUv.xy)).xy, vRect.xy, vRect.zw);
   vec4 t = texture(uAtlas, vec3(uv, vUv.z));
   if (t.a < 0.5) discard;
   // ADR-249: per-pixel ground-plane depth. The clamp (skirt = front-corner key) is not linear over the frame quad, so the
