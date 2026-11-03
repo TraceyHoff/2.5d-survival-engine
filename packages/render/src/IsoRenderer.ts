@@ -413,8 +413,11 @@ export class IsoRenderer implements Renderer {
     // lost context / hidden canvas: every GL call is a no-op and clientWidth may be 0 -> never size targets to 0x0
     if (this.contextLost || this.gl.isContextLost() || !(cssW > 0) || !(cssH > 0)) return;
     this.lastCss = [cssW, cssH, dprIn]; this.lights.downscale = this.quality.tier.lightDownscale;
-    // DPR / pixel budget caps + MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp (an oversized scene FBO is incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
-    const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn * this.quality.tier.resScale, this.capabilities);
+    // Full preset: native DPR, soft DPR / pixel-budget caps bypassed (opt-in only; Auto keeps them). Hard
+    // MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp inside clampDrawingBuffer still applies (an oversized scene FBO is
+    // incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
+    const full = this.quality.fullResolution;
+    const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, full ? dprIn : dprIn * this.quality.tier.resScale, this.capabilities, { bypassSoftCaps: full });
     this.canvas.width = w; this.canvas.height = h;
     this.camera.setViewport(w, h, dpr);
     if (w === this.w && h === this.h && this.lights.downscale === this.lightDs) return;

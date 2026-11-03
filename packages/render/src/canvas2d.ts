@@ -99,11 +99,13 @@ export class Canvas2DRenderer {
   }
   bindGameplay(b: GameplayBindings): void { this.bindings = b; }
   setFocusEntity(e: number): void { this.focus = e; }
-  setQualityPreset(_p: unknown): void {}
+  private fullRes = false;
+  /** Full preset: do not cap the backbuffer at 1.5x DPR (see resize). Any other preset restores the 1.5x cap. */
+  setQualityPreset(p: unknown): void { this.fullRes = p === "full"; }
   async loadLook(_url: string): Promise<{ warnings: string[]; loaded: string[] }> { return { warnings: [], loaded: [] }; }
   resize(cssW: number, cssH: number, dpr: number): void {
     if (!(cssW > 0) || !(cssH > 0)) return;
-    const d = Math.min(dpr, 1.5); this.w = Math.round(cssW * d); this.h = Math.round(cssH * d);
+    const d = this.fullRes ? dpr : Math.min(dpr, 1.5); this.w = Math.round(cssW * d); this.h = Math.round(cssH * d);
     this.canvas.width = this.w; this.canvas.height = this.h; this.camera.setViewport(this.w, this.h, d);
   }
   diagReport(): string { return `renderer: Canvas2D sprites (WebGL2 unavailable); images ${[...this.images.values()].filter(Boolean).length}/${this.images.size}; draws ${this.stats.drawCalls}`; }

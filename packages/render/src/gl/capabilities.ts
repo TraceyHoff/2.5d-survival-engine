@@ -159,10 +159,17 @@ export function toMediump(src: string): string {
     .replace(/\buniform\s+(?!highp\b|mediump\b|lowp\b)((?:float|vec[234]|mat[234](?:x[234])?)\b)/g, "uniform highp $1");
 }
 
-/** Clamp a requested drawing-buffer size to the device caps (DPR cap, pixel budget, viewport / renderbuffer limits). */
-export function clampDrawingBuffer(cssW: number, cssH: number, dpr: number, caps: Pick<RenderCapabilities, "maxDpr" | "maxPixels" | "limits">): { w: number; h: number; dpr: number } {
-  let d = Math.max(0.5, Math.min(dpr || 1, caps.maxDpr));
-  const px = cssW * cssH * d * d; if (px > caps.maxPixels) d *= Math.sqrt(caps.maxPixels / px);
+/** Clamp a requested drawing-buffer size to the device caps.
+ * Soft caps (DPR cap, pixel budget) are skipped when `bypassSoftCaps` is set -- used only by the explicit Full
+ * preset, which is opt-in. Hard GPU limits (max renderbuffer / texture / viewport size) always still apply, so an
+ * oversized scene FBO cannot silently become incomplete (black world).
+ */
+export function clampDrawingBuffer(cssW: number, cssH: number, dpr: number, caps: Pick<RenderCapabilities, "maxDpr" | "maxPixels" | "limits">, opts?: { bypassSoftCaps?: boolean }): { w: number; h: number; dpr: number } {
+  let d = Math.max(0.5, dpr || 1);
+  if (!opts?.bypassSoftCaps) {
+    d = Math.min(d, caps.maxDpr);
+    const px = cssW * cssH * d * d; if (px > caps.maxPixels) d *= Math.sqrt(caps.maxPixels / px);
+  }
   const lim = Math.min(caps.limits.maxRenderbufferSize || 4096, caps.limits.maxTextureSize || 4096, caps.limits.maxViewport[0], caps.limits.maxViewport[1]);
   d = Math.min(d, lim / Math.max(1, cssW), lim / Math.max(1, cssH));
   return { w: Math.max(1, Math.round(cssW * d)), h: Math.max(1, Math.round(cssH * d)), dpr: d };

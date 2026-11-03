@@ -1,6 +1,8 @@
 /**
  * Adaptive quality: fixed tiers + a frame-time governor (target 60 fps, floor 30 fps, hysteresis) and the user-facing
- * Settings preset (Auto / Low / Medium / High / Ultra, persisted; ADR-116). Auto runs the governor; fixed presets pin a tier.
+ * Settings preset (Auto / Low / Medium / High / Ultra / Full, persisted; ADR-116). Auto runs the governor; fixed presets pin a tier.
+ * Full pins the Ultra tier AND bypasses the soft DPR / pixel-budget caps in IsoRenderer.resize() (hard GPU limits
+ * still apply), so it renders at the device's native DPR. It is opt-in only: Auto keeps its device ceiling and caps.
  */
 export interface QualityTier { name: string; resScale: number; lightDownscale: number; bloom: boolean; weather: number; particles: number;
   /** ADR-116: clutter density multiplier (1+ on ultra) */ clutter: number; /** max sprite/anim detail (all dir frames, full wearables) */ maxDetail: boolean }
@@ -11,9 +13,9 @@ export const QUALITY_TIERS: readonly QualityTier[] = [
   // ADR-116 Ultra/Max: native DPR (to 4K / canvas size), full-res lightmap, every effect at full
   { name: "ultra", resScale: 1, lightDownscale: 1, bloom: true, weather: 1, particles: 1.25, clutter: 1.25, maxDetail: true },
 ];
-export type QualityPreset = "auto" | "low" | "medium" | "high" | "ultra";
-export const QUALITY_PRESETS: readonly QualityPreset[] = ["auto", "low", "medium", "high", "ultra"];
-const PRESET_TIER: Record<Exclude<QualityPreset, "auto">, number> = { low: 0, medium: 1, high: 2, ultra: 3 };
+export type QualityPreset = "auto" | "low" | "medium" | "high" | "ultra" | "full";
+export const QUALITY_PRESETS: readonly QualityPreset[] = ["auto", "low", "medium", "high", "ultra", "full"];
+const PRESET_TIER: Record<Exclude<QualityPreset, "auto">, number> = { low: 0, medium: 1, high: 2, ultra: 3, full: 3 };
 export const PRESET_STORAGE_KEY = "survivaz.render.quality";
 
 export interface GovernorOptions {
@@ -69,6 +71,8 @@ export class QualityController {
     if (bench && !d.remembered) { this.bench = []; this.benchSkip = 30; this.benchAdjust = bench; }
   }
   get level(): number { return this.preset === "auto" ? this.governor.level : PRESET_TIER[this.preset]; }
+  /** True only for the explicit Full preset: native DPR with soft DPR / pixel caps bypassed (see IsoRenderer.resize). */
+  get fullResolution(): boolean { return this.preset === "full"; }
   get tier(): QualityTier { return QUALITY_TIERS[this.level]!; }
   get current(): QualityTier { return this.tier; }
   setPreset(p: QualityPreset): void { this.preset = p; savePreset(p); }
