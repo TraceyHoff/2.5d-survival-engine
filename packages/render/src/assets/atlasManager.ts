@@ -675,7 +675,10 @@ export class AtlasManager {
   get currentPageScale(): number { return this.pageScale; }
   private pickScale(atlas: Atlas | undefined, src: AtlasSource): number {
     if (!src.pages?.length || !atlas) return 1;
-    if (RESIDENT_GROUND_RE.test(atlas.key)) return 1; // ADR-246: resident ground pages stay 1x (8 pages @2x = +120 MB; pixel-art cells, magnified crisp)
+    // Ground: only the drawn season may use its @2x page (the other seasons stay 1x). All seasons
+    // at @2x would be ~+120 MB; the drawn season alone is the ground the camera actually sits on,
+    // and at 1x a 68x52 cell magnified on a phone screen is exactly the screenshot's soft ground.
+    if (RESIDENT_GROUND_RE.test(atlas.key) && !this.groundPinOk(atlas.key)) return 1;
     const want = atlas.pages?.length ? AssetRegistry.pickPage(atlas, this.pageScale).scale : this.pageScale;
     const ok = (k: number) => k === 1 || ((src.pages!.some((p) => p.scale === k)) && atlas.columns * atlas.frameW * k <= this.layerSize && atlas.rows * atlas.frameH * k <= this.layerSize);
     for (const k of [...new Set([want, ...src.pages.map((p) => p.scale).filter((k) => k < want).sort((a, b) => b - a), 1])]) if (ok(k)) return k;

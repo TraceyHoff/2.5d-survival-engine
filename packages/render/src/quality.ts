@@ -15,6 +15,9 @@ export const QUALITY_TIERS: readonly QualityTier[] = [
 ];
 export type QualityPreset = "auto" | "low" | "medium" | "high" | "ultra" | "full";
 export const QUALITY_PRESETS: readonly QualityPreset[] = ["auto", "low", "medium", "high", "ultra", "full"];
+/** Atlas page scale a preset asks for: Ultra / Full use the @2x pages where they exist (1x otherwise);
+ *  every other preset stays on 1x pages, so Auto never triggers an atlas rebuild on a governor step. */
+export function atlasPageScaleForPreset(p: QualityPreset): number { return p === "ultra" || p === "full" ? 2 : 1; }
 const PRESET_TIER: Record<Exclude<QualityPreset, "auto">, number> = { low: 0, medium: 1, high: 2, ultra: 3, full: 3 };
 export const PRESET_STORAGE_KEY = "survivaz.render.quality";
 

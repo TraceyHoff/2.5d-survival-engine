@@ -132,7 +132,12 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   const capHigh = flags.includes("high") || lowEnd;
   if (capHigh && device.ceiling > 2) { device.ceiling = 2; device.start = Math.min(device.start, 2); device.name = (["low", "medium", "high", "ultra"] as const)[device.start]!; device.reasons.push(lowEnd ? "lowend: capped at high" : "?gl=high (context loss): capped at high"); }
   const ultra = device.start >= 3 && !lowmem && !flags.includes("safe");
-  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : console_ ? (ultra ? 448 : 256) : ultra ? 1024 : 768;
+  // Capable phones (reported >= 4 GB RAM and >= 6 cores) get 256 MB instead of 128: at 128 MB the
+  // pack's hot atlases (~200 MB at 1x) are forced to 0.5x by fitBudget, which is the blur in the
+  // screenshot -- visible art magnified 2x from a halved page. Smaller / unknown devices keep 128 MB,
+  // and the upload OOM path still halves on a real out-of-memory, so this is a budget, not a promise.
+  const capableMobile = mobile && (opts.memoryGB ?? nav?.deviceMemory ?? 0) >= 4 && (opts.cores ?? nav?.hardwareConcurrency ?? 0) >= 6;
+  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? (capableMobile ? 256 : 128) : console_ ? (ultra ? 448 : 256) : ultra ? 1024 : 768;
   if (console_) fallbacks.push(`console GPU (${renderer.slice(0, 40)}): atlas budget ${textureBudgetMB} MB (streamed), RGBA8 targets, ${ultra ? "native res" : "<=1080p"}`);
   if (flags.includes("safe")) fallbacks.push("safe mode (?gl=safe): no float targets, bloom or LUT; direct composite");
   if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);

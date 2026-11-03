@@ -1,8 +1,25 @@
-/** Full Resolution preset: native DPR, soft caps bypassed, Auto behaviour unchanged. */
+/** Full Resolution preset: native DPR, soft caps bypassed, Auto behaviour unchanged.
+ *  Blur fix: @2x atlas pages are actually used (page scale was never wired before), the drawn
+ *  season's ground may use its @2x page, and capable phones get a 256 MB atlas budget. */
 import { describe, it, expect } from "vitest";
-import { QualityController, parsePreset, QUALITY_PRESETS } from "../src/quality.js";
-import { clampDrawingBuffer } from "../src/gl/capabilities.js";
+import { atlasPageScaleForPreset, QualityController, parsePreset, QUALITY_PRESETS } from "../src/quality.js";
+import { clampDrawingBuffer, detectCapabilities } from "../src/gl/capabilities.js";
 import { Canvas2DRenderer } from "../src/canvas2d.js";
+import { AtlasManager } from "../src/assets/atlasManager.js";
+
+const ANDROID_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36";
+// Same mock shape as capabilities.test.ts (constants carried on the context object).
+const E = { MAX_TEXTURE_SIZE: 1, MAX_ARRAY_TEXTURE_LAYERS: 2, MAX_RENDERBUFFER_SIZE: 3, MAX_VIEWPORT_DIMS: 4, MAX_TEXTURE_IMAGE_UNITS: 5, MAX_VERTEX_TEXTURE_IMAGE_UNITS: 6,
+  MAX_COMBINED_TEXTURE_IMAGE_UNITS: 7, MAX_VERTEX_ATTRIBS: 8, MAX_FRAGMENT_UNIFORM_VECTORS: 9, MAX_VERTEX_UNIFORM_VECTORS: 10, MAX_DRAW_BUFFERS: 11, MAX_COLOR_ATTACHMENTS: 12,
+  RENDERER: 13, VENDOR: 14, FRAGMENT_SHADER: 20, VERTEX_SHADER: 21, HIGH_FLOAT: 22 } as const;
+function mockGl(o: { renderer?: string } = {}): WebGL2RenderingContext {
+  const P: Record<number, unknown> = { [E.MAX_TEXTURE_SIZE]: 16384, [E.MAX_ARRAY_TEXTURE_LAYERS]: 2048, [E.MAX_RENDERBUFFER_SIZE]: 16384, [E.MAX_VIEWPORT_DIMS]: new Int32Array([16384, 16384]),
+    [E.MAX_TEXTURE_IMAGE_UNITS]: 16, [E.MAX_VERTEX_TEXTURE_IMAGE_UNITS]: 16, [E.MAX_COMBINED_TEXTURE_IMAGE_UNITS]: 32, [E.MAX_VERTEX_ATTRIBS]: 16,
+    [E.MAX_FRAGMENT_UNIFORM_VECTORS]: 1024, [E.MAX_VERTEX_UNIFORM_VECTORS]: 1024, [E.MAX_DRAW_BUFFERS]: 8, [E.MAX_COLOR_ATTACHMENTS]: 8, [E.RENDERER]: o.renderer ?? "ANGLE (Qualcomm, Adreno (TM) 750, OpenGL ES 3.2)", [E.VENDOR]: "Qualcomm" };
+  const ext = new Set(["EXT_color_buffer_float", "EXT_color_buffer_half_float", "OES_texture_float_linear"]);
+  return { ...E, getParameter: (n: number) => P[n] ?? (n === 100 ? o.renderer : undefined), getExtension: (n: string) => (n === "WEBGL_debug_renderer_info" ? { UNMASKED_RENDERER_WEBGL: 100, UNMASKED_VENDOR_WEBGL: 14 } : ext.has(n) ? {} : null),
+    getShaderPrecisionFormat: (st: number) => ({ rangeMin: 127, rangeMax: 127, precision: st === E.FRAGMENT_SHADER ? 23 : 23 }) } as unknown as WebGL2RenderingContext;
+}
 
 const lim = (n: number) => ({ maxTextureSize: n, maxRenderbufferSize: n, maxViewport: [n, n] as [number, number] }) as never;
 
@@ -35,6 +52,28 @@ describe("Full Resolution preset", () => {
     const small = clampDrawingBuffer(3000, 1000, 2, { maxDpr: 3, maxPixels: 1e9, limits: lim(4096) } as never, { bypassSoftCaps: true });
     expect(small.w).toBeLessThanOrEqual(4096);
     expect(small.h).toBeLessThanOrEqual(4096);
+  });
+  it("atlas pages: Ultra / Full ask for @2x, Auto and the other presets stay on 1x", () => {
+    expect(atlasPageScaleForPreset("full")).toBe(2);
+    expect(atlasPageScaleForPreset("ultra")).toBe(2);
+    expect(atlasPageScaleForPreset("auto")).toBe(1);
+    expect(atlasPageScaleForPreset("high")).toBe(1);
+  });
+  it("capable phones get a 256 MB atlas budget; unknown / small phones keep 128 MB", () => {
+    expect(detectCapabilities(mockGl(), { userAgent: ANDROID_UA, cores: 8, memoryGB: 8 }).textureBudgetMB).toBe(256);
+    expect(detectCapabilities(mockGl(), { userAgent: ANDROID_UA }).textureBudgetMB).toBe(128);
+    expect(detectCapabilities(mockGl(), { userAgent: ANDROID_UA, cores: 4, memoryGB: 2 }).textureBudgetMB).toBe(128);
+  });
+  it("ground @2x: only the drawn season's pages, other seasons stay 1x", () => {
+    const am = Object.create(AtlasManager.prototype) as any;
+    am.layerSize = 2048; am.groundPinSeason = "summer"; am.pageScale = 2;
+    const src = (key: string) => ({ pages: [{ scale: 1, image: `${key}.png` }, { scale: 2, image: `${key}@2x.png` }] });
+    const atlas = (key: string) => ({ key, columns: 15, frameW: 68, rows: 19, frameH: 52 });
+    expect(am.pickScale(atlas("gt_summer_p0"), src("gt_summer_p0"))).toBe(2);
+    expect(am.pickScale(atlas("gt_fall_p0"), src("gt_fall_p0"))).toBe(1);
+    expect(am.pickScale(atlas("season_res"), src("season_res"))).toBe(2);
+    am.pageScale = 1;
+    expect(am.pickScale(atlas("gt_summer_p0"), src("gt_summer_p0"))).toBe(1);
   });
   it("Canvas2D fallback uses full DPR only on Full, and keeps the 1.5x cap otherwise", () => {
     const canvas = { width: 0, height: 0 } as unknown as HTMLCanvasElement;

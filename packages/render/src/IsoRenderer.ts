@@ -50,7 +50,7 @@ import { VfxLayer } from "./vfx.js";
 import { BurningFx, HearthFx } from "./burning.js";
 import { ChimneySmoke } from "./building/chimney.js";
 import type { Renderer } from "./types.js";
-import { loadPreset, parsePreset, QualityController, QUALITY_TIERS, type QualityPreset } from "./quality.js";
+import { atlasPageScaleForPreset, loadPreset, parsePreset, QualityController, QUALITY_TIERS, type QualityPreset } from "./quality.js";
 import { benchAdjust, deviceSignature, rememberLevel, startLevel } from "./deviceTier.js";
 import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
 import { AsyncReadback } from "./gl/readback.js";
@@ -126,7 +126,17 @@ export class IsoRenderer implements Renderer {
   private readonly settleHold = new SettleHold();
   /** Frames skipped while an atlas rebuild settled (diag / tests). */
   heldFrames = 0;
-  private applyQuality(): void { this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]); }
+  private applyQuality(): void {
+    // @2x pages were dead code before: setPageScale was never called, so Ultra / Full rendered
+    // 1x pages into a native-DPR backbuffer -- a sharp canvas holding soft art. Wire the preset's
+    // page scale here (and in the constructor, before the first setRegistry), so changing the
+    // preset rebuilds the atlases at the scale it asks for. Full also lifts the atlas budget to
+    // 256 MB before that rebuild, so the @2x pages do not immediately force fitBudget to halve
+    // the rest of the visible art; a real OOM still halves on upload as before.
+    if (this.quality.fullResolution) this.atlas.textureBudgetMB = Math.max(this.atlas.textureBudgetMB, 256);
+    void this.atlas.setPageScale(atlasPageScaleForPreset(this.quality.preset)).catch((e: unknown) => reportRenderError("atlas page scale", e));
+    this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]);
+  }
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
   /** ADR-246: weather sprite spawner (fx_snowflake / fx_blizzard / fx_heat_haze). */
@@ -304,6 +314,10 @@ export class IsoRenderer implements Renderer {
     this.pieceAnchor = opts.pieceAnchor ?? "center";
     this.style = mergeStyle(DEFAULT_STYLE, opts.style ?? {});
     this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), { layerSize: caps.atlasLayerSize, textureBudgetMB: caps.textureBudgetMB });
+    // Preset's page scale before the first setRegistry, so a persisted Full / Ultra preset does
+    // not first build at 1x and only switch after the user re-picks it in Settings. setPageScale
+    // with no registry yet just records the scale; the first rebuild then uses it.
+    void this.atlas.setPageScale(atlasPageScaleForPreset(this.quality.preset));
     { // KTX2 wearables: Basis transcoder (vendored, lazy) unless ?ktx2=0 or safe mode; probe target from compressed caps
       const off = caps.safe || (typeof location !== "undefined" && /[?&]ktx2=0\b/.test(location.search));
       setKtx2Transcoder(off ? null : basisTranscoder); this.atlas.setCompressed(off ? null : caps.compressed);
