@@ -251956,6 +251956,27 @@
     "gear"
    ],
    "outline": "body"
+  },
+  {
+   "key": "acc_gear_cloth_mask",
+   "slot": "accessory",
+   "displayName": "Cloth Mask",
+   "locKey": "cosmetic.acc_gear_cloth_mask",
+   "bodies": {
+    "male": {
+     "sprite": "cz_acc_bandana_male"
+    },
+    "female": {
+     "sprite": "cz_acc_bandana_female"
+    }
+   },
+   "layer": 30,
+   "z": 0,
+   "tintChannels": 2,
+   "hidesSlots": [],
+   "hatHair": false,
+   "unlockTags": [],
+   "outline": "body"
   }
  ]
 }
