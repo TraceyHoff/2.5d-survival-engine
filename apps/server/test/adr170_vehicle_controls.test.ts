@@ -13,8 +13,8 @@ describe("ADR-170: vehicles are drivable from the client on every input", () => 
     for (const c of G.VEHICLE_STATE_COMMANDS) expect(GAMEPLAY_NET_COMMANDS).toContain(c);
     const at = GAMEPLAY_NET_COMMANDS.indexOf(G.VEHICLE_STATE_COMMANDS[0]);
     expect(GAMEPLAY_NET_COMMANDS.slice(at, at + G.VEHICLE_STATE_COMMANDS.length)).toEqual([...G.VEHICLE_STATE_COMMANDS]);
-    // later ADRs append after them (ADR-204 inventory ops); nothing is inserted before.
-    expect(GAMEPLAY_NET_COMMANDS.slice(at + G.VEHICLE_STATE_COMMANDS.length)).toEqual([...G.INVENTORY_OP_COMMANDS]);
+    // later ADRs append after them (ADR-204 inventory ops, Task 9 map markers); nothing is inserted before.
+    expect(GAMEPLAY_NET_COMMANDS.slice(at + G.VEHICLE_STATE_COMMANDS.length)).toEqual([...G.INVENTORY_OP_COMMANDS, ...G.MAP_MARKER_COMMANDS]);
     for (const c of [G.VehicleEnterCmd, G.VehicleExitCmd, G.VehicleDeployCmd]) expect(GAMEPLAY_NET_COMMANDS).toContain(c);
   });
   it("Vehicle.Engine / Vehicle.Lights are bound on keyboard, gamepad and touch", () => {

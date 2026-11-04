@@ -40,6 +40,9 @@ describe("ADR-163 build-mode piece actions over the network", () => {
     w.set(B.e, Transform, { x: X - 2, y: Y, z: 0 }); w.set(A.e, Transform, { x: X - 1.5, y: Y, z: 0 }); tick(10);
     // loot label + bare-hand loot (A drops, B takes with an empty hand)
     const bag = G.dropItem(w, A.e, d.itemId("wood"), 4) ?? (() => { G.addItem(w, A.e, d.itemId("wood"), 4); return G.dropItem(w, A.e, d.itemId("wood"), 4)!; })();
+    // Only death bags get the owner-only window (Task 4: voluntarily dropped stacks are lootable immediately),
+    // so this scenario exercises the window with a death bag: same owner and contents, kind flipped to Death.
+    w.set(bag, G.LootBag, { ...w.get(bag, G.LootBag)!, kind: G.LootSource.Death });
     tick(5);
     const bt = w.get(bag, Transform)!; const rb = near(B.c.world, bt.x, bt.y, G.LootBag)[0]!;
     expect(rb).toBeDefined(); expect(B.c.world.get(rb, G.LootSummary)).toMatchObject({ item: d.itemId("wood"), count: 4 });
