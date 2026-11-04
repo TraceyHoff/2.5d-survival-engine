@@ -29,6 +29,8 @@ import { fuelSecondsLeft } from "../systems/fuel.js";
 import { KEY_ITEM, keyTooltip } from "../vehicle_keys.js";
 const itemDefKey = (w: World, item: number): string => gameplayDefs(w).items.get(item)?.key ?? "";
 import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
+import { canLootBagAt } from "../combat/pvp.js";
+import { isBaseStoragePiece } from "../ai/storage_api.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
 import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
@@ -338,17 +340,34 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
 /** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "loot"; bag: Entity } | undefined {
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "loot"; bag: Entity } | { panel: "lootLocked"; bag: Entity } | { panel: "storage"; piece: Entity } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
   const st = nearestStation(c); const pet = nearestPet(c.world, c.player);
   // ADR-160: a loot bag (zombie / animal / death / dropped / crate) in reach opens by hand when it is the closest target
   const bag = nearestLootBag(c);
-  if (bag && (!st || bag.d <= stationDistance(c, st.station)) && (!pet || bag.d <= pet.d)) return { panel: "loot", bag: bag.entity }; // ADR-145: the pet / tameable animal wins when it is closer than the station
+  // Plain base storage (chests, boxes, shelves) had no Interact case at all, so a chest could never be opened
+  // from the world — the inventory panel only ever showed a container once it was already being viewed.
+  const storage = nearestStoragePiece(c);
+  if (bag && (!st || bag.d <= stationDistance(c, st.station)) && (!pet || bag.d <= pet.d) && (!storage || bag.d <= storage.d)) {
+    // A death bag inside its owner-only window must not open the bare player inventory: that is what made
+    // other players' / AI humans' bags look like "just the inventory, nothing to loot". Report it locked instead.
+    if (!canLootBagAt(c.world, c.player, bag.entity, ctxTick(c))) return { panel: "lootLocked", bag: bag.entity };
+    return { panel: "loot", bag: bag.entity }; // ADR-145: the pet / tameable animal wins when it is closer than the station
+  }
+  if (storage && (!st || storage.d <= stationDistance(c, st.station)) && (!pet || storage.d <= pet.d)) return { panel: "storage", piece: storage.entity };
   // a loot bag / container (e.g. the sandbox pet-corner crate) closer than the pet keeps Interact: the server opens it
-  if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d)) return { panel: "pet", pet: pet.entity };
+  if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d) && !(storage && storage.d < pet.d)) return { panel: "pet", pet: pet.entity };
   if (st) return { panel: "station", ...st };
   return undefined;
+}
+/** Nearest plain base-storage piece within container reach (same definition AI storage uses: container piece
+ *  that is not a stall, fire, station, turret or trough). The piece entity is the OpenContainer target — the
+ *  server resolves it to its Storage attachment, so the client needs no replicated Container to offer it. */
+export function nearestStoragePiece(c: MenuCtx, r = gameplayDefs(c.world).building.containerReach): { entity: Entity; d: number } | undefined {
+  const w = c.world; const me = w.get(c.player, Transform); if (!me || !w.isRegistered(BuildPiece)) return undefined; let best: { entity: Entity; d: number } | undefined;
+  for (const e of w.query([BuildPiece, Transform])) { if (w.has(e, Dead)) continue; const def = gameplayDefs(w).pieces.get(w.getField(e, BuildPiece, "type") ?? 0); if (!isBaseStoragePiece(def)) continue; const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && (!best || d < best.d)) best = { entity: e, d }; }
+  return best;
 }
 /** ADR-160: nearest LootBag within container reach of the player (hand loot; no tool needed), with its distance. */
 export function nearestLootBag(c: MenuCtx, r = gameplayDefs(c.world).building.containerReach): { entity: Entity; d: number } | undefined {

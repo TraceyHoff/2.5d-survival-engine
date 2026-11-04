@@ -88,6 +88,18 @@ describe("Full Resolution preset", () => {
     for (const k of ["buildings", "buildings_twig", "buildings_stone", "openings", "defenses", "gt_summer_p0", "furniture"]) expect(VISIBLE_PIN_RE.test(k)).toBe(true);
     for (const k of ["buildingsx", "decor", "ui_icons", "zombies"]) expect(VISIBLE_PIN_RE.test(k)).toBe(false);
   });
+  it("fitBudget's idle demotion never cold-shrinks pinned building/furniture art: unpinned idle art pays first", async () => {
+    const gl = { canvas: undefined, getParameter: () => 4096, isContextLost: () => false, getError: () => 0 } as never;
+    const a = new AtlasManager(gl, { registerLoader: () => {} } as never, { textureBudgetMB: 9 }) as any;
+    a.atlases = []; a.coldDownscale = 1; a.downscale = 1; a.recentlyUsed.add("characters");
+    const rt = (key: string, w: number): any => ({ key, img: { width: w, height: w }, emis: null, masks: {}, scale: 1, cold: false });
+    const list = [rt("buildings", 1024), rt("furniture", 1024), rt("decor", 1024)];
+    let last: any[] = []; a.pack = (l: any[]) => { last = l; }; a.planEstimate = () => last.reduce((t, x) => t + x.img.width * x.img.height * 4, 0); a.estimate = a.planEstimate;
+    // 1024^2 RGBA8 = 4 MB each; budget 9 MB only fits the two pinned sheets at 1x plus decor cold at 0.25 (0.25 MB)
+    await a.fitBudget(list, 0, 0);
+    expect(list[0]!.cold).toBe(false); expect(list[1]!.cold).toBe(false); expect(list[2]!.cold).toBe(true);
+    expect(last.find((x: any) => x.key === "buildings")!.img.width).toBe(1024);
+  });
   it("Canvas2D fallback uses full DPR only on Full, and keeps the 1.5x cap otherwise", () => {
     const canvas = { width: 0, height: 0 } as unknown as HTMLCanvasElement;
     const r = new Canvas2DRenderer(canvas, {} as unknown as CanvasRenderingContext2D);

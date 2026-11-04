@@ -75,12 +75,18 @@ export function dropDeathBag(world: World, e: Entity): Entity | undefined {
   moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Death); indexEntity(world, bag);
   emit(world, DeathBagDropped, { bag, owner: e, ownerId, stacks: moves.length }); return bag;
 }
-/** Loot gate (container open / withdraw): owner-only window after the drop. */
-export function canLootBag(world: World, actor: Entity, bag: Entity): boolean {
+/** Loot gate (container open / withdraw): owner-only window after the drop. Only death bags get the window: a
+ *  voluntarily dropped item is on the ground for anyone to pick up, so applying the death-bag lock to dropped
+ *  stacks made dropped items unlootable for 60s with no explanation. `tick` is the authoritative server tick
+ *  (replicas must pass their server-tick estimate, not their local world.tick). */
+export function canLootBagAt(world: World, actor: Entity, bag: Entity, tick: number): boolean {
   const lb = world.get(bag, LootBag); if (!lb) return true; if (lb.owner === 0) return true;
+  if (lb.kind !== LootSource.Death) return true;
   const dropped = bagSpawnTick(lb); // ADR-238: stored spawn tick (legacy saves: derived)
-  return (hasPlayerId(world, actor) ? world.getField(actor, PlayerId, "id") : undefined) === lb.owner || world.tick >= dropped + secondsToTicks(PVP.bagOwnerOnlySeconds, DT);
+  return (hasPlayerId(world, actor) ? world.getField(actor, PlayerId, "id") : undefined) === lb.owner || tick >= dropped + secondsToTicks(PVP.bagOwnerOnlySeconds, DT);
 }
+/** Server-side form: tick = world.tick. */
+export function canLootBag(world: World, actor: Entity, bag: Entity): boolean { return canLootBagAt(world, actor, bag, world.tick); }
 /** ADR-160 bare-handed loot: the nearest LootBag within container reach (and closer than `within`) the actor may open. */
 export function handLootTarget(world: World, actor: Entity, within = Infinity): Entity | undefined {
   const t = world.get(actor, Transform); if (!t) return undefined;

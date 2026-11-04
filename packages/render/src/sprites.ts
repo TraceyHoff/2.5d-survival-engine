@@ -1115,6 +1115,7 @@ export class SpriteBatch {
           else if (pst < 0) { const ua = atlas.namedAnim(drawVis, "unlit"); if (ua >= 0 && atlas.resolve(drawVis, ua, 0, 0, 0, res)) { res.flipX = flip; res.hasDamageFrames = hd; } }
         }
         const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
+        if (res.atlas >= 0) atlas.markUsedAt(res.atlas); // drawn building art counts as recently used: without this, fitBudget's idle demotion could cold-shrink walls/foundations/ceilings while characters stayed pinned at 1x
         const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
         const ax = Math.floor(part.x), ay = Math.floor(part.y);
         const vr = viewRect(ax, ay, fw, fh, vq); const vax = vr.x, vay = vr.y, vfw = vr.w, vfh = vr.h; // view footprint

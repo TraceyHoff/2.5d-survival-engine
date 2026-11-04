@@ -1033,7 +1033,7 @@ export class AtlasManager {
     let best: [number, number] | null = null; let keptReserve = reserveBytes; let demoted = 0;
     for (const r of [reserveBytes, keepBytes + (reserveBytes - keepBytes) / 2, keepBytes + (reserveBytes - keepBytes) / 4, keepBytes]) { const c = fits(1, full - r); if (c !== null) { best = [1, c]; keptReserve = r; break; } }
     if (!best && this.recentlyUsed.size) {
-      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) /* ADR-145: creature sheets stay full res */.sort((a, b) => (BUILD_ATLAS_RE.test(a.key) ? 1 : 0) - (BUILD_ATLAS_RE.test(b.key) ? 1 : 0) || b.img!.width * b.img!.height - a.img!.width * a.img!.height); // ADR-211: building art last
+      const idle = list.filter((a, i) => !a.cold && !visPin[i] && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) /* ADR-145: creature sheets stay full res; pinned visible art (ground/furniture/buildings) is never demoted to cold, or its 1x pin would be overridden by the cold scale */.sort((a, b) => (BUILD_ATLAS_RE.test(a.key) ? 1 : 0) - (BUILD_ATLAS_RE.test(b.key) ? 1 : 0) || b.img!.width * b.img!.height - a.img!.width * a.img!.height); // ADR-211: building art last
       for (const a of idle) { a.cold = true; demoted++; const c = fits(1, full - keepBytes); if (c !== null) { best = [1, c]; keptReserve = keepBytes; break; } }
     }
     if (!best) {
