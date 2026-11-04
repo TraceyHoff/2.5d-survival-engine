@@ -17,7 +17,7 @@ import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallN
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost, pieceGates } from "../building/place.js";
 import { hasSkillUnlock, unlockRequirement } from "../skills/tree.js";
-import { DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
+import { BoilCmd, DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
 import { Equipment, Worn } from "../components.js";
 import { ItemCategory, WEAR_SLOTS } from "../defs.js";
 import { entityIndex } from "@engine/core";
@@ -68,6 +68,8 @@ export function foodTooltip(w: World, item: number, durability = 0): string {
 }
 /** ADR-128: eat/drink the item in `slot` (server validates cooldown, rot, refill-at-water). */
 export function useIntent(slot: number): MenuIntent { return intent(UseCmd, { slot }); }
+/** Task 13: boil the filled raw-water container in `slot` at a lit campfire (server validates the fire). */
+export function boilIntent(slot: number): MenuIntent { return intent(BoilCmd, { slot }); }
 /** ADR-135: main-hand equip (same command the hotbar keys send) and wear/unwear toggle for gear slots. */
 export const equipIntent = (slot: number): MenuIntent => intent(EquipCmd, { slot });
 /** ADR-204: split `count` off a stack (where 0 = own inventory, 1 = open container) / move a slot (swap) e.g. onto the hotbar. */

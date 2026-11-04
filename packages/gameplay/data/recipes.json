@@ -295,5 +295,12 @@
     {"key": "seed_mix", "station": "none", "seconds": 2, "ingredients": [{"item": "wild_grain", "count": 1}, {"item": "berries", "count": 1}], "output": {"item": "seed_mix", "count": 3}},
     {"key": "veggie_bites", "station": "none", "seconds": 2, "ingredients": [{"item": "carrot", "count": 1}, {"item": "berries", "count": 1}], "output": {"item": "veggie_bites", "count": 3}},
     {"key": "egg_crunch", "station": "campfire", "seconds": 3, "ingredients": [{"item": "egg", "count": 1}, {"item": "raw_small_game", "count": 1}], "output": {"item": "egg_crunch", "count": 3}}
+    ,{"key": "waterskin", "station": "none", "seconds": 3, "ingredients": [{"item": "fiber", "count": 4}], "output": {"item": "waterskin", "count": 1}}
+    ,{"key": "cloth_mask", "station": "none", "seconds": 3, "ingredients": [{"item": "fiber", "count": 6}], "output": {"item": "cloth_mask", "count": 1}}
+    ,{"key": "charcoal_tonic", "station": "campfire", "seconds": 3, "ingredients": [{"item": "charcoal", "count": 1}, {"item": "herbs", "count": 1}], "output": {"item": "charcoal_tonic", "count": 1}}
+    ,{"key": "salt_brew", "station": "campfire", "seconds": 3, "ingredients": [{"item": "salt", "count": 1}, {"item": "herbs", "count": 2}], "output": {"item": "salt_brew", "count": 1}}
+    ,{"key": "honey_tea", "station": "campfire", "seconds": 3, "ingredients": [{"item": "honey", "count": 1}, {"item": "herbs", "count": 1}], "output": {"item": "honey_tea", "count": 1}}
+    ,{"key": "cooling_brew", "station": "campfire", "seconds": 3, "ingredients": [{"item": "salt", "count": 1}, {"item": "honey", "count": 1}], "output": {"item": "cooling_brew", "count": 1}}
+    ,{"key": "medicated_bandage", "station": "workbench", "seconds": 3, "ingredients": [{"item": "bandage", "count": 1}, {"item": "antiseptic", "count": 1}], "output": {"item": "medicated_bandage", "count": 1}}
   ]
 }

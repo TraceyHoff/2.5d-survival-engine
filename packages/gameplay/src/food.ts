@@ -23,12 +23,14 @@ export function spoilStageIndex(fresh: number, stages: readonly SpoilStage[] = D
 export function fillLevel(defs: GameDefs, item: number, durability: number): number | undefined {
   const sips = defs.items.get(item)?.sips ?? 0; return sips > 0 ? Math.max(0, Math.min(1, durability / sips)) : undefined;
 }
-/** Refills a liquid container slot by `sips` (default: to full). Authority; returns sips added. Hook for water sources. */
+/** Refills a liquid container slot by `sips` (default: to full). Authority; returns sips added. Hook for water sources.
+ * Refilling with untreated water reverts a boiled container to its raw variant (the new contents are raw again). */
 export function fillContainer(world: World, e: Entity, slot: number, sips = Infinity): number {
   const defs = gameplayDefs(world); const v = readSlots(world, e); if (slot < 0 || slot >= v.slotCount) return 0;
   const item = v.item(slot); const max = defs.items.get(item)?.sips ?? 0; if (!max) return 0;
   const cur = v.durability(slot); const next = Math.min(max, cur + sips); if (next === cur) return 0;
-  v.put(slot, item, v.count(slot), v.created(slot), next); writeSlots(world, e, v, defs); return next - cur;
+  const raw = defs.items.get(item)?.boilSource ?? 0;
+  v.put(slot, raw || item, v.count(slot), v.created(slot), next); writeSlots(world, e, v, defs); return next - cur;
 }
 /** Drinks one sip (durability - 1); the container stays (empty at 0). Returns false when empty. */
 export function takeSip(world: World, e: Entity, slot: number): boolean {

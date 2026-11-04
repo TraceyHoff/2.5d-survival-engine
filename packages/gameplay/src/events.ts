@@ -42,7 +42,7 @@ export const CraftFailed = ev<{ entity: Entity; recipe: number; reason: CraftFai
 export const XpActivity = ev<{ entity: Entity; source: string; units: number }>("gameplay.XpActivity");
 export const ItemConsumed = ev<{ entity: Entity; item: number }>("gameplay.ItemConsumed");
 /** ADR-128: why a Use (eat/drink) was refused. */
-export const enum ConsumeFail { Cooldown = 1, Rotten = 2, Empty = 3, NotConsumable = 4 }
+export const enum ConsumeFail { Cooldown = 1, Rotten = 2, Empty = 3, NotConsumable = 4, NoFire = 5 }
 export const ConsumeFailed = ev<{ entity: Entity; item: number; reason: ConsumeFail }>("gameplay.ConsumeFailed");
 /** ADR-128: a liquid container was refilled at a water tile (sips added) or the player drank from the tile (item 0). */
 export const WaterDrunk = ev<{ entity: Entity; item: number; sips: number }>("gameplay.WaterDrunk");

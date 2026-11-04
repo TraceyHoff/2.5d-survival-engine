@@ -20,6 +20,8 @@ import { gatherSystem, respawnSystem } from "./systems/gathering.js";
 import { noiseDecaySystem } from "./systems/noise.js";
 import { spoilageSystem, SPOILAGE_EVERY } from "./systems/spoilage.js";
 import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
+import { diseaseSystem } from "./systems/diseases.js";
+import { installDiseases } from "./diseases.js";
 import { animSettleSystem } from "./systems/movement.js";
 import { stanceSystem } from "./stance.js";
 import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
@@ -73,6 +75,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.hordes", HORDES_EVERY], // ADR-121 server director (no-op on clients / when disabled)
   ["simulation", "gameplay.stance"], // ADR-244 carry follow / block break / sleep heal / night skip (authority)
   ["simulation", "gameplay.vitals"],
+  ["simulation", "gameplay.diseases"], // Task 13: symptom drains + exposure + transmission (after vitals, before death)
   ["simulation", "gameplay.death"],
   ["simulation", "gameplay.deathBags"],
   ["simulation", "gameplay.spoilage", SPOILAGE_EVERY],
@@ -120,7 +123,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   const sys: Record<string, (w: World, dt: number) => void> = {
     "gameplay.commands": commandIntentSystem, "gameplay.clock": clockSystem, "gameplay.weather": weatherSystem,
     "gameplay.wear": wearSystem, "gameplay.exposure": exposureSystem, "gameplay.fuel": fuelSystem, "gameplay.respawn": respawnSystem, "gameplay.gather": gatherSystem,
-    "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
+    "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem, "gameplay.diseases": diseaseSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
@@ -129,6 +132,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   };
   installProgression(world);
   installPets(world); // ADR-145
+  installDiseases(world); // Task 13: wound-infection Damaged subscription (once per world)
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {
     const fn = sys[name]; if (!fn) throw new Error(`no system ${name}`);
     world.addSystem(phase, name, fn, every ? { every } : {});

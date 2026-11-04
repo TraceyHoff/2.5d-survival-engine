@@ -45,6 +45,18 @@ describe("gameplay panels (ADR-095 shell)", () => {
     const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5, 7); menus.open("inventory");
     q("[data-role=slot][data-item]").click(); expect(q("[data-role=inv-details]").textContent).toContain("Crafted by Ada"); menus.destroy();
   });
+  test("Task 13: a filled raw-water container near a lit campfire shows a Boil button that sends the Boil intent", () => {
+    const { w, me, sent, menus } = setup(); G.addItem(w, me, id("water_flask"), 1);
+    G.spawnStation(w, G.StationKind.Campfire, 1, 0, { burnSeconds: 600 });
+    menus.open("inventory"); q("[data-role=slot][data-item]").click();
+    const boil = q("[data-key=boil-0]"); expect(boil.textContent).toBe("Boil"); boil.click();
+    expect(sent.at(-1)).toMatchObject({ cmd: G.BoilCmd, args: { slot: 0 } });
+    menus.destroy();
+    // without a lit campfire nearby, no Boil button appears
+    const s2 = setup(); G.addItem(s2.w, s2.me, id("water_flask"), 1);
+    s2.menus.open("inventory"); q("[data-role=slot][data-item]").click();
+    expect(document.querySelector("[data-key=boil-0]")).toBeNull(); s2.menus.destroy();
+  });
   test("crafting: Enter on a recipe sends queueCraft with the chosen count; queue jobs cancel", () => {
     const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 20); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);
     menus.open("crafting"); q("[data-key=count-5]").click();

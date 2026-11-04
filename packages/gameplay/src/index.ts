@@ -19,6 +19,8 @@ export * from "./realism.js";
 export * from "./world.js";
 export * from "./systems/environment.js";
 export * from "./systems/vitals.js";
+export * from "./systems/diseases.js";
+export * from "./diseases.js";
 export * from "./systems/gathering.js";
 export * from "./systems/crafting.js";
 export * from "./systems/fuel.js";

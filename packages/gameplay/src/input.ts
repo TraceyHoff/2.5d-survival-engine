@@ -53,8 +53,12 @@ export const AttackCmd = defineCommand("gameplay.attack", T);
 export const ReloadCmd = defineCommand("gameplay.reload", {});
 /** Wear / take off the clothing or armor in an inventory slot (toggle). */
 export const WearCmd = defineCommand("gameplay.wear", { slot: "u8" });
+/** Boil the filled raw-water container in an inventory slot at a lit campfire (keeps its sips). */
+export const BoilCmd = defineCommand("gameplay.boil", { slot: "u8" });
 /** Registered after ClanDeclineCmd (append-only ids); queued like GAMEPLAY_COMMANDS. */
 export const ARMS_COMMANDS: readonly [CommandDef, IntentAction][] = [[ReloadCmd, IntentAction.Reload], [WearCmd, IntentAction.Wear]];
+/** Task 13: disease actions (append-only ids, registered last). */
+export const DISEASE_COMMANDS: readonly [CommandDef, IntentAction][] = [[BoilCmd, IntentAction.Boil]];
 
 /** Registration order = command ids (same list on both peers). Append only. */
 export const GAMEPLAY_COMMANDS: readonly [CommandDef, IntentAction][] = [
@@ -76,6 +80,7 @@ export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> 
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
   ...Object.fromEntries([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES, ...INVENTORY_OP_RATES,
   ...Object.fromEntries(MAP_MARKER_COMMANDS.map((d) => [d.name, 10])),
+  ...Object.fromEntries(DISEASE_COMMANDS.map(([d]) => [d.name, 10])),
 };
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
@@ -98,6 +103,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of PET_COMMANDS) reg.register(d); // append-only: pets (ADR-145)
   for (const d of INVENTORY_OP_COMMANDS) reg.register(d); // append-only: split / move slot (ADR-204)
   for (const d of MAP_MARKER_COMMANDS) reg.register(d); // append-only: world-map markers
+  for (const [d] of DISEASE_COMMANDS) reg.register(d); // append-only (Task 13): boil water at a lit campfire
   return reg;
 }
 
@@ -137,7 +143,7 @@ export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | 
   runInputHooks(world, e, frame, reg);
 }
 export function queueCommand(world: World, e: Entity, reg: CommandRegistry, c: Command): boolean {
-  const def = reg.def(c.type); const entry = def && (GAMEPLAY_COMMANDS.find(([d]) => d.name === def.name) ?? ARMS_COMMANDS.find(([d]) => d.name === def.name));
+  const def = reg.def(c.type); const entry = def && (GAMEPLAY_COMMANDS.find(([d]) => d.name === def.name) ?? ARMS_COMMANDS.find(([d]) => d.name === def.name) ?? DISEASE_COMMANDS.find(([d]) => d.name === def.name));
   if (!entry) return false;
   let qs = world.getResource(CommandQueues); if (!qs) world.setResource(CommandQueues, (qs = new Map()));
   let q = qs.get(e); if (!q) qs.set(e, (q = []));

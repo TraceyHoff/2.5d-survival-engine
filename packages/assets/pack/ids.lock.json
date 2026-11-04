@@ -5096,6 +5096,7 @@
     "acc_gear_fur_cloak": 166,
     "acc_gear_leather_backpack": 167,
     "acc_gear_reed_satchel": 168,
-    "acc_gear_tactical_pack": 169
+    "acc_gear_tactical_pack": 169,
+    "acc_gear_cloth_mask": 170
   }
 }

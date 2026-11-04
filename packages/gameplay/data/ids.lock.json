@@ -462,7 +462,18 @@
     "veggie_bites": 460,
     "lantern": 461,
     "torch": 462,
-    "berry_seeds": 463
+    "berry_seeds": 463,
+    "boiled_canteen": 464,
+    "boiled_water_bottle": 465,
+    "boiled_water_flask": 466,
+    "boiled_waterskin": 467,
+    "charcoal_tonic": 468,
+    "cloth_mask": 469,
+    "cooling_brew": 470,
+    "honey_tea": 471,
+    "medicated_bandage": 472,
+    "salt_brew": 473,
+    "waterskin": 474
   },
   "resources": {
     "fallen_branches": 1,
@@ -916,7 +927,14 @@
     "seed_mix": 363,
     "veggie_bites": 364,
     "lantern": 365,
-    "torch": 366
+    "torch": 366,
+    "charcoal_tonic": 367,
+    "cloth_mask": 368,
+    "cooling_brew": 369,
+    "honey_tea": 370,
+    "medicated_bandage": 371,
+    "salt_brew": 372,
+    "waterskin": 373
   },
   "pieces": {
     "anvil": 1,

@@ -33,7 +33,7 @@ export const Survival = defineComponent("Survival", {
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9, Turret = 10, Trap = 11 }
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9, Turret = 10, Trap = 11, Disease = 12 }
 export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
 /** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
 export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }
@@ -86,7 +86,7 @@ export const enum IntentAction {
   None = 0, Gather = 1, Craft = 2, Use = 3, CancelCraft = 4, Equip = 5,
   Place = 10, Upgrade = 11, Repair = 12, Demolish = 13, Paint = 14,
   ToggleDoor = 20, LockDoor = 21, OpenContainer = 22, CloseContainer = 23, Deposit = 24, Withdraw = 25, ToggleFire = 26,
-  Attack = 30, Reload = 31, Wear = 32,
+  Attack = 30, Reload = 31, Wear = 32, Boil = 33,
 }
 /** Per-tick intent, written in the input phase by applyGameplayInput (sim-local; rebuilt from inputs). */
 export const PlayerIntent = defineComponent("PlayerIntent", {
@@ -187,6 +187,15 @@ export const MAP_MARKER_LABEL_MAX = 24;
  * client's session (so the owner always passes the replication scope); `owner` is the persistent PlayerId. Networked
  * (scope-filtered by visibility) and persistent (chunk-saved via Transform). */
 export const MapMarker = defineComponent("MapMarker", { owner: "u32", visibility: "u8", party: "u32", clan: "u32", len: "u8", label: { type: "u8", length: MAP_MARKER_LABEL_MAX } }, { networked: true, persistent: true });
+/** Task 13 diseases: active disease slots (disease index + 1, 0 = empty; untilTick 0 = no auto-expiry) plus
+ * exposure accumulators in ticks (cold/heat/sprint/rest/contact). Networked (HUD + transmission + move penalty
+ * read it on every peer) and persistent (sickness survives restarts). */
+export const MAX_DISEASES = 8;
+export const Diseases = defineComponent("Diseases", {
+  disease: { type: "u8", length: MAX_DISEASES },
+  untilTick: { type: "u32", length: MAX_DISEASES },
+  coldTicks: "u32", heatTicks: "u32", sprintTicks: "u32", restTicks: "u32", contactTicks: "u32",
+}, { networked: true, persistent: true });
 export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
 export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
 export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
@@ -369,4 +378,5 @@ export const GAMEPLAY_COMPONENTS = [
   LootSummary, // ADR-161
   Stance, // ADR-244 (append-only)
   MapMarker, // append-only (world-map markers)
+  Diseases, // append-only (Task 13: diseases)
 ] as const;

@@ -35,6 +35,7 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   r(C.LootSummary, "all"), // ADR-161
   r(C.Stance, "all"), // ADR-244
   r(C.MapMarker, "markers"), // world-map markers: visibility-filtered (private = owner only, party / clan = live members)
+  r(C.Diseases, "all"), // Task 13: HUD chips + transmission + move penalty read it on every peer
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 

@@ -16,7 +16,10 @@ function baseSources(): Set<number> {
 }
 function reachable(): Set<number> {
   const have = baseSources(); let grew = true;
-  while (grew) { grew = false; for (const r of recipes) if (!have.has(r.output.item) && r.ingredients.every((i) => have.has(i.item))) { have.add(r.output.item); grew = true; } }
+  while (grew) { grew = false; for (const r of recipes) if (!have.has(r.output.item) && r.ingredients.every((i) => have.has(i.item))) { have.add(r.output.item); grew = true; }
+    // Task 13: boiling is a container-preserving transform, not a recipe — a boiled variant is
+    // reachable whenever its raw form is (use a filled container at a lit campfire).
+    for (const it of d.items.values()) if (it.boilSource && have.has(it.boilSource) && !have.has(it.id)) { have.add(it.id); grew = true; } }
   return have;
 }
 /** Raw-material cost (sum of base-source units) of the cheapest recipe chain. */

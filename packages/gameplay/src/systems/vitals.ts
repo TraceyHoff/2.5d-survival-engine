@@ -5,6 +5,7 @@
  */
 import { stanceMode, STANCE } from "../stance.js";
 import { StanceMode } from "../components.js";
+import { contractDisease, cureDiseasesForItem } from "../diseases.js";
 import { addModifier, defineResource, entityIndex, evaluate, ModOp, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState, snapStamina } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -61,6 +62,8 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
       ready.set(e, world.tick + CONSUME_COOLDOWN_TICKS);
       const sv = world.get(e, Survival)!; world.setField(e, Survival, "thirst", clamp(sv.thirst + WATER_TILE_THIRST, 0, 100));
       anim(Anim.Drink); emit(world, WaterDrunk, { entity: e, item: 0, sips: 0 });
+      // Task 13: untreated water straight from the tile can carry dysentery (authority rolls; clients replicate it)
+      if (isAuthority(world)) { const c = defs.diseaseTuning.causes.rawWaterChance; if (c > 0 && world.rngFor("disease.dysentery", e).next() < c) contractDisease(world, e, "dysentery", dt); }
       continue;
     }
     const { item } = slotItem(world, e, slot);
@@ -94,6 +97,17 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
       const until = world.tick + secondsToTicks(sp.sickSeconds, dt);
       addModifier(world, e, Buffs, { stat: Stat.HealthRegen, op: ModOp.Add, value: -defs.vitals.healthRegenPerSec * 2, expiresAtTick: until });
       addModifier(world, e, Buffs, { stat: Stat.StaminaRegen, op: ModOp.Add, value: -defs.vitals.staminaRegenPerSec * 0.5, expiresAtTick: until });
+    }
+    // Task 13: cures clear their disease on any successful consume (deterministic: every peer agrees); cause
+    // rolls are authority-only and replicate via the Diseases component.
+    cureDiseasesForItem(world, e, item);
+    if (isAuthority(world)) {
+      const causes = defs.diseaseTuning.causes;
+      const roll = (key: string, chance: number): void => { if (chance > 0 && world.rngFor(`disease.${key}`, e).next() < chance) contractDisease(world, e, key, dt); };
+      if (idef.rawMeat) roll("food_poisoning", causes.rawMeatChance);
+      if (stage.sick && !iron) roll("food_poisoning", causes.sickFoodChance);
+      if (iron && si === stages.length - 1) roll("food_poisoning", causes.rottenFoodChance); // rotten food eaten only via iron_stomach
+      if (idef.sips > 0 && !idef.boiled) roll("dysentery", causes.rawWaterChance); // raw-water container sip
     }
     emit(world, ItemConsumed, { entity: e, item });
   }

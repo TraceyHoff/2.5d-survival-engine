@@ -65,6 +65,19 @@ export interface ItemDef extends Visual {
   readonly tradeable: boolean;
   /** Liquid container (water_flask): sips when full; current fill lives in the slot's durability (0..sips). 0 = n/a. */
   readonly sips: number;
+  /** Boiled-water container: its contents are treated, so drinking never rolls dysentery. Raw containers become their
+   * boiled variant via the Boil action at a lit campfire; refilling a boiled container at untreated water reverts it. */
+  readonly boiled: boolean;
+  /** Item id this container becomes when boiled (0 = cannot be boiled). */
+  readonly boilTarget: number;
+  /** Item id this boiled container reverts to when refilled with untreated water (0 = n/a). */
+  readonly boilSource: number;
+  /** Disease keys this item cures when consumed (data/diseases.json keys); [] = no cure. */
+  readonly cures: readonly string[];
+  /** Raw meat: eating rolls food_poisoning (data/diseases.json causes.rawMeatChance). */
+  readonly rawMeat: boolean;
+  /** Face covering (cloth_mask): worn, it fully blocks disease transmission in both directions. */
+  readonly mask: boolean;
   /** Progression tier (1 primitive, 2 bronze, 3 iron, 4 steel, 5 advanced; 0 = untiered) and balance family. */
   readonly tier: number; readonly family: string;
   readonly wear: WearDef | null; readonly ranged: RangedDef | null; readonly thrown: ThrownDef | null; readonly ammo: AmmoDef | null; readonly explosive: ExplosiveDef | null;
@@ -72,6 +85,19 @@ export interface ItemDef extends Visual {
   readonly heldLight?: number;
 }
 export interface SpoilStage { readonly key: string; readonly minFresh: number; readonly nutritionMul: number; readonly sick: boolean }
+/** One disease (data/diseases.json): effects apply every second while active. durationSeconds 0 = no auto-expiry
+ * (exhaustion clears on rest only). cure = item key that clears it when consumed, null = no cure item. */
+export interface DiseaseDef {
+  readonly key: string; readonly name: string; readonly short: string; readonly color: string; readonly contagious: boolean;
+  readonly durationSeconds: number; readonly hpDps: number; readonly hungerMul: number; readonly thirstMul: number;
+  readonly staminaDrainPerSec: number; readonly moveMul: number; readonly cure: string | null;
+}
+/** Disease tuning (data/diseases.json): roll chances per cause event, transmission and exposure thresholds. */
+export interface DiseasesTuning {
+  readonly causes: { readonly rawMeatChance: number; readonly sickFoodChance: number; readonly rottenFoodChance: number; readonly rawWaterChance: number; readonly woundChance: number };
+  readonly transmission: { readonly radiusTiles: number; readonly contactSeconds: number; readonly chance: number; readonly scanEveryTicks: number };
+  readonly exposure: { readonly coldSeconds: number; readonly heatSeconds: number; readonly sprintSeconds: number; readonly restSeconds: number };
+}
 export interface ItemCount { readonly item: number; readonly count: number }
 export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount; readonly skill: { readonly key: string; readonly level: number } | null }
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
@@ -242,6 +268,11 @@ export interface GameDefs {
   readonly noise: NoiseTuning;
   /** ADR-108 night light avoidance. */ readonly lightAvoid: LightAvoidTuning;
   readonly vitals: VitalsTuning;
+  /** Diseases (data/diseases.json, order-stable: the Diseases component stores index + 1). */
+  readonly diseases: readonly DiseaseDef[];
+  readonly diseaseTuning: DiseasesTuning;
+  /** 0-based index of a disease key, or -1 when unknown. */
+  diseaseIndex(key: string): number;
   readonly environment: EnvironmentTuning;
   readonly movement: MovementTuning;
   readonly worldgen: WorldgenDef;
@@ -264,6 +295,7 @@ export interface BareHandsDef { readonly maxMinTier: number; readonly tools: Rea
 interface RawVisual { sprite?: string }
 export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean; sips?: number;
   tier?: number; family?: string; heldLight?: number; wear?: { slot: string; insulation?: number; waterproof?: number; armor?: number; carryBonus?: number };
+  boiled?: boolean; boilTo?: string; cures?: string[]; rawMeat?: boolean; mask?: boolean;
   ranged?: Omit<RangedDef, "ammo" | "chargeSeconds" | "minChargeMul" | "staminaCost" | "structureMul"> & { ammo: string[]; chargeSeconds?: number; minChargeMul?: number; staminaCost?: number; structureMul?: number };
   thrown?: ThrownDef; ammo?: { damageMul: number; structureMul?: number; armorPierce?: number; ignite?: boolean }; explosive?: Omit<ExplosiveDef, "ignite"> & { ignite?: boolean } }
 export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
@@ -285,11 +317,14 @@ export interface RawPiece extends RawVisual {
   rotSteps?: number; small?: boolean; surface?: { height: number }; category?: string; snap?: "vertex"; shape?: "L"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
+export interface RawDisease { key: string; name: string; short: string; color: string; contagious?: boolean; durationSeconds: number; hpDps?: number; hungerMul?: number; thirstMul?: number; staminaDrainPerSec?: number; moveMul?: number; cure?: string | null }
+export interface RawDiseases { $comment?: string; diseases: RawDisease[]; causes: DiseasesTuning["causes"]; transmission: DiseasesTuning["transmission"]; exposure: DiseasesTuning["exposure"] }
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
   resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number }; depletion?: Partial<DepletionDef> & { $comment?: string } };
   vitals: VitalsTuning & { $comment?: string };
+  diseases: RawDiseases;
   environment: Omit<EnvironmentTuning, "weather" | "seasons"> & { weather: RawWeather[]; seasons?: RawSeasons; $comment?: string };
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
@@ -334,6 +369,27 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   const itemRef = (key: string, where: string): number => { const id = itemsR.reg.tryId(key); if (id === undefined) { err(`${where}: unknown item "${key}"`); return 0; } return id; };
   const posInt = (n: number, where: string): void => { if (!Number.isInteger(n) || n < 1) err(`${where}: must be a positive integer (got ${n})`); };
 
+  // diseases (parsed before items: item `cures` entries validate against these keys)
+  const diseases: DiseaseDef[] = [];
+  {
+    const rd = raw.diseases; const where = "diseases";
+    if (!rd || !Array.isArray(rd.diseases) || rd.diseases.length === 0 || rd.diseases.length > 8) err(`${where}: need 1..8 diseases (Diseases component width)`);
+    const seen = new Set<string>();
+    for (const d of rd?.diseases ?? []) {
+      if (!KEY.test(d.key)) err(`${where}: bad key "${d.key}"`); if (seen.has(d.key)) err(`${where}: duplicate key ${d.key}`); seen.add(d.key);
+      if (!(d.durationSeconds >= 0)) err(`${where}.${d.key}.durationSeconds must be >= 0`);
+      if (!((d.hpDps ?? 0) >= 0) || !((d.hungerMul ?? 1) >= 1) || !((d.thirstMul ?? 1) >= 1) || !((d.staminaDrainPerSec ?? 0) >= 0)) err(`${where}.${d.key}: hpDps/staminaDrainPerSec must be >= 0, hungerMul/thirstMul >= 1`);
+      if (!((d.moveMul ?? 1) > 0 && (d.moveMul ?? 1) <= 1)) err(`${where}.${d.key}.moveMul must be in (0, 1]`);
+      diseases.push({ key: d.key, name: d.name, short: d.short, color: d.color, contagious: d.contagious === true, durationSeconds: d.durationSeconds, hpDps: d.hpDps ?? 0, hungerMul: d.hungerMul ?? 1, thirstMul: d.thirstMul ?? 1, staminaDrainPerSec: d.staminaDrainPerSec ?? 0, moveMul: d.moveMul ?? 1, cure: d.cure ?? null });
+    }
+    const chance = (v: number | undefined, name: string): void => { if (!(v !== undefined && v >= 0 && v <= 1)) err(`${where}.causes.${name} must be in [0, 1]`); };
+    for (const [k, v] of Object.entries(rd?.causes ?? {})) chance(v, k);
+    const tr = rd?.transmission; if (!(tr && tr.radiusTiles > 0 && tr.contactSeconds > 0 && tr.chance >= 0 && tr.chance <= 1 && Number.isInteger(tr.scanEveryTicks) && tr.scanEveryTicks >= 1)) err(`${where}.transmission: need radiusTiles > 0, contactSeconds > 0, chance in [0, 1], scanEveryTicks >= 1`);
+    const ex = rd?.exposure; if (!(ex && ex.coldSeconds > 0 && ex.heatSeconds > 0 && ex.sprintSeconds > 0 && ex.restSeconds > 0)) err(`${where}.exposure: cold/heat/sprint/rest seconds must be > 0`);
+  }
+  const diseaseTuning: DiseasesTuning = { causes: { ...raw.diseases.causes }, transmission: { ...raw.diseases.transmission }, exposure: { ...raw.diseases.exposure } };
+  const diseaseKeys = new Set(diseases.map((d) => d.key));
+
   const items = new Map<number, ItemDef>();
   for (const r of raw.items.items) {
     const where = `item ${r.key}`;
@@ -356,6 +412,9 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (r.wear && !((r.wear.waterproof ?? 0) >= 0 && (r.wear.waterproof ?? 0) <= 1)) err(`${where}.wear.waterproof must be 0..1`);
     if (r.ranged) { posInt(r.ranged.magazine, `${where}.ranged.magazine`); if (r.ranged.magazine > 255) err(`${where}.ranged.magazine > 255`); if (!r.ranged.ammo.length) err(`${where}.ranged.ammo empty`); }
     if (r.heldLight !== undefined && !(r.heldLight >= 0 && r.heldLight <= 12)) err(`${where}.heldLight must be 0..12 tiles`);
+    if (r.boiled && r.boilTo) err(`${where}: a boiled variant cannot itself boil`);
+    if (r.boilTo && !r.sips) err(`${where}.boilTo needs sips (only liquid containers boil)`);
+    for (const c of r.cures ?? []) if (!diseaseKeys.has(c)) err(`${where}.cures: unknown disease "${c}"`);
     if (r.explosive && !(r.explosive.radius > 0 && r.explosive.fuseSeconds >= 0)) err(`${where}.explosive: radius > 0, fuseSeconds >= 0`);
     const id = itemsR.reg.tryId(r.key) ?? 0;
     const rg = r.ranged;
@@ -370,10 +429,28 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       ammo: r.ammo ? { damageMul: r.ammo.damageMul, structureMul: r.ammo.structureMul ?? 1, armorPierce: r.ammo.armorPierce ?? 0, ignite: r.ammo.ignite ?? false } : null,
       explosive: r.explosive ? { ...r.explosive, ignite: r.explosive.ignite ?? false } : null,
       heldLight: r.heldLight ?? 0,
+      boiled: r.boiled === true, boilTarget: 0, boilSource: 0, cures: [...(r.cures ?? [])], rawMeat: r.rawMeat === true, mask: r.mask === true,
     });
   }
 
   for (const d of items.values()) for (const a of d.ranged?.ammo ?? []) if (a && items.get(a)?.category !== ItemCategory.Ammo) err(`item ${d.key}.ranged.ammo: ${items.get(a)?.key} is not ammo`);
+  // boil pairs resolve after the full items table exists (boiled variants are listed after their raw form)
+  for (const r of raw.items.items) {
+    if (!r.boilTo) continue;
+    const src = items.get(itemsR.reg.tryId(r.key) ?? 0); const tgt = items.get(itemsR.reg.tryId(r.boilTo) ?? 0);
+    if (!src || !tgt) { err(`item ${r.key}.boilTo: unknown item "${r.boilTo}"`); continue; }
+    if (tgt.sips !== src.sips) { err(`item ${r.key}.boilTo: sips differ (${src.sips} vs ${tgt.sips})`); continue; }
+    if (!tgt.boiled) { err(`item ${r.key}.boilTo: "${r.boilTo}" is not flagged boiled`); continue; }
+    items.set(src.id, { ...src, boilTarget: tgt.id });
+    items.set(tgt.id, { ...tgt, boilSource: src.id });
+  }
+  // every disease cure must name an item that actually cures it
+  for (const d of diseases) {
+    if (d.cure === null) continue;
+    const it = items.get(itemsR.reg.tryId(d.cure) ?? 0);
+    if (!it) err(`diseases.${d.key}.cure: unknown item "${d.cure}"`);
+    else if (!it.cures.includes(d.key)) err(`diseases.${d.key}.cure: item "${d.cure}" does not list "${d.key}" in cures`);
+  }
   const recipes = new Map<number, RecipeDef>();
   for (const r of raw.recipes.recipes) {
     const where = `recipe ${r.key}`;
@@ -513,9 +590,11 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   const lock: IdLock = { items: itemsR.lock, resources: resR.lock, recipes: recR.lock, pieces: pieceLock, zombies: zomR.lock };
   const lookup = (r: StableIdRegistry) => (key: string): number => r.id(key);
   const pieceHash = pieceRegistry!.hash;
-  const all = [itemsR.reg.hash, resR.reg.hash, recR.reg.hash, pieceHash, zomR.reg.hash].reduce((h, x) => fnv1a(`${x};`, h), 0x811c9dc5);
+  const diseaseHash = fnv1a(diseases.map((d) => d.key).join(";"));
+  const all = [itemsR.reg.hash, resR.reg.hash, recR.reg.hash, pieceHash, zomR.reg.hash, diseaseHash].reduce((h, x) => fnv1a(`${x};`, h), 0x811c9dc5);
   return {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
+    diseases, diseaseTuning, diseaseIndex: (key: string): number => diseases.findIndex((d) => d.key === key),
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
     vitals: strip(raw.vitals), environment: { ...envRest, weather, ...(seasons ? { seasons } : {}) }, movement: { ...strip(raw.movement), deckStandHeight: raw.movement.deckStandHeight ?? 0.75, floorStandHeight: raw.movement.floorStandHeight ?? 0.3125, stepRate: raw.movement.stepRate ?? 6, swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },

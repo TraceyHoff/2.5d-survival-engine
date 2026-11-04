@@ -7,7 +7,7 @@
 import { mountUi } from "./ui-root.js";
 import { Weather, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
-import { Exposure, Health, Survival } from "@engine/gameplay";
+import { activeDiseases, Diseases, Exposure, Health, Survival } from "@engine/gameplay";
 import { seasonAtDays } from "@engine/core";
 import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, loadTempUnit, SEASON_GLYPH, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
@@ -63,6 +63,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
 #hud .row[data-stat=temp] .felt{position:absolute;top:-4px;width:0;height:0;margin-left:-3px;border:3px solid transparent;border-top-color:#3B2433;transition:left .4s}
 #hud .row[data-stat=temp] .tv{flex:none;min-width:30px;text-align:right;font-size:10px;white-space:nowrap}
 #hud .row[data-stat=temp][data-band=cold] .tv{color:#5A9BFF}#hud .row[data-stat=temp][data-band=hot] .tv{color:#FF6A4A}
+#hud [data-role=disease-chips]{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}#hud .dchip{font-size:9px;padding:1px 5px;border-radius:6px;border:1px solid #4A2F3D;color:#FFFAF0;text-shadow:0 1px 0 #3B2433;white-space:nowrap}
 @media (max-height:420px){#hud{width:100px;padding:2px 4px;opacity:.9}#hud .bar{height:5px}#hud .row{margin:1px 0}#hud .row[data-stat=temp] .tv{min-width:26px;font-size:9px}}`;
   document.head.append(style);
   const root = document.createElement("div"); root.id = "hud";
@@ -84,6 +85,8 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
   const tLab = document.createElement("span"); tLab.className = "lab"; tLab.textContent = "🌡"; const tIc = document.createElement("img"); tIc.className = "ic"; tIc.alt = "temp"; tIc.style.display = "none"; tLab.prepend(tIc);
   const tBar = document.createElement("div"); tBar.className = "bar"; const tAir = document.createElement("i"); tAir.className = "air"; const tFelt = document.createElement("i"); tFelt.className = "felt"; const tGrad = document.createElement("i"); tGrad.className = "grad"; tBar.append(tGrad, tAir, tFelt); // gradient as a child so the bar_track nine-slice frame (fill) stays around it
   const tVal = document.createElement("span"); tVal.className = "tv"; tVal.dataset["hud"] = "temp"; tRow.append(tLab, tBar, tVal); root.append(tRow);
+  // Task 13: one chip per active disease on the local player (replicated Diseases component); chips vanish on cure
+  const chips = document.createElement("div"); chips.dataset["role"] = "disease-chips"; root.append(chips);
   let unit: TempUnit = ov.unit ?? loadTempUnit(), unitAt = 0, tempIcon = "", hudBottom = -1;
   mountUi(root);
   // Art's UI kit: panel_hud plaque, bar_track / bar_fill_* nine-slices, vital_* icons (falls back to the CSS look)
@@ -131,6 +134,15 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     // ADR-239: publish the HUD's bottom edge so the touch XP chip (gather-fx) stacks under the taller panel, never over it
     const hb = root.offsetTop + root.offsetHeight + 4; if (root.offsetHeight > 0 && hb !== hudBottom) { hudBottom = hb; document.documentElement.style.setProperty("--hud-bottom", `${hb}px`); }
     vals.forEach((v, i) => { fills[i]!.style.width = `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`; });
+    // Task 13: disease chips follow the replicated component (added / removed as diseases come and go)
+    try {
+      const actives = p !== undefined && w.isRegistered(Diseases) ? activeDiseases(w, p) : [];
+      const keys = actives.map((d) => d.key).join(",");
+      if (chips.dataset["keys"] !== keys) {
+        chips.dataset["keys"] = keys; chips.innerHTML = "";
+        for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.textContent = d.short; c.title = d.name; c.style.background = d.color; chips.append(c); }
+      }
+    } catch { /* replica without Diseases yet */ }
   };
   const timer = setInterval(update, 250); update();
   return { destroy: () => { clearInterval(timer); root.remove(); style.remove(); } };

@@ -20,7 +20,7 @@ import { iconForItem, ROADS, clanTintIndex,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
-  SKILLS, equipIntent, wearIntent, equipmentView,
+  SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
@@ -410,6 +410,14 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           const row = grid(); row.dataset["role"] = "inv-actions";
           if (cv && !s.equipped) row.append(btn("Store", `store-${s.slot}`, () => store(s), { role: "use" }));
           if (s.consume) row.append(btn(useVerb(s), `use-${s.slot}`, () => eat(s), { role: "use", disabled: useVerb(s) === "Empty", data: { use: s.consume } }));
+          // Task 13: boil a filled raw-water container at a lit campfire (button only shows when one is in reach).
+          // Note: a nearby campfire station has a Container, so openContainer() puts the panel in container mode
+          // (cv truthy) — the button must show in that mode too, not only with no container open.
+          if (!s.equipped) {
+            const bd = gameplayDefs(c.world).items.get(s.item);
+            const boilable = !!bd && bd.sips > 0 && !bd.boiled && !!bd.boilTarget && readSlots(c.world, c.player).durability(s.slot) > 0;
+            if (boilable && me && nearLitCampfire(c.world, me.x, me.y, gameplayDefs(c.world).building.containerReach)) row.append(btn("Boil", `boil-${s.slot}`, () => send(boilIntent(s.slot), `Boiled ${s.name}.`), { role: "use" }));
+          }
           if (s.equip) row.append(btn(s.equipped ? "Unequip" : "Equip", `eq-${s.slot}`, () => equipSlot(s), { role: "equip-toggle" }));
           if (!cv && s.equip === "hand" && gameplayDefs(c.world).items.get(s.item)?.wear?.slot === 6 /* WearSlot.OffHand */) row.append(btn("Off hand", `offhand-${s.slot}`, () => send(wearIntent(s.slot), `Off hand ${s.name}.`), { role: "use" }));
           if (!cv && isKit(c.world, s.item)) row.append(btn("Deploy", `deploy-${s.slot}`, () => { const i = deployKitIntent(c.world, c.player, s.slot); if (i) send(i, `Deployed ${s.name}. Walk up and press Use to get in.`); }, { role: "deploy" }));
