@@ -4,6 +4,7 @@
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
+import { BUILD_HASH } from "./error-log.js";
 import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
 import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
@@ -59,6 +60,9 @@ text-shadow:0 3px 0 #74432C,0 6px 0 #432C24,0 10px 18px rgba(0,0,0,.5);-webkit-t
 .boot .lane{position:relative;width:min(420px,76vw);padding-top:40px}.boot .lane .track{width:100%}
 .boot .lane .zw{position:absolute;left:0;bottom:16px;width:36px;height:36px;margin-left:-18px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='6' height='5' fill='%2379a85a'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23c0302a'/%3E%3Crect x='9' y='3' width='1' height='1' fill='%23c0302a'/%3E%3Crect x='4' y='6' width='8' height='5' fill='%234a6b8a'/%3E%3Crect x='11' y='6' width='4' height='2' fill='%2379a85a'/%3E%3Crect x='5' y='11' width='2' height='4' fill='%233b2433'/%3E%3Crect x='9' y='11' width='2' height='4' fill='%233b2433'/%3E%3C/svg%3E") center/contain no-repeat;image-rendering:pixelated;pointer-events:none;will-change:transform,left}
 .boot[data-boot=error] .fill{background:#C0302A}.boot[data-boot=error] .lbl{color:#FF9A8A}.boot[data-boot=menu] .lane .zw{display:none}
+.boot .version{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 12px);z-index:5;
+font:600 12px system-ui,sans-serif;color:#E6C47E;opacity:.85;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.boot[data-boot=menu] .version{display:block}
 .boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}
 .boot .panel{display:flex;flex-direction:column;gap:12px;background:#F6EAD2;border:4px solid #74432C;border-radius:18px;padding:18px 22px;
 box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433;box-sizing:border-box;
@@ -151,6 +155,11 @@ export class BootUI {
   constructor(private readonly base: string) {
     const st = document.createElement("style"); st.textContent = CSS(base); document.head.append(st);
     this.root.className = "boot"; this.root.dataset["boot"] = "loading";
+    // Version marker, top-left of the main menu: the build hash stamped by Vite (GITHUB_SHA on CI, else the local
+    // git short hash, "dev" in tests). The repo has no semantic version (package.json is 0.0.0 everywhere), so the
+    // commit hash is the version that actually identifies a deployed build.
+    const ver = document.createElement("div"); ver.className = "version"; ver.dataset["role"] = "version"; ver.textContent = `v${BUILD_HASH}`;
+    this.root.append(ver);
     const esc = (t: string): string => t.replace(/[&<>"]/g, (ch) => `&#${ch.charCodeAt(0)};`);
     this.header.innerHTML = `<div class="title">${esc(BR.title)}<small>${esc(BR.tagline.toUpperCase())}</small></div>`;
     document.title = BR.title;

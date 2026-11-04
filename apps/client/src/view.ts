@@ -109,6 +109,10 @@ function readXform(w: World, e: Entity, def: typeof Transform | typeof PrevTrans
   out.x = d.x[k]!; out.y = d.y[k]!; out.z = d.z[k]!; out.facing = d.facing[k]!; return out;
 }
 export const CAM_Z_TAU = 0.15, CAM_Z_SNAP = 4;
+/** Camera x/y follow easing (s): the camera used to sit exactly on the interpolated player position, so every tick
+ * jitter, collision slide and reconciliation remnant moved the whole screen. Easing x/y like z (tau 0.08 s, ~0.2-tile
+ * lag at walk speed) smooths that out; large jumps (teleport / respawn) still snap, like z. */
+export const CAM_XY_TAU = 0.08, CAM_XY_SNAP = 4;
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
@@ -508,9 +512,14 @@ export class IsoView {
     const why = player === undefined ? `no player entity (entities ${this.map.size}, local server ${st?.localServer ?? "?"}, snapshots ${st?.snapshots ?? 0}${st?.error ? `: ${st.error}` : ""})` : "player not mirrored into the view";
     // ADR-155: the target z is lifted onto stepped tile heights, so a step jerked the whole screen for 2-3 frames
     // (camera speed 3.8x). Ease only the camera's z (tau CAM_Z_TAU s); x/y stay exact, sprites stay on their steps.
+    // Camera x/y follow is eased the same way (tau CAM_XY_TAU s): exact follow passed every tick jitter straight
+    // to the screen. Sprites themselves still sit on their interpolated steps; only the camera lags slightly.
     if (want) { const now = performance.now(), dt = this.camZAt ? Math.min(0.25, (now - this.camZAt) / 1000) : 0; this.camZAt = now;
       if (this.camZ === undefined || Math.abs(want.z - this.camZ) > CAM_Z_SNAP) this.camZ = want.z; else this.camZ += (want.z - this.camZ) * (1 - Math.exp(-dt / CAM_Z_TAU));
-      want.z = this.camZ; }
+      want.z = this.camZ;
+      if (this.camXY === undefined || Math.hypot(want.x - this.camXY.x, want.y - this.camXY.y) > CAM_XY_SNAP) this.camXY = { x: want.x, y: want.y };
+      else { const k = 1 - Math.exp(-dt / CAM_XY_TAU); this.camXY.x += (want.x - this.camXY.x) * k; this.camXY.y += (want.y - this.camXY.y) * k; }
+      want.x = this.camXY.x; want.y = this.camXY.y; }
     const hadErr = this.camGuard.error; const tgt = this.camGuard.resolve(want, camE !== player ? "follow" : "player", why);
     if (this.camGuard.error && !hadErr) console.warn(`[render] ${this.camGuard.error}`);
     r.camera.lookAt(tgt.x + this.camShake.x, tgt.y + this.camShake.y, tgt.z); // ADR-214: screen shake offset (tiles; 0 when off)
@@ -523,6 +532,7 @@ export class IsoView {
     blackFrameStep(this, r, held0);
   }
   private camZ: number | undefined; private camZAt = 0;
+  private camXY: { x: number; y: number } | undefined;
   /** ADR-157 per-frame scratch components (render loop reads without allocating). */
   /** ADR-208: NetClient (or any provider) whose reconciliation offsets are rendered on predicted entities. */
   corrections: CorrectionSource | undefined; private corrSampler = new CorrectionSampler();

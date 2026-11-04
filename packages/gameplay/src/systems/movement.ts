@@ -192,7 +192,7 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
     // ADR-212 doorway assist: pushing straight into a wall beside an opening slides the body toward the opening's centre
     if (x === t.x && dx && !dy) y = doorAssist(world, x, y, dx, 0, sp, level, swim);
     else if (y === t.y && dy && !dx) x = doorAssist(world, x, y, dy, 1, sp, level, swim);
-    if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: Math.atan2(dy, dx) });
+    if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: turnFacing(t.facing ?? 0, Math.atan2(dy, dx), dt) });
   }
   settleStandZ(world, e, dt); // ADR-212: decks are walked on at deck-top height
 }
@@ -206,7 +206,17 @@ function doorAssist(world: World, x: number, y: number, d: number, axis: 0 | 1, 
   return bodyAxisMove(world, axis === 0 ? x : lat, axis === 0 ? lat : y, nl, axis === 0 ? 1 : 0, level, swim);
 }
 
-/** ADR-125: character walk-cycle playback rate (walkSpeed / walkAnimRefSpeed) so feet match ground speed; shared by both renderers. */
+/** Player turn rate (rad/s): facing eases toward the move direction instead of snapping to it in one tick, so
+ * turning while walking looks smooth. Position still moves in the input direction at full speed at once (responsive);
+ * only the sprite's facing lags, at most ~0.16 s for a 90° turn. */
+export const PLAYER_TURN_RATE = 10;
+/** Facing after `dt` seconds of turning from `cur` toward `target`, at most PLAYER_TURN_RATE rad/s, shortest way round. */
+export function turnFacing(cur: number, target: number, dt: number): number {
+  let d = (target - cur) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2; else if (d < -Math.PI) d += Math.PI * 2;
+  const step = PLAYER_TURN_RATE * dt;
+  return cur + Math.max(-step, Math.min(step, d));
+}
 export function walkAnimRate(world: World): number { const mv = gameplayDefs(world).movement; return mv.walkAnimRefSpeed > 0 ? mv.walkSpeed / mv.walkAnimRefSpeed : 1; }
 
 // ---- swimming (ADR-107) -------------------------------------------------------------------------------------

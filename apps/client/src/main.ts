@@ -612,7 +612,7 @@ deathUi = mountDeathScreen(root, { world: () => world, player: () => session.pla
   respawn: () => { const c = session.client; if (!c?.connected) return false; try { return c.sendCommand(gameplayNet(RespawnCmd), {} as never) !== false; } catch { return false; } },
   onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); }, view: () => input.viewQuarter });
 // ADR-253: four 90° views (KBM [ / ], pad RB + D-pad ←/→ or LT + D-pad ←/→ in build mode, ⟲ / ⟳ HUD for mouse / touch)
-camRot = attachCameraRotate({ target: () => iso?.renderer, input, root,
+camRot = attachCameraRotate({ target: () => iso?.renderer, input, root, spinTarget: () => canvas,
   pivot: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y, z: t.z ?? 0 } : undefined; },
   onChange: (q) => { audio.mixer.view = q; },
   hidden: () => !!document.querySelector("[data-boot=menu]") || !!deathUi?.dead || !!menus?.nav.isOpen || session.player === undefined });

@@ -20,6 +20,8 @@ import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentActio
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export const NODE_BAR_MS = 3000;
+/** Screen lift (css px at zoom 1) of a node health bar above its feet: hand icons must sit above this, not over it. */
+export const NODE_BAR_LIFT = 58;
 export const NODE_BAR_FADE_MS = 600;
 export interface NodeBar { node: Entity; x: number; y: number; frac: number; at: number; kind: "wood" | "stone" | "plant" }
 /** Alpha of a node bar `ms` after its last hit (1 -> fades over the last NODE_BAR_FADE_MS of NODE_BAR_MS, then 0). */
@@ -203,7 +205,7 @@ export interface GatherFxDeps {
   world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; hidden(): boolean;
   device?(): "keyboardMouse" | "gamepad" | "touch"; icon?(item: number, key: string): string;
 }
-const CSS = `#gather-fx{position:absolute;inset:0;z-index:3;pointer-events:none}
+const CSS = `#gather-fx{position:absolute;inset:0;z-index:5;pointer-events:none}
 #pickup-toasts{position:absolute;left:12px;bottom:96px;z-index:5;display:flex;flex-direction:column;gap:4px;pointer-events:none;font:600 14px/1.2 system-ui,sans-serif}
 #pickup-toasts[data-device=touch]{bottom:auto;top:84px;left:8px;font-size:12px}
 #pickup-toasts [data-role=toast]{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:6px;background:rgba(20,16,12,.62);color:#FFFAF0;transition:opacity .3s ease,transform .3s ease;text-shadow:0 1px 1px #000}
@@ -268,7 +270,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       };
       for (const b of hits.bars.values()) {
         const al = nodeBarAlpha(now - b.at); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);
-        drawBar(s.x, s.y - 58 * z, (touch ? 44 : 36) * z, Math.max(4, 5 * z), b.frac, barFill(b.frac), al);
+        drawBar(s.x, s.y - NODE_BAR_LIFT * z, (touch ? 44 : 36) * z, Math.max(4, 5 * z), b.frac, barFill(b.frac), al);
       }
       for (const b of creatures.scan(w, now, p)) { // ADR-134 creature bars: compact, a touch smaller than node bars
         const al = creatureBarAlpha(now - b.at, b.target); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);

@@ -66,6 +66,10 @@ export function hintVisual(h: Pick<ToolHint, "have" | "equipped">): { grey: bool
   return h.have ? { grey: false, lock: false, ring: h.equipped ? "#7BC86C" : "#E6C47E" } : { grey: true, lock: true, ring: "#C0584A" };
 }
 
+/** Hand-icon lift (css px at zoom 1) above a node/station: above the node health bar (NODE_BAR_LIFT 58 in
+ * gather-fx.ts), so the icon never sits over a bar, and the bars themselves draw above the icons (gather-fx
+ * canvas z-index 5 > hint z-index 4) for any icon that still overlaps one in screen space. */
+export const TOOL_HINT_LIFT = 64;
 const CSS = `#tool-hint{position:absolute;left:0;top:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .25s ease;will-change:transform,opacity}
 #tool-hint[data-show="true"]{opacity:1}#tool-hint[data-have="false"] canvas.icon{filter:grayscale(1) brightness(.8)}`;
 
@@ -102,7 +106,7 @@ export function mountToolHint(root: HTMLElement, d: ToolHintDeps): { destroy(): 
       if (!shown || !cam) return;
       const size = d.device?.() === "touch" ? 44 : 34; draw(shown, size);
       setData(el, "icon", shown.icon); setData(el, "have", String(shown.have)); setAttr(el, "aria-label", shown.label); setAttr(el, "title", shown.label);
-      const s = isoToCss(cam, shown.x, shown.y); const lift = 40 * Math.max(0.6, Math.min(2, cam.drawZoom));
+      const s = isoToCss(cam, shown.x, shown.y); const lift = TOOL_HINT_LIFT * Math.max(0.6, Math.min(2, cam.drawZoom));
       const tf = `translate(${Math.round(s.x - size / 2)}px,${Math.round(s.y - lift - size)}px)`; if (tf !== lastTf) { lastTf = tf; el.style.transform = tf; }
     } catch { el.dataset["show"] = "false"; }
   };

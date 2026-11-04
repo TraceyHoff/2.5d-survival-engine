@@ -18,6 +18,9 @@ import { camIso, type CameraLike } from "./world-tools.js";
 import type { PromptDevice } from "./farm-prompt.js";
 
 export const STATION_HINT = { exitSlack: 0.35, graceMs: 350, scanMs: 120 } as const;
+/** Hand-icon lift (css px at zoom 1): above the node health bar (58 in gather-fx.ts), like the tool hint, so a
+ * station's hand icon never sits over a nearby resource's bar; bars also draw above the icons (z-index). */
+export const STATION_HINT_LIFT = 64;
 /** What Interact would open now: a station, something else, or nothing. */
 export type InteractPick = { station: Entity; kind: number } | "other" | undefined;
 export interface HintHold { station?: Entity; kind: number; lostAt: number }
@@ -86,7 +89,7 @@ export function mountStationHint(root: HTMLElement, d: StationHintDeps): { destr
       setAttr(el, "aria-label", `${txt} ${name}`); setAttr(el, "title", name);
       const s = worldToScreen(tx, ty, w.getField(shown.station, Transform, "z") ?? 0, camIso(cam)); const z = cam.drawZoom;
       const x = (s.sx - cam.x) * z + cam.viewW / cam.dpr / 2, y = (s.sy - cam.y) * z + cam.viewH / cam.dpr / 2;
-      const lift = 52 * Math.max(0.6, Math.min(2, z));
+      const lift = STATION_HINT_LIFT * Math.max(0.6, Math.min(2, z));
       const tf = `translate(${Math.round(x - size / 2)}px,${Math.round(y - lift - size - (dev === "touch" ? 30 : 22))}px)`; if (tf !== lastTf) { lastTf = tf; el.style.transform = tf; } // pill sits above the sprite top
     } catch { el.dataset["show"] = "false"; }
   };
