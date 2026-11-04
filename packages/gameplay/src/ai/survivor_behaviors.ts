@@ -7,7 +7,8 @@ import { Membership, PlayerId, StallDisplay, Transform, type Entity, type World 
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js";
 import { GameplayConfig } from "../config.js";
-import { readSlots, countItem, slotFreshness } from "../inventory.js";
+import { readSlots, countItem, slotFreshness, exchangeItems } from "../inventory.js";
+import { crafterIdFor } from "../economy/provenance.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { pieceCost, pieceUnlocked } from "../building/place.js";
 import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
@@ -47,7 +48,37 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     if (bestFood >= 0) view.food = bestFood; if (bestWater >= 0) view.water = bestWater;
     const have = (item: number, n: number): boolean => countItem(world, self, item) >= n;
     // ADR-203: goal tools first (stone axe / pickaxe / spear); other hand recipes keep the next goal tool's ingredients and the campfire cost
-    const dc = defsCache(defs); const hand = dc.hand.filter((r) => countItem(world, self, r.output.item) === 0);
+    const dc = defsCache(defs);
+    // Task 16: purpose-driven bot crafting. The legacy pick used to select ANY affordable hand recipe whose output the
+    // bot did not own. Dye (3rd hand recipe in file order, berries x3, always affordable) was the loop: crafted, then
+    // junk-dropped when the bag filled (dye is neither ladder-useful nor plan-kept), then crafted again forever,
+    // scattering dye piles bots never reclaim (ADR-252: bots never perceive ground loot) until areas lagged. Now a
+    // recipe is selectable only when its output serves the next unowned goal tool — the tool itself, or a
+    // hand-craftable ingredient of it — capped at the outstanding need, so existing stock counts toward the need and
+    // the bot uses what it already holds before crafting more. Plan-driven crafts are untouched: fillPlanSensors
+    // overwrites craftRecipe with the plan's own hand-craft step after this runs.
+    const need = new Map<number, number>();
+    for (const k of GOAL_CRAFTS) {
+      const d = dc.itemByKey.get(k); if (!d || countItem(world, self, d.id) > 0) continue;
+      const gr = dc.recipeFor.get(d.id);
+      if (gr && gr.station === StationKind.None) {
+        need.set(d.id, 1);
+        const queue = [{ item: d.id, need: 1 }]; const seen = new Set<number>([d.id]); let pops = 0;
+        while (queue.length && pops++ < 64) { // 64 pops bounds any recipe cycle; real goal chains are depth <= 2
+          const cur = queue.shift()!; const r = dc.recipeFor.get(cur.item);
+          if (!r || r.station !== StationKind.None) continue;
+          for (const g of r.ingredients) {
+            if (g.item === cur.item) continue;
+            const add = Math.ceil(cur.need / r.output.count) * g.count;
+            const prev = need.get(g.item) ?? 0; need.set(g.item, prev + add);
+            if (!seen.has(g.item)) { seen.add(g.item); queue.push({ item: g.item, need: prev + add }); }
+            else if (add > 0) queue.push({ item: g.item, need: add }); // re-propagate the delta
+          }
+        }
+      }
+      break;
+    }
+    const hand = dc.hand.filter((r) => { const n = need.get(r.output.item); return n !== undefined && countItem(world, self, r.output.item) < n; });
     const goalOf = (r: (typeof hand)[number]): number => { const k = defs.items.get(r.output.item)?.key ?? ""; const i = (GOAL_CRAFTS as readonly string[]).indexOf(k); return i < 0 ? 99 : i; };
     // other hand recipes may only spend what the next unowned goal tool does not need (reserve = its ingredients)
     const reserve = new Map<number, number>();
@@ -59,7 +90,11 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     for (const r of hand.sort((a, b) => goalOf(a) - goalOf(b))) {
       // ADR-217: the goal tools after the axe (FIRE_AFTER_GOALS) wait for the campfire's cost too (wood is chopped now)
       const extra = goalOf(r) === 99 ? (id: number) => reserve.get(id) ?? 0 : goalOf(r) >= FIRE_AFTER_GOALS ? (id: number) => fireRes.get(id) ?? 0 : () => 0;
-      if (r.ingredients.every((g) => have(g.item, g.count + extra(g.item)))) { view.craftRecipe = r.id; break; }
+      // Task 16: room gate — the craft system would fail this with InventoryFull (its output never drops to the
+      // ground; a failed add lands in CraftOwed), so don't pick a recipe whose full output can't land in the bag.
+      // The dry run mirrors checkRecipe: ingredients out, then the whole output in.
+      if (r.ingredients.every((g) => have(g.item, g.count + extra(g.item)))
+        && exchangeItems(world, self, r.ingredients, [r.output], true, crafterIdFor(world, self, r.output.item))) { view.craftRecipe = r.id; break; }
     }
     // ADR-203: plan each base piece that is missing near home (campfire first), not only "no piece at all"
     let k = 0;

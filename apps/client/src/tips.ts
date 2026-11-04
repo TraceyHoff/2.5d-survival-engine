@@ -1,7 +1,17 @@
 /**
  * Task 14: gameplay tips shown on both loading screens (boot + the second post-mode screen), rotating every
  * few seconds. Kept short and tied to systems players actually meet early.
+ * Task 16: rotation slowed to 10 s so each tip is readable, and the text darkened one step (still legible
+ * against the dark loading-screen gradient — see TIP_COLOR).
  */
+/** Task 16: milliseconds between tip rotations on both loading screens (was 6000). */
+export const TIP_ROTATION_MS = 10000;
+/**
+ * Task 16: tip text color (was #C9C2B8). A medium warm gray: visibly darker than before, but still
+ * ≥ ~4.5:1 against the mid/dark zones of the loading gradient (#22301f → #14110f) where the tip sits,
+ * so it stays readable. Going darker would drop below comfortable contrast on that dark background.
+ */
+export const TIP_COLOR = "#9C968C";
 export const TIPS: readonly string[] = [
   "Raw meat and untreated water can make you sick — boil water at a lit campfire and cook meat before eating.",
   "A cloth mask (fiber ×6) blocks disease spread — wear one near sick players or AI humans.",

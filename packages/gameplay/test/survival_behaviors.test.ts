@@ -19,14 +19,15 @@ function ctx(w: ReturnType<typeof setup>["w"], p: Entity, agent: ReturnType<type
 describe("survival behaviors", () => {
   it("sensors: food/water slots, craftable recipe, build plan, inventory space", () => {
     const { w, p, agent } = setup();
-    G.addItem(w, p, I("berries"), 3); G.addItem(w, p, I("water_flask"), 1); G.addItem(w, p, I("wood"), 6); G.addItem(w, p, I("stone"), 4);
+    // Task 16: the bot needs a purpose to craft — fiber completes the stone_axe goal-tool materials
+    G.addItem(w, p, I("berries"), 3); G.addItem(w, p, I("water_flask"), 1); G.addItem(w, p, I("wood"), 6); G.addItem(w, p, I("stone"), 4); G.addItem(w, p, I("fiber"), 2);
     const v = ctx(w, p, agent).world;
     expect(v.food).toBeDefined(); expect(v.water).toBeDefined(); expect(v.food).not.toBe(v.water);
-    expect(d.recipes.get(v.craftRecipe!)!.station).toBe(0); expect(d.pieces.get(v.buildPlan!.piece)!.key).toBe("campfire");
+    expect(d.recipes.get(v.craftRecipe!)!.key).toBe("stone_axe"); expect(d.recipes.get(v.craftRecipe!)!.station).toBe(0); expect(d.pieces.get(v.buildPlan!.piece)!.key).toBe("campfire");
     expect(v.invSpaceFree).toBeGreaterThan(0); expect(v.invSpaceFree).toBeLessThan(1);
   });
   it("eat / drink / craft / build / sleep emit the matching actions", () => {
-    const { w, p, agent } = setup(); G.addItem(w, p, I("berries"), 3); G.addItem(w, p, I("water_flask"), 1); G.addItem(w, p, I("wood"), 6); G.addItem(w, p, I("stone"), 4);
+    const { w, p, agent } = setup(); G.addItem(w, p, I("berries"), 3); G.addItem(w, p, I("water_flask"), 1); G.addItem(w, p, I("wood"), 6); G.addItem(w, p, I("stone"), 4); G.addItem(w, p, I("fiber"), 2);
     const c = ctx(w, p, agent);
     expect(run("eat", c).o.actions).toEqual([`eat:${c.world.food}`]); expect(run("drink", c).o.actions).toEqual([`drink:${c.world.water}`]);
     expect(run("craft", c).o.actions).toEqual([`craft:${c.world.craftRecipe}`]);
