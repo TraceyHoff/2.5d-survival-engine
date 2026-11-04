@@ -32,6 +32,8 @@ import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCr
 import { canLootBagAt } from "../combat/pvp.js";
 import { isBaseStoragePiece } from "../ai/storage_api.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
+import { PlaceMapMarkerCmd, RemoveMapMarkerCmd } from "../map_marker_commands.js";
+import { MAP_MARKER_LABEL_MAX } from "../components.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
 import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
 
@@ -74,6 +76,12 @@ export const containerToSlotIntent = (slot: number, to: number, dir: 0 | 1 = 0):
 /** ADR-231: pack slot -> container slot (swap / merge; the container slot may be empty). */
 export const slotToContainerIntent = (packSlot: number, cslot: number): MenuIntent => intent(ContainerToSlotCmd, { slot: cslot, to: packSlot, dir: 1 });
 export const moveSlotIntent = (slot: number, to: number, where = 0): MenuIntent => intent(MoveSlotCmd, { where, slot, to });
+/** World-map marker intents: place at (x, y) with a visibility (0 private, 1 party, 2 clan) and a label; remove by entity. */
+export const placeMapMarkerIntent = (x: number, y: number, visibility: number, label: string): MenuIntent => {
+  const chars = Array.from(label.slice(0, MAP_MARKER_LABEL_MAX)).map((c) => c.charCodeAt(0));
+  return intent(PlaceMapMarkerCmd, { x, y, visibility, len: chars.length, label: chars });
+};
+export const removeMapMarkerIntent = (marker: Entity): MenuIntent => intent(RemoveMapMarkerCmd, { marker: marker as unknown as number }, ["marker"]);
 export const wearIntent = (slot: number): MenuIntent => intent(WearCmd, { slot });
 export const EQUIP_SLOT_LABELS = ["Head", "Body", "Legs", "Feet", "Hands", "Back", "Off hand", "Accessory"] as const;
 export interface EquipSlotView { slot: number; label: string; invSlot: number; item: number; name: string; icon: string }

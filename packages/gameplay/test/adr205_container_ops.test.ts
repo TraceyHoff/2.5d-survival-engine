@@ -17,8 +17,8 @@ function setup(open = true) {
 describe("ADR-205 container -> hotbar", () => {
   it("moves a storage stack into an empty hotbar slot", () => {
     const { w, crate, run, rej, pack, box } = setup(); G.addItem(w, crate, id("stone_axe"), 1);
-    run(G.ContainerToSlotCmd, { slot: 0, to: 3 });
-    expect(rej).toEqual([]); expect(pack().item(3)).toBe(id("stone_axe")); expect(box().item(0)).toBe(0);
+    run(G.ContainerToSlotCmd, { slot: 0, to: 19 }); // hotbar slot 3 (16 + 3)
+    expect(rej).toEqual([]); expect(pack().item(19)).toBe(id("stone_axe")); expect(box().item(0)).toBe(0);
   });
   it("swaps an occupied hotbar slot back into the container (durability / crafter kept)", () => {
     const { w, p, crate, run, rej, pack, box } = setup(); G.addItem(w, p, id("wood"), 7); G.addItem(w, crate, id("stone_axe"), 1);
@@ -30,7 +30,7 @@ describe("ADR-205 container -> hotbar", () => {
   it("rejects: closed container, empty / out-of-range slots, equipped target, overweight — nothing written", () => {
     const s = setup(false); G.addItem(s.w, s.crate, id("wood"), 3); s.run(G.ContainerToSlotCmd, { slot: 0, to: 0 }); expect(s.rej).toEqual(["no_container"]);
     const { w, p, crate, run, rej, pack, box } = setup(); G.addItem(w, crate, id("wood"), 3); G.addItem(w, p, id("stone_axe"), 1);
-    run(G.ContainerToSlotCmd, { slot: 4, to: 1 }); run(G.ContainerToSlotCmd, { slot: 6, to: 1 }); run(G.ContainerToSlotCmd, { slot: 0, to: 16 }); run(G.ContainerToSlotCmd, { slot: 200, to: 1 });
+    run(G.ContainerToSlotCmd, { slot: 4, to: 1 }); run(G.ContainerToSlotCmd, { slot: 6, to: 1 }); run(G.ContainerToSlotCmd, { slot: 0, to: 24 }); run(G.ContainerToSlotCmd, { slot: 200, to: 1 });
     w.set(p, G.Equipment, { mainHandSlot: 0, mainHandItem: id("stone_axe") }); run(G.ContainerToSlotCmd, { slot: 0, to: 0 });
     const wt = d.items.get(id("wood"))!.weight; w.setField(p, G.Inventory, "maxWeight", d.items.get(id("stone_axe"))!.weight + wt * 2);
     run(G.ContainerToSlotCmd, { slot: 0, to: 2 }); // 3 wood would exceed the pack cap

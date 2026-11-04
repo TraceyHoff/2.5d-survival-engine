@@ -178,7 +178,10 @@ export function baseBehaviors(): GameBehavior[] {
         const fail = (): false => { c.bb.set("workFail", c.self.tick); return false; };
         if (s.k === "wear") { if (cooled(c, "wearAt", 60)) { o.actions.push(`wear:${s.invSlot}`); c.bb.set("wearAt", c.self.tick); mark(c, "wears"); } return false; }
         if (s.k === "withdraw") { const sb = bs?.storage; if (!sb) return fail();
-          if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) return fail(); return; } stop(o);
+          // Container reach is 2.5 tiles: stop as soon as the box is reachable instead of pushing to 1.6
+          // through furniture — a bot approaching from behind its own workbench pinned itself at ~2.1 tiles
+          // forever (the workbench blocks the last stretch, and nothing else moves it while gated on workFail).
+          if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) return fail(); return; } stop(o);
           if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, s.item, s.count))) { mark(c, "withdraws"); return false; } return; }
         if (s.k === "craft") { const st = bs?.stations.get(s.station); if (!st) return fail();
           const wait = c.bb.num("craftUntil", -1); if (wait > c.self.tick) { if (Math.hypot(st.x - c.self.x, st.y - c.self.y) > 2) goTo(c, o, st.x, st.y); else stop(o); return; }
@@ -199,7 +202,7 @@ export function baseBehaviors(): GameBehavior[] {
         { name: "full", curve: { type: "linear", m: -0.6, b: 1 }, input: (c) => Math.min(1, c.world.invSpaceFree ?? 0.5) },
         { name: "nearBase", curve: { type: "inverse" }, input: (c) => { const sb = c.world.bs?.storage; return sb ? Math.min(1, Math.hypot(sb.x - c.self.x, sb.y - c.self.y) / 24) : 1; } }],
       run: (c, o) => { const sb = c.world.bs?.storage, sur = c.world.surplus; if (!sb || !sur) return false;
-        if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) { c.bb.set("stashAt", c.self.tick); return false; } return; } stop(o);
+        if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) { c.bb.set("stashAt", c.self.tick); return false; } return; } stop(o); // same reach-based stop as withdraw
         // one deposit per open/close cycle (ADR-250 API), one stack after another across think ticks
         const list = sur.slice(0, 6); const k = c.bb.num("stashIdx"); const s = list[Math.min(k, list.length - 1)]!;
         if (containerSeq(c, o, sb.id, storageDepositActions(sb.id as Entity, s.item, s.count))) { mark(c, "deposits");

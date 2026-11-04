@@ -41,7 +41,7 @@ import { attachBrowserInput } from "@engine/input/browser";
 import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld, onGameplayRejected } from "@engine/server/protocol";
 import { inventoryOpRejectText } from "./inventory-reject.js";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, moveSlotIntent, hotbarConsumes, gameplayDefs, BuildPiece } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, moveSlotIntent, hotbarConsumes, gameplayDefs, BuildPiece, compassOf } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
@@ -53,6 +53,8 @@ import { mountHud } from "./hud.js";
 import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
 import { mountHotbar, hotbarCells, hotbarCycle } from "./hotbar.js";
+import { createWorldMap } from "./world-map.js";
+import { mountCompassHud } from "./compass-hud.js";
 import { CLIENT_FRAME_MAPPING, gateEdges } from "./frame-mapping.js";
 import { buildSignEditor } from "./sign-editor.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
@@ -187,7 +189,8 @@ function startMenus(): void {
   if (menus) return;
   maybeStartTutorial();
   menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, fx: { get: () => fxLayer.settings(), set: (v) => { saveFx(v); fxLayer.apply(v); }, click: () => audio.ui("ui.click") }, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, clanTint: (t) => iso?.registry.clanPaletteForTint(t)?.primary, startPlacing: (sel) => buildMode.start(sel, { fromMenu: true }), worldTools: worldToolsApi, renamePet },
-    onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
+    onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); },
+    mapBody: () => { const m = createWorldMap({ world: () => world, player: () => session.player, tiles: () => session.client?.tiles.tiles, send: sendIntent }); return [m.el]; } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
 function menuCtx(): MenuCtx | undefined {
@@ -295,13 +298,14 @@ if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { inp
 function hotbarInput(): void {
   let slot = -1;
   if (promptDevice() === "gamepad") { const dir = input.pressed("HotbarNext") ? 1 : input.pressed("HotbarPrev") ? -1 : 0;
-    if (dir) { const c = menuCtx(); if (c) { try { const cells = hotbarCells(inventoryView(c)); slot = hotbarCycle(cells, cells.findIndex((x) => x.equipped), dir); } catch { /* no inventory yet */ } } } }
+    if (dir) { const c = menuCtx(); if (c) { try { const cells = hotbarCells(inventoryView(c)); const bar = hotbarCycle(cells, cells.findIndex((x) => x.equipped), dir); slot = bar >= 0 ? cells[bar]!.slot : -1; } catch { /* no inventory yet */ } } } }
   if (slot >= 0) sendIntent(equipIntent(slot));
 }
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   inGameplay = false;
-  { const t = performance.now(); if (t - hotbarT > 120) { hotbarT = t; hotbar.update(hotbarVisible()); } } // ADR-179 (rebuilds only on change)
+  { const t = performance.now(); if (t - hotbarT > 120) { hotbarT = t; hotbar.update(hotbarVisible()); compassHud.update(hotbarVisible()); } } // ADR-179 (rebuilds only on change)
+  if (input.pressed("ToggleMap")) menus?.toggle("map");
   if (deathUi?.dead) { buildMode.stop(); return; } // ADR-153: dead: only the death screen takes input
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
@@ -627,6 +631,8 @@ const hotbar = mountHotbar({ device: promptDevice, equip: (slot) => { const c = 
   view: () => { const c = menuCtx(); if (!c) return undefined; try { return inventoryView(c); } catch { return undefined; } } });
 let hotbarT = 0;
 const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !buildMode.active && !worldTools?.tool.active && !document.querySelector("[data-boot=menu]");
+// Compass HUD (Task 9): top-centre strip, same visibility as the hotbar, updated with it.
+const compassHud = mountCompassHud({ heading: () => { const p = session.player; if (p === undefined) return undefined; const t = world.get(p, Transform); return t ? compassOf(t.facing) : undefined; } });
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
 vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
   toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });

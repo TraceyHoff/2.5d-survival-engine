@@ -73,7 +73,9 @@ describe("ADR-223 slot-grid inventory", () => {
   });
   test("hotbar key / hotbar tap on food eats (UseCmd), on a tool equips (EquipCmd)", () => {
     const { w, me } = setup(); G.addItem(w, me, id("cooked_meat"), 2); G.addItem(w, me, id("stone_axe"), 1);
-    expect(G.hotbarConsumes(w, me as never, 0)).toBe(true); expect(G.hotbarConsumes(w, me as never, 1)).toBe(false);
+    // Pack (0..15) is separate from the hotbar (16..23): move the food/tool onto hotbar slots 1/2 first.
+    expect(G.moveSlot(w, me, 0, 0, G.HOTBAR_OFFSET)).toBeUndefined(); expect(G.moveSlot(w, me, 0, 1, G.HOTBAR_OFFSET + 1)).toBeUndefined();
+    expect(G.hotbarConsumes(w, me as never, G.HOTBAR_OFFSET)).toBe(true); expect(G.hotbarConsumes(w, me as never, G.HOTBAR_OFFSET + 1)).toBe(false);
     expect(G.edgeCommands(G.GameplayEdgeBits.Hotbar1, w, me as never)[0]!.def).toBe(G.UseCmd);
     expect(G.edgeCommands(G.GameplayEdgeBits.Hotbar2, w, me as never)[0]!.def).toBe(G.EquipCmd);
     expect(G.edgeCommands(G.GameplayEdgeBits.Hotbar1)[0]!.def).toBe(G.EquipCmd); // no world: unchanged ADR-180 mapping

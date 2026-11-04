@@ -5,8 +5,9 @@
  */
 import { entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
 import * as C from "./components.js";
+import { markerScope } from "./map_markers.js";
 
-export type Scope = "all" | "owner" | "viewers" | "server" | "local";
+export type Scope = "all" | "owner" | "viewers" | "markers" | "server" | "local";
 /**
  * "static" = net static class (only BuildPiece declares it; every replicated component on a piece entity -
  * Transform, Tribe, PrivilegeZone, CraftingStation - rides the static channel and ignores scopes).
@@ -33,6 +34,7 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   r(C.Pet, "all"), r(C.TroughOwner, "all"), r(C.PetBrain, "server"), // ADR-145
   r(C.LootSummary, "all"), // ADR-161
   r(C.Stance, "all"), // ADR-244
+  r(C.MapMarker, "markers"), // world-map markers: visibility-filtered (private = owner only, party / clan = live members)
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 
@@ -56,5 +58,6 @@ export function applyReplication(net: NetReplicationHooks): void {
     if (r.class === "static") net.setReplicationClass(r.def, "static");
     if (r.scope === "owner") net.setScope(r.def, "owner");
     else if (r.scope === "viewers") net.setScope(r.def, containerViewersScope);
+    else if (r.scope === "markers") net.setScope(r.def, markerScope);
   }
 }

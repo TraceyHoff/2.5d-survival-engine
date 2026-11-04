@@ -10,6 +10,7 @@ import { gameplayDefs } from "./config.js";
 import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
 import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
+import { MAP_MARKER_COMMANDS, MAP_MARKER_ENTITY_FIELDS } from "./map_marker_commands.js";
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
@@ -22,6 +23,7 @@ import { SKILL_COMMANDS } from "./skills/progression.js";
 import { VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS } from "./vehicle_craft.js";
 import { driveFromBits, setDriveInput, VEHICLE_COMMANDS, VEHICLE_STATE_COMMANDS, VEHICLE_ENTITY_FIELDS } from "./vehicles.js";
 import { analogMoving, GameplayEdgeBits, GameplayHoldBits, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
+import { HOTBAR_OFFSET } from "./components.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
 export const GameplayActions = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const);
@@ -68,10 +70,12 @@ export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> 
   ...ECONOMY_ENTITY_FIELDS,
   ...VEHICLE_ENTITY_FIELDS,
   ...VEHICLE_CRAFT_ENTITY_FIELDS,
+  ...MAP_MARKER_ENTITY_FIELDS,
 };
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
   ...Object.fromEntries([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES, ...INVENTORY_OP_RATES,
+  ...Object.fromEntries(MAP_MARKER_COMMANDS.map((d) => [d.name, 10])),
 };
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
@@ -93,6 +97,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of SIGN_COMMANDS) reg.register(d); // append-only: signs (ADR-120)
   for (const d of PET_COMMANDS) reg.register(d); // append-only: pets (ADR-145)
   for (const d of INVENTORY_OP_COMMANDS) reg.register(d); // append-only: split / move slot (ADR-204)
+  for (const d of MAP_MARKER_COMMANDS) reg.register(d); // append-only: world-map markers
   return reg;
 }
 
@@ -113,7 +118,7 @@ export function hotbarConsumes(world: World, e: Entity, slot: number): boolean {
 export const SIM_EDGE_ACTIONS = ["Reload", "Hotbar1", "Hotbar2", "Hotbar3", "Hotbar4", "Hotbar5", "Hotbar6", "Hotbar7", "Hotbar8"] as const;
 export function edgeCommands(edges: number, world?: World, e?: Entity): { def: CommandDef; values: Record<string, number> }[] {
   const out: { def: CommandDef; values: Record<string, number> }[] = [];
-  const slot = hotbarSlotFromEdges(edges); if (slot >= 0) out.push({ def: (world && e !== undefined && hotbarConsumes(world, e, slot) ? UseCmd : EquipCmd) as CommandDef, values: { slot } });
+  const bar = hotbarSlotFromEdges(edges); const slot = bar >= 0 ? HOTBAR_OFFSET + bar : -1; if (slot >= 0) out.push({ def: (world && e !== undefined && hotbarConsumes(world, e, slot) ? UseCmd : EquipCmd) as CommandDef, values: { slot } });
   if (edges & GameplayEdgeBits.Reload) out.push({ def: ReloadCmd as CommandDef, values: {} });
   return out;
 }

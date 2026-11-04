@@ -12,6 +12,9 @@ export interface AddedFields {
   /** Array fields that were NARROWER in the old layout: name -> old element count (ADR-098). Old elements are copied
    *  in order and the tail is zero-filled. May be combined with `fields` (a save that predates both). */
   grown?: Readonly<Record<string, number>>;
+  /** Scalar fields whose DEFAULT changed since the old layout: name -> old default. The schema hash includes
+   *  defaults, so a migration that also changed a default must name the old one or it never matches a real save. */
+  oldDefaults?: Readonly<Record<string, number>>;
 }
 /** core Slot.crafterId on gameplay's slot containers (4b8b28d): 0 = no crafter. */
 export const CRAFTER_ID_MIGRATIONS: readonly AddedFields[] = [
@@ -25,6 +28,14 @@ const C24 = { items: 24, counts: 24, createdTick: 24, durability: 24, crafterId:
 export const CONTAINER_96_MIGRATIONS: readonly AddedFields[] = [
   { component: "Container", fields: [], grown: C24 },
   { component: "Container", fields: ["crafterId"], grown: C24 },
+];
+/** Player Inventory grew 16 -> 24 slots (16 pack + 8 hotbar, hotbar stored after the pack). Old rows zero-pad the
+ * tail, so every old item lands in the pack and the hotbar starts empty — the player re-assigns it. */
+const I16 = { items: 16, counts: 16, createdTick: 16, durability: 16, crafterId: 16 } as const;
+/** slotCount's default moved with INVENTORY_SLOTS (16 -> 24), so the old hash carries default 16. */
+export const INVENTORY_24_MIGRATIONS: readonly AddedFields[] = [
+  { component: "Inventory", fields: [], grown: I16, oldDefaults: { slotCount: 16 } },
+  { component: "Inventory", fields: ["crafterId"], grown: I16, oldDefaults: { slotCount: 16 } },
 ];
 /** ADR-137: Appearance gained the "hands" wear slot (WEARABLE_SLOTS 8 -> 9). Old rows zero-pad it (no hands part, palette 0). */
 const A8 = { parts: 8, primary: 8, secondary: 8 } as const;
@@ -41,11 +52,15 @@ export const APPEARANCE_SKIN_SCHEME_MIGRATION: AddedFields = { component: "Appea
 export const PROGRESSION_TREES_MIGRATION: AddedFields = { component: "Progression", fields: ["tver", "txp", "tlevel", "tpoints"] };
 /** ADR-238: LootBag gained spawnTick / kind / emptiedTick (0 = legacy: spawn derived from despawnAtTick, label inferred). */
 export const LOOTBAG_DESPAWN_MIGRATION: AddedFields = { component: "LootBag", fields: ["spawnTick", "kind", "emptiedTick"] };
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, APPEARANCE_SKIN_SCHEME_MIGRATION, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION];
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...INVENTORY_24_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, APPEARANCE_SKIN_SCHEME_MIGRATION, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
-export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}): Schema =>
-  Object.fromEntries(Object.entries(s).filter(([k]) => !added.includes(k)).map(([k, v]) => [k, k in grown && typeof v === "object" ? { ...v, length: grown[k]! } : v])) as Schema;
+export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}, oldDefaults: Readonly<Record<string, number>> = {}): Schema =>
+  Object.fromEntries(Object.entries(s).filter(([k]) => !added.includes(k)).map(([k, v]) => {
+    let out = k in grown && typeof v === "object" ? { ...v, length: grown[k]! } : v;
+    if (k in oldDefaults) out = typeof out === "string" ? { type: out, default: oldDefaults[k]! } : { ...out, default: oldDefaults[k]! };
+    return [k, out];
+  })) as Schema;
 /** Per field of the CURRENT schema: byte size now, byte size in the old record (0 = added), and whether it is added. */
 export interface FieldPlan { fields: { bytes: number; oldBytes: number; added: boolean }[]; oldSize: number; newSize: number }
 /** The migration that explains stored hash `h` for `store`, if any. */
@@ -55,7 +70,7 @@ export function planFor(store: ComponentStore, h: number, migrations: readonly A
     if (m.component !== store.def.name) continue;
     if (!m.fields.some((f) => f in store.def.schema) && !gk.some((f) => f in store.def.schema)) continue;
     if (gk.some((f) => !(f in store.def.schema) || fieldLength(store.def.schema[f]!) < grown[f]!)) continue;
-    if (schemaHash(oldSchemaOf(store.def.schema, m.fields, grown)) !== h) continue;
+    if (schemaHash(oldSchemaOf(store.def.schema, m.fields, grown, m.oldDefaults ?? {})) !== h) continue;
     const fields = store.fields.map((f) => {
       const spec = store.def.schema[f]!; const added = m.fields.includes(f); const el = BYTES[fieldType(spec)];
       return { bytes: el * fieldLength(spec), oldBytes: added ? 0 : el * (grown[f] ?? fieldLength(spec)), added };

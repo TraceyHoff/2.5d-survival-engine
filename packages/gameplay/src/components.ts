@@ -57,7 +57,12 @@ export type InvSchema = {
   /** Per-slot crafter provenance: persistent PlayerId (u32) of whoever crafted the item, 0 = gathered. Part of the stack key. */
   crafterId: { type: FieldType; length: number };
 };
-export const INVENTORY_SLOTS = 16;
+/** Player pack slots (separate from the hotbar): gathered / crafted / looted items always land here, never on the hotbar. */
+export const PACK_SLOTS = 16;
+/** Hotbar slots: the 8 quick slots, stored after the pack in the same Inventory array (slots PACK_SLOTS..PACK_SLOTS+HOTBAR_SLOTS-1). */
+export const HOTBAR_OFFSET = PACK_SLOTS;
+/** Total player Inventory slots: 16 pack + 8 hotbar. */
+export const INVENTORY_SLOTS = PACK_SLOTS + 8;
 /** Container array width (ADR-098): the hard per-instance cap. Real capacity is per-instance `slotCount`, set from the def
  *  (piece `container`, vehicle class storage, bag size); slots >= slotCount are always empty. */
 export const CONTAINER_MAX_SLOTS = 96;
@@ -173,6 +178,15 @@ export const Latency = defineComponent("Latency", { rttMs: "u16" });
  * crouch = the crouch toggle, carriedNetId = the LootBag carried at the carry socket (0 none), bedNetId/spot/lie = the
  * bed slept in (spot index into the bed's spots, lie 1 = sleep_lie, 2 = sleep_lie_under, 0 = curled floor sleep).
  */
+/** World-map marker visibility: 0 = private (owner only), 1 = party, 2 = clan. Set at creation; party/clan markers
+ * carry the party/clan id they were placed under, so players who join that party/clan later can see them too. */
+export const enum MarkerVisibility { Private = 0, Party = 1, Clan = 2 }
+/** Max marker label length (same u8-array text pattern as Sign). */
+export const MAP_MARKER_LABEL_MAX = 24;
+/** World-map marker: a point a player marked on the map. Transform holds the world position; Owner holds the placing
+ * client's session (so the owner always passes the replication scope); `owner` is the persistent PlayerId. Networked
+ * (scope-filtered by visibility) and persistent (chunk-saved via Transform). */
+export const MapMarker = defineComponent("MapMarker", { owner: "u32", visibility: "u8", party: "u32", clan: "u32", len: "u8", label: { type: "u8", length: MAP_MARKER_LABEL_MAX } }, { networked: true, persistent: true });
 export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
 export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
 export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
@@ -354,4 +368,5 @@ export const GAMEPLAY_COMPONENTS = [
   Pet, TroughOwner, PetBrain, // append-only (ADR-145)
   LootSummary, // ADR-161
   Stance, // ADR-244 (append-only)
+  MapMarker, // append-only (world-map markers)
 ] as const;

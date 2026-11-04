@@ -112,11 +112,11 @@ describe("ADR-231 inventory panel drag-and-drop", () => {
 describe("ADR-231 HUD hotbar drag", () => {
   test("dragging one HUD slot onto another calls move(from, to); a tap still equips", () => {
     const moves: number[][] = []; const eq: number[] = [];
-    const hb = mountHotbar({ device: () => "touch", equip: (s) => eq.push(s), move: (f, t) => moves.push([f, t]), view: () => [{ slot: 0, item: 1, icon: "wood", name: "Wood", count: 3 }] });
-    hb.update(true); const b0 = hb.el.querySelector<HTMLElement>("[data-slot='0']")!; const b4 = hb.el.querySelector<HTMLElement>("[data-slot='4']")!;
-    expect(b0.dataset["drag"]).toBe("h:0"); expect(b4.dataset["drag"]).toBeUndefined(); expect(b4.dataset["drop"]).toBe("h:4");
-    b0.click(); expect(eq).toEqual([0]);
-    drag(b0, b4); expect(moves).toEqual([[0, 4]]); b0.click(); expect(eq).toEqual([0]); // the click after the drag is swallowed
+    const hb = mountHotbar({ device: () => "touch", equip: (s) => eq.push(s), move: (f, t) => moves.push([f, t]), view: () => [{ slot: 16, item: 1, icon: "wood", name: "Wood", count: 3 }] });
+    hb.update(true); const b0 = hb.el.querySelector<HTMLElement>("[data-slot='16']")!; const b4 = hb.el.querySelector<HTMLElement>("[data-slot='20']")!;
+    expect(b0.dataset["drag"]).toBe("h:16"); expect(b4.dataset["drag"]).toBeUndefined(); expect(b4.dataset["drop"]).toBe("h:20");
+    b0.click(); expect(eq).toEqual([16]);
+    drag(b0, b4); expect(moves).toEqual([[16, 20]]); b0.click(); expect(eq).toEqual([16]); // the click after the drag is swallowed
     hb.destroy();
   });
 });

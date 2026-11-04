@@ -13,7 +13,7 @@
  * so freshness is preserved (systems/spoilage.ts also re-bases when temperature changes the multiplier).
  */
 import { decayAt, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
-import { Container, Inventory, type InvSchema } from "./components.js";
+import { Container, Inventory, PACK_SLOTS, type InvSchema } from "./components.js";
 import { gameplayDefs } from "./config.js";
 import { skillMul } from "./skills/tree.js";
 import type { GameDefs, ItemCount } from "./defs.js";
@@ -21,6 +21,10 @@ import type { GameDefs, ItemCount } from "./defs.js";
 export interface SlotView {
   readonly slotCount: number;
   readonly maxWeight: number;
+  /** Slots below this index accept newly added items (merges + fresh stacks). For a player's Inventory this is the
+   * pack size (PACK_SLOTS): gathered / crafted / looted items never land on the hotbar; the hotbar is filled only by
+   * explicit moves (MoveSlot / container-to-slot). Containers use slotCount (no hotbar). Defaults to slotCount. */
+  readonly addLimit: number;
   item(i: number): number;
   count(i: number): number;
   created(i: number): number;
@@ -31,7 +35,8 @@ export interface SlotView {
 }
 
 export class ScratchSlots implements SlotView {
-  constructor(readonly slotCount: number, readonly maxWeight: number, readonly items: number[], readonly counts: number[], readonly createds: number[], readonly durs: number[] = [], readonly now = 0, readonly crafters: number[] = []) {}
+  readonly addLimit: number;
+  constructor(readonly slotCount: number, readonly maxWeight: number, readonly items: number[], readonly counts: number[], readonly createds: number[], readonly durs: number[] = [], readonly now = 0, readonly crafters: number[] = [], addLimit?: number) { this.addLimit = addLimit ?? slotCount; }
   item(i: number): number { return this.items[i] ?? 0; }
   count(i: number): number { return this.counts[i] ?? 0; }
   created(i: number): number { return this.createds[i] ?? 0; }
@@ -65,7 +70,7 @@ export function readSlots(world: World, e: Entity): ScratchSlots {
   const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e); const s = st.slot(idx);
   const n = Math.min(st.data.slotCount[s]!, def.schema.items.length);
   const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => takeField(world, def, idx, f, n);
-  return new ScratchSlots(n, st.data.maxWeight[s]! * (def === Inventory ? skillMul(world, e, "carry") : 1), take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
+  return new ScratchSlots(n, st.data.maxWeight[s]! * (def === Inventory ? skillMul(world, e, "carry") : 1), take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"), def === Inventory ? Math.min(n, PACK_SLOTS) : n);
 }
 export function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
   const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e);
@@ -88,7 +93,7 @@ export function slotsCount(v: SlotView, item: number): number {
 export function slotsCanAdd(v: SlotView, item: number, count: number, defs: GameDefs, crafter = 0): number {
   const def = defs.items.get(item); if (!def || count <= 0) return 0;
   let space = 0;
-  for (let i = 0; i < v.slotCount && space < count; i++) {
+  for (let i = 0; i < v.addLimit && space < count; i++) {
     const id = v.item(i);
     if (id === item && v.crafter(i) === crafter) space += Math.max(0, def.maxStack - v.count(i));
     else if (id === 0) space += def.maxStack;
@@ -105,12 +110,12 @@ export function slotsAdd(v: SlotView, item: number, count: number, defs: GameDef
   const def = defs.items.get(item); if (!def) return 0;
   const total = slotsCanAdd(v, item, count, defs, crafter);
   let left = total;
-  for (let i = 0; i < v.slotCount && left > 0; i++) {
+  for (let i = 0; i < v.addLimit && left > 0; i++) {
     if (v.item(i) !== item || v.crafter(i) !== crafter) continue;
     const c0 = v.count(i); const n = Math.min(left, def.maxStack - c0);
     if (n > 0) { v.put(i, item, c0 + n, Math.round((v.created(i) * c0 + created * n) / (c0 + n)), Math.min(v.durability(i), durability), crafter); left -= n; }
   }
-  for (let i = 0; i < v.slotCount && left > 0; i++) {
+  for (let i = 0; i < v.addLimit && left > 0; i++) {
     if (v.item(i) !== 0) continue;
     const n = Math.min(left, def.maxStack); v.put(i, item, n, created, durability, crafter); left -= n;
   }

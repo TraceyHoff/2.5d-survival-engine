@@ -34,6 +34,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
   { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "pet", title: "Pets", icon: "🐾", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
+  { id: "map", title: "World Map", icon: "🗺", hotkeys: ["KeyM"], bar: true, text: "Your location, facing and markers. Tap a spot to place a marker." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
 ];
@@ -79,6 +80,8 @@ export interface GameMenusOptions {
   onChat?: (text: string, channel: number, to?: number) => void;
   /** Real gameplay data + command sender for the inventory/crafting/build/character/party/clan/trade panels. */
   gameplay?: GameplaySource;
+  /** World-map panel body (world-map.ts): built fresh on each open so its canvas loop starts with the panel. */
+  mapBody?: () => Node[];
   /**
    * "Delete my progress" in Settings (ADR-099): what deleting means in the current mode (singleplayer save, or your
    * character on this server). `run` returns the message to show; throw to show an error. undefined = no entry.
@@ -164,6 +167,7 @@ export class GameMenus {
     if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", s ? sessionBody(s, (t) => this.para(t)) : [this.para("Not in a shared session.")],
       s ? [...(s.actions?.() ?? []).map(([t, fn]): [string, () => void] => [t, () => { this.nav.closeAll(); fn(); }]), [s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
     const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
+    if (id === "map" && this.o.mapBody) return this.panel(id, m.title, this.o.mapBody());
     if (this.o.gameplay && (GAMEPLAY_PANELS as readonly string[]).includes(id)) return this.panel(id, m.title, this.gameplayNodes(id as GameplayPanel));
     return this.panel(id, m.title, [this.para(m.text)]);
   }

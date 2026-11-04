@@ -15,7 +15,7 @@ describe("input hooks (slice 7)", () => {
     G.applyGameplayInput(w, p, frame({ moveX: 0.6, moveY: 0.2 }), reg); expect(w.getField(p, G.PlayerIntent, "moving")).toBe(1);
     const seen: number[] = []; G.addInputHook(w, { name: "t", onFrame: (_w, _e, f) => seen.push(f.edges ?? 0) });
     G.applyGameplayInput(w, p, frame({ edges: G.GameplayEdgeBits.Hotbar3 }), reg);
-    expect(w.getResource(G.CommandQueues)!.get(p)![0]).toEqual({ action: G.IntentAction.Equip, values: { slot: 2 } });
+    expect(w.getResource(G.CommandQueues)!.get(p)![0]).toEqual({ action: G.IntentAction.Equip, values: { slot: G.HOTBAR_OFFSET + 2 } }); // Hotbar3 = hotbar slot 2, stored at 16 + 2
     expect(seen).toEqual([G.GameplayEdgeBits.Hotbar3]);
     expect(() => G.addInputHook(w, { name: "t", onFrame: () => {} })).toThrow();
   });

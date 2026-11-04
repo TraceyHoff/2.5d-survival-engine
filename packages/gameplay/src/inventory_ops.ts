@@ -37,7 +37,7 @@ export function checkSplit(v: SlotView, slot: number, count: number): { to: numb
   if (!Number.isInteger(slot) || slot < 0 || slot >= v.slotCount || slot >= CONTAINER_MAX_SLOTS) return { fail: "bad_slot" };
   const have = v.count(slot); if (!v.item(slot) || have < 2) return { fail: "bad_count" };
   if (!Number.isInteger(count) || count < 1 || count >= have) return { fail: "bad_count" };
-  for (let i = 0; i < v.slotCount; i++) if (!v.item(i)) return { to: i };
+  for (let i = 0; i < v.addLimit; i++) if (!v.item(i)) return { to: i };
   return { fail: "no_space" };
 }
 export function splitSlots(v: SlotView, slot: number, count: number): number {

@@ -6,7 +6,7 @@ import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSig
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, edgeCommands, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
-  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind, installMapMarkerCommands, MapMarker } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
@@ -246,6 +246,10 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   installClanCommands(world, handlers); // gameplay.clan* on core GroupRegistry (GroupKind.Clan) + gameplay ClanState
   installPartyCommands(world, handlers); // gameplay.partyInvite / partyAccept / partyLeave / partyKick on core GroupRegistry
+  installMapMarkerCommands(world, handlers); // gameplay.placeMapMarker / removeMapMarker (world-map markers)
+  // Map markers must replicate regardless of AOI: a marker for a far-away location has to show on the world map
+  // even when the player is nowhere near it. Flagging is idempotent and cheap (markers are few).
+  net.onTick(() => { if (world.isRegistered(MapMarker)) for (const e of world.query([MapMarker])) net.setGlobal(e); });
   const rearmCrafts = (): void => world.resource(CraftQueuesRes).rearmAll(); // timers are not saved: re-arm after any load
   // Melee hits from players are re-checked with lag compensation (target rewound to what the attacker saw).
   setHitValidator(world, (attacker, target, check) => {

@@ -57,8 +57,8 @@ describe("ADR-204 pad-only split / to hotbar", () => {
     menus.open("inventory"); seek("[data-key=slot-12]"); press(PAD.Y);
     expect(document.querySelectorAll("[data-role=hotbar-picker] [data-key^=hb-to-]")).toHaveLength(G.HOTBAR_SIZE);
     seek("[data-key=hb-to-1]"); press(PAD.A);
-    expect(sent.at(-1)).toMatchObject({ cmd: G.MoveSlotCmd, args: { where: 0, slot: 12, to: 1 } });
-    const v = inv(w, me); expect([v.item(1), v.item(12), v.count(12)]).toEqual([id("stone_axe"), id("stone"), 4]); menus.destroy();
+    expect(sent.at(-1)).toMatchObject({ cmd: G.MoveSlotCmd, args: { where: 0, slot: 12, to: G.HOTBAR_OFFSET + 1 } });
+    const v = inv(w, me); expect([v.item(G.HOTBAR_OFFSET + 1), v.item(12)]).toEqual([id("stone_axe"), 0]); menus.destroy();
   });
   test("pickers and start buttons never overlap: one arrange row at a time, unique keys", () => {
     const { w, me, menus, press, seek } = setup(); G.addItem(w, me, id("wood"), 10);

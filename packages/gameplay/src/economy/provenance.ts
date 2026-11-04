@@ -15,7 +15,7 @@
 import { fillLevel, spoilStageIndex, spoilStages } from "../food.js";
 import type { SpoilStage } from "../defs.js";
 import { arrayFieldsContainer, installContainers, playerOf, PlayerId, PlayerNames, PlayerNameRegistry, type Entity, type World } from "@engine/core";
-import { Container, Inventory } from "../components.js";
+import { Container, Inventory, PACK_SLOTS } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { freshness, slotsDef, spoilMulOf } from "../inventory.js";
 import { ECONOMY } from "./config.js";
@@ -27,7 +27,9 @@ export function installGameplayContainers(world: World): void {
   const defs = gameplayDefs(world);
   const reg = installContainers(world, (item) => defs.items.get(item)?.maxStack ?? 1);
   if (REGISTERED.has(reg)) return; REGISTERED.add(reg);
-  reg.register(Inventory, arrayFieldsContainer(Inventory, FIELDS));
+  const inv = arrayFieldsContainer(Inventory, FIELDS);
+  inv.addCapacity = (w, e) => Math.min(inv.capacity(w, e), PACK_SLOTS);
+  reg.register(Inventory, inv);
   reg.register(Container, arrayFieldsContainer(Container, FIELDS));
 }
 /** The world's core PlayerNameRegistry (created on first use; net NameSync replicates it, clients use client.names). */

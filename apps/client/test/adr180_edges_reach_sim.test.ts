@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { World, InputState } from "@engine/core";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { InputSystem, KeyboardMouseDevice, GamepadDevice, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, EDGE_ACTIONS } from "@engine/input";
-import { GAMEPLAY_EDGES, GameplayEdgeBits, SIM_EDGE_ACTIONS, edgeCommands, EquipCmd, ReloadCmd, Equipment, WeaponState, addItem, itemIdSafe, listSlots } from "@engine/gameplay";
+import { GAMEPLAY_EDGES, GameplayEdgeBits, SIM_EDGE_ACTIONS, edgeCommands, EquipCmd, ReloadCmd, Equipment, WeaponState, addItem, itemIdSafe, listSlots, moveSlot, HOTBAR_OFFSET } from "@engine/gameplay";
 import { createGameServer } from "@engine/server";
 import { applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 import { CLIENT_FRAME_MAPPING, gateEdges, SIM_EDGE_MASK } from "../src/frame-mapping.js";
@@ -18,7 +18,7 @@ describe("ADR-180: every edge action in the profiles reaches the sim", () => {
   });
   it("sim edges map to commands; the rest are documented client-only", () => {
     for (const a of SIM_EDGE_ACTIONS) expect(edgeCommands(GameplayEdgeBits[a]).length, a).toBe(1);
-    expect(edgeCommands(GameplayEdgeBits.Hotbar3)).toEqual([{ def: EquipCmd, values: { slot: 2 } }]);
+    expect(edgeCommands(GameplayEdgeBits.Hotbar3)).toEqual([{ def: EquipCmd, values: { slot: HOTBAR_OFFSET + 2 } }]);
     expect(edgeCommands(GameplayEdgeBits.Reload)).toEqual([{ def: ReloadCmd, values: {} }]);
     for (const a of GAMEPLAY_EDGES.filter((x) => !(SIM_EDGE_ACTIONS as readonly string[]).includes(x))) expect(edgeCommands(GameplayEdgeBits[a]), a).toEqual([]);
   });
@@ -43,18 +43,21 @@ describe("ADR-180: every edge action in the profiles reaches the sim", () => {
     const p = c.connect(); await new Promise((r) => setTimeout(r, 0)); net.advance(100); await p; tick(4);
     const e = gs.players.get(c.clientId)!.entity; const gun = itemIdSafe(gs.world, "semi_auto_pistol")!;
     addItem(gs.world, e, gun, 1); addItem(gs.world, e, itemIdSafe(gs.world, "pistol_round")!, 24);
-    const slots = listSlots(gs.world, e); const gunSlot = slots.find((s) => s.item === gun)!.slot; const other = slots.find((s) => s.slot < 4 && s.item !== gun)!.slot;
-    expect(gunSlot).toBeLessThan(8);
+    const slots = listSlots(gs.world, e); const gunPack = slots.find((s) => s.item === gun)!.slot; const otherPack = slots.find((s) => s.slot < 4 && s.item !== gun)!.slot;
+    expect(gunPack).toBeLessThan(8);
+    // Hotbar is separate from the pack now: digit keys equip hotbar slots 16..23, so move the gun / other item there first.
+    const gunBar = gunPack, otherBar = otherPack; moveSlot(gs.world, e, 0, gunPack, HOTBAR_OFFSET + gunBar); moveSlot(gs.world, e, 0, otherPack, HOTBAR_OFFSET + otherBar);
+    const gunSlot = HOTBAR_OFFSET + gunBar, other = HOTBAR_OFFSET + otherBar;
     // keyboard: digit equips the gun, R reloads it
-    tap(() => kbm.press(`key.Digit${gunSlot + 1}`), () => kbm.release(`key.Digit${gunSlot + 1}`));
+    tap(() => kbm.press(`key.Digit${gunBar + 1}`), () => kbm.release(`key.Digit${gunBar + 1}`));
     expect(gs.world.get(e, Equipment)!.mainHandSlot).toBe(gunSlot);
     tap(() => kbm.press("key.KeyR"), () => kbm.release("key.KeyR")); tick(60);
     expect(gs.world.get(e, WeaponState)!.loaded).toBe(12);
     // gamepad: D-pad equips another slot (exactly once: no toggle back), then back to the gun and Y reloads after a shot-free unload
-    const dpad = ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][other]!;
+    const dpad = ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][otherBar]!;
     tap(() => pad.set(dpad, 1), () => pad.set(dpad, 0)); expect(gs.world.get(e, Equipment)!.mainHandSlot).toBe(other);
-    const gdp = gunSlot < 4 ? ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][gunSlot]! : undefined;
-    if (gdp) { tap(() => pad.set(gdp, 1), () => pad.set(gdp, 0)); } else { pad.set("pad.lb", 1); tick(1); const d = ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][gunSlot - 4]!; tap(() => pad.set(d, 1), () => pad.set(d, 0)); pad.set("pad.lb", 0); tick(2); }
+    const gdp = gunBar < 4 ? ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][gunBar]! : undefined;
+    if (gdp) { tap(() => pad.set(gdp, 1), () => pad.set(gdp, 0)); } else { pad.set("pad.lb", 1); tick(1); const d = ["pad.dup", "pad.dright", "pad.ddown", "pad.dleft"][gunBar - 4]!; tap(() => pad.set(d, 1), () => pad.set(d, 0)); pad.set("pad.lb", 0); tick(2); }
     expect(gs.world.get(e, Equipment)!.mainHandSlot).toBe(gunSlot);
     expect(gs.world.get(e, WeaponState)!.loaded).toBe(0); // switching returned the rounds
     tap(() => pad.set("pad.y", 1), () => pad.set("pad.y", 0)); tick(60);

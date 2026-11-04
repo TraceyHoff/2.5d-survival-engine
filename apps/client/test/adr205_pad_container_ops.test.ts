@@ -47,12 +47,12 @@ describe("ADR-205 pad-only container split / to hotbar", () => {
   });
   test("Y on a storage item, D-pad to hotbar slot 6, A moves it into the pack and swaps the old item back", () => {
     const { w, me, crate, sent, menus, press, seek } = setup(); G.addItem(w, crate, id("stone_axe"), 1);
-    G.addItem(w, me, id("wood"), 5); G.moveSlot(w, me, 0, 0, 6); const old = id("wood");
+    G.addItem(w, me, id("wood"), 5); G.moveSlot(w, me, 0, 0, G.HOTBAR_OFFSET + 6); const old = id("wood");
     menus.open("inventory"); seek("[data-key=cslot-0]"); press(PAD.Y);
     expect(document.querySelectorAll("[data-role=hotbar-picker] [data-key^=hb-to-]")).toHaveLength(G.HOTBAR_SIZE);
     seek("[data-key=hb-to-6]"); press(PAD.A);
-    expect(sent.at(-1)).toMatchObject({ cmd: G.ContainerToSlotCmd, args: { slot: 0, to: 6 } });
-    expect(G.readSlots(w, me).item(6)).toBe(id("stone_axe")); expect([G.readSlots(w, crate).item(0), G.readSlots(w, crate).count(0)]).toEqual([old, 5]); menus.destroy();
+    expect(sent.at(-1)).toMatchObject({ cmd: G.ContainerToSlotCmd, args: { slot: 0, to: G.HOTBAR_OFFSET + 6 } });
+    expect(G.readSlots(w, me).item(G.HOTBAR_OFFSET + 6)).toBe(id("stone_axe")); expect([G.readSlots(w, crate).item(0), G.readSlots(w, crate).count(0)]).toEqual([old, 5]); menus.destroy();
   });
   test("rejections show specific friendly text in the panel status line", () => {
     const { menus } = setup(); menus.open("inventory");

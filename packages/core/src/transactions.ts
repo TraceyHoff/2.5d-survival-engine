@@ -30,6 +30,9 @@ export const defaultMergeMeta: MergeMetaFn = (a, an, b, bn) => {
 const extrasOf = (s: Slot): SlotExtras => ({ meta: s.meta, ...(s.crafterId ? { crafterId: s.crafterId } : {}), ...(s.durability !== undefined ? { durability: s.durability } : {}), ...(s.createdTick !== undefined ? { createdTick: s.createdTick } : {}) });
 export interface SlotContainer {
   capacity(world: World, e: Entity): number;
+  /** Slots below this index accept newly added items (Transaction.add). Defaults to capacity; a player's Inventory
+   * sets it to the pack size so purchases / trades never land on the hotbar (explicit transfers still use capacity). */
+  addCapacity?(world: World, e: Entity): number;
   getSlot(world: World, e: Entity, i: number): Slot;
   /** item 0 / count 0 = empty. */
   setSlot(world: World, e: Entity, i: number, s: Slot): void;
@@ -105,7 +108,7 @@ export class Transaction {
   /** Add items anywhere (stack first, then empty). Fails without partial writes when it doesn't fully fit. */
   add(e: Entity, item: number, count: number, extra: number | SlotExtras = 0): TxResult {
     const ex: SlotExtras = typeof extra === "number" ? { meta: extra } : extra;
-    const a = this.ad(e), n = a.capacity(this.world, e), max = this.reg.maxStack(item, ex); let left = count;
+    const a = this.ad(e), n = a.addCapacity?.(this.world, e) ?? a.capacity(this.world, e), max = this.reg.maxStack(item, ex); let left = count;
     const plan: [number, Slot][] = [];
     for (let pass = 0; pass < 2 && left > 0; pass++) for (let i = 0; i < n && left > 0; i++) {
       const s = this.get(e, i); if (pass === 0 ? s.item !== item || !sameStack(s, ex) : s.item !== 0) continue;

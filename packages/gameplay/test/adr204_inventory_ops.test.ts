@@ -24,7 +24,7 @@ describe("ADR-204 split stack", () => {
     const { w, p, run, rej } = setup(); G.addItem(w, p, id("wood"), 10); G.addItem(w, p, id("stone_axe"), 1);
     for (const count of [0, 10, 11, 65535]) run(G.SplitStackCmd, { where: 0, slot: 0, count });
     run(G.SplitStackCmd, { where: 0, slot: 1, count: 1 }); // single item
-    run(G.SplitStackCmd, { where: 0, slot: 200, count: 1 }); run(G.SplitStackCmd, { where: 0, slot: 16, count: 1 });
+    run(G.SplitStackCmd, { where: 0, slot: 200, count: 1 }); run(G.SplitStackCmd, { where: 0, slot: 24, count: 1 }); // 24 = first slot past the 24-slot inventory
     run(G.SplitStackCmd, { where: 1, slot: 0, count: 2 }); run(G.SplitStackCmd, { where: 7, slot: 0, count: 2 }); // no open container / bad holder
     expect(rej).toEqual(["bad_count", "bad_count", "bad_count", "bad_count", "bad_count", "bad_slot", "bad_slot", "no_container", "bad_holder"]);
     expect(slots(w, p).count(0)).toBe(10);
@@ -42,14 +42,14 @@ describe("ADR-204 move slot (to hotbar)", () => {
     const { w, p, run, rej } = setup(); G.addItem(w, p, id("wood"), 10); G.addItem(w, p, id("stone"), 4); G.addItem(w, p, id("fiber"), 4); G.addItem(w, p, id("stone_axe"), 1);
     const axeSlot = 3; expect(slots(w, p).item(axeSlot)).toBe(id("stone_axe"));
     w.set(p, G.Equipment, { mainHandSlot: axeSlot, mainHandItem: id("stone_axe") });
-    run(G.MoveSlotCmd, { where: 0, slot: axeSlot, to: 1 }); const v = slots(w, p);
-    expect(rej).toEqual([]); expect(v.item(1)).toBe(id("stone_axe")); expect(v.item(axeSlot)).toBe(id("stone")); expect(v.count(axeSlot)).toBe(4);
-    expect(w.getField(p, G.Equipment, "mainHandSlot")).toBe(1);
-    run(G.MoveSlotCmd, { where: 0, slot: 1, to: 12 }); expect(slots(w, p).item(12)).toBe(id("stone_axe")); expect(slots(w, p).item(1)).toBe(0); expect(w.getField(p, G.Equipment, "mainHandSlot")).toBe(12);
+    run(G.MoveSlotCmd, { where: 0, slot: axeSlot, to: 17 }); const v = slots(w, p); // pack -> hotbar slot 1 (16 + 1), empty slot swaps in
+    expect(rej).toEqual([]); expect(v.item(17)).toBe(id("stone_axe")); expect(v.item(axeSlot)).toBe(0);
+    expect(w.getField(p, G.Equipment, "mainHandSlot")).toBe(17);
+    run(G.MoveSlotCmd, { where: 0, slot: 17, to: 12 }); expect(slots(w, p).item(12)).toBe(id("stone_axe")); expect(slots(w, p).item(17)).toBe(0); expect(w.getField(p, G.Equipment, "mainHandSlot")).toBe(12);
   });
   it("rejects same slot, empty source and out-of-range slots", () => {
     const { w, p, run, rej } = setup(); G.addItem(w, p, id("wood"), 3);
-    run(G.MoveSlotCmd, { where: 0, slot: 0, to: 0 }); run(G.MoveSlotCmd, { where: 0, slot: 5, to: 1 }); run(G.MoveSlotCmd, { where: 0, slot: 0, to: 16 }); run(G.MoveSlotCmd, { where: 0, slot: 255, to: 1 });
+    run(G.MoveSlotCmd, { where: 0, slot: 0, to: 0 }); run(G.MoveSlotCmd, { where: 0, slot: 5, to: 1 }); run(G.MoveSlotCmd, { where: 0, slot: 0, to: 24 }); run(G.MoveSlotCmd, { where: 0, slot: 255, to: 1 });
     expect(rej).toEqual(["same_slot", "empty_slot", "bad_slot", "bad_slot"]); expect(slots(w, p).count(0)).toBe(3);
   });
   it("re-arranged inventory survives a persistence snapshot round trip", () => {

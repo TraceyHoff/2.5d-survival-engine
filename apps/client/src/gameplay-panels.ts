@@ -21,7 +21,7 @@ import { iconForItem, ROADS, clanTintIndex,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView,
-  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PET_HELP, petName, petSpecies, Pet,
+  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
@@ -223,7 +223,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const back = (w: 0 | 1, sl: number): string => (w === 1 ? `cslot-${sl}` : `slot-${sl}`);
       const startArrange = (mode: "split" | "hotbar", w: 0 | 1, sl: number): void => { const it = listOf(w).find((x) => x.slot === sl); if (!it) return;
         arrangeUi.mode = mode; arrangeUi.where = w; arrangeUi.slot = sl; arrangeUi.count = defaultSplit(it.count); invUi.pick = undefined; kit.rerender();
-        let h = 0; while (h < HOTBAR_SIZE && ((w === 0 && h === sl) || v.some((x) => x.slot === h))) h++; if (h >= HOTBAR_SIZE) h = w === 0 && sl === 0 ? 1 : 0;
+        let h = 0; while (h < HOTBAR_SIZE && ((w === 0 && HOTBAR_OFFSET + h === sl) || v.some((x) => x.slot === HOTBAR_OFFSET + h))) h++; if (h >= HOTBAR_SIZE) h = w === 0 && sl === HOTBAR_OFFSET ? 1 : 0;
         focusKey(mode === "split" ? "split-go" : `hb-to-${h}`); };
       if (arrangeUi.where === 1 && !cv) arrangeUi.mode = "";
       const picker = (): HTMLElement | undefined => {
@@ -245,23 +245,23 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           ar.append(hd, row);
         } else {
           const row = grid(); row.dataset["role"] = "hotbar-picker";
-          for (let h = 0; h < HOTBAR_SIZE; h++) { const o = v.find((x) => x.slot === h); const lock = W === 1 && !!o?.equipped;
+          for (let h = 0; h < HOTBAR_SIZE; h++) { const hs = HOTBAR_OFFSET + h; const o = v.find((x) => x.slot === hs); const lock = W === 1 && !!o?.equipped;
             row.append(btn(`${h + 1}${o ? `: ${o.name}` : ""}${lock ? " (equipped)" : ""}`, `hb-to-${h}`, () => { arrangeUi.mode = "";
-              send(W === 1 ? containerToSlotIntent(cur.slot, h) : moveSlotIntent(cur.slot, h), o ? `Swapped ${cur.name} with ${o.name} (hotbar ${h + 1}).` : `${cur.name} → hotbar ${h + 1}.`); focusKey(`slot-${h}`); },
-              { role: "hotbar-slot", disabled: (W === 0 && h === cur.slot) || lock, alt: !!o, data: { slot: String(h) } })); }
+              send(W === 1 ? containerToSlotIntent(cur.slot, hs) : moveSlotIntent(cur.slot, hs), o ? `Swapped ${cur.name} with ${o.name} (hotbar ${h + 1}).` : `${cur.name} → hotbar ${h + 1}.`); focusKey(`slot-${hs}`); },
+              { role: "hotbar-slot", disabled: (W === 0 && hs === cur.slot) || lock, alt: !!o, data: { slot: String(hs) } })); }
           row.append(btn("Cancel", "arrange-cancel", cancel, { alt: true }));
           ar.append(heading(`Put ${cur.name} on hotbar slot${W === 1 ? " (from storage)" : ""}`), row);
         }
         return ar;
       };
-      // ADR-223 slot-grid inventory + ADR-231 drag-and-drop. Pack slots (HOTBAR_SIZE..) in a contained scroll area, the hotbar
-      // (0..HOTBAR_SIZE-1) as a bottom row, equipment to the right (stacked on narrow screens) — or, with a container open, the
+      // ADR-223 slot-grid inventory + ADR-231 drag-and-drop. Pack slots (0..PACK_SLOTS-1) in a contained scroll area, the hotbar
+      // (HOTBAR_OFFSET..HOTBAR_OFFSET+HOTBAR_SIZE-1) as a bottom row, equipment to the right (stacked on narrow screens) — or, with a container open, the
       // container's grid beside / below the pack (the old split / to-hotbar list is gone) — and ONE details pane.
       // Tile input: pad A / Enter = primary action (eat · drink · equip · store / take); mouse / touch: tap selects, double-click /
       // double-tap = primary; drag a tile (mouse: small move, touch: long-press) onto any pack / hotbar / container / equipment
       // slot = move · swap · merge (server-authoritative MoveSlot / ContainerToSlot / equip); releasing anywhere else cancels.
       // Pad / keys: the pane's "Move" (or a picked tile) then A / Enter / tap on the destination slot; pad X = split, Y = to hotbar.
-      const nSlots = Math.max(HOTBAR_SIZE, readSlots(c.world, c.player).slotCount);
+      const nSlots = readSlots(c.world, c.player).slotCount;
       const bySlot = new Map(v.map((s) => [s.slot, s] as const)); const byC = new Map(boxE.map((s) => [s.slot, s] as const));
       const equipSlot = (s: (typeof v)[number]): void => send(s.equip === "hand" ? equipIntent(s.slot) : wearIntent(s.slot), s.equipped ? `Unequipped ${s.name}.` : `Equipped ${s.name}.`);
       const me = c.world.get(c.player, Transform); const wet = !!me && nearWater(c.world, me.x, me.y);
@@ -299,17 +299,17 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (invUi.pick && !entOf(invUi.pick)) invUi.pick = undefined;
       const equippedIn = (slot: number): string | undefined => { const q = eqv.find((x) => x.invSlot === slot); return q?.item ? q.label : undefined; };
       const tile = (slot: number): HTMLElement => {
-        const s = bySlot.get(slot); const hot = slot < HOTBAR_SIZE; const ref = slotRef("p", slot);
+        const s = bySlot.get(slot); const hot = slot >= HOTBAR_OFFSET; const ref = slotRef("p", slot);
         if (s?.equipped) { // equipped pieces live in the paper-doll slot, not in the pack: show where they went
           const label = equippedIn(s.slot) ?? "Equipment";
           const b = btn(`→ ${label}`, `slot-${slot}`, () => kit.status(`${s.name} is equipped in ${label} — unequip it there to return it to your pack.`), { alt: true, role: "slot", data: { slot: String(slot), equipped: label } });
-          b.setAttribute("aria-label", `${s.name} equipped in ${label}`); if (hot) b.append(el("span", { class: "hk" }, String(slot + 1)));
+          b.setAttribute("aria-label", `${s.name} equipped in ${label}`); if (hot) b.append(el("span", { class: "hk" }, String(slot - HOTBAR_OFFSET + 1)));
           return b;
         }
         if (!s) { // empty slot: a drop target; hotbar empties are focusable so the bar reads as 8 cells on every input
           const b = btn("", `slot-${slot}`, () => { if (placePick({ kind: "p", slot })) return; invUi.sel = -1; kit.rerender(); }, { alt: true, role: "slot", data: { slot: String(slot), empty: "", drop: ref } });
-          b.setAttribute("aria-label", hot ? `Hotbar ${slot + 1} (empty)` : `Slot ${slot + 1} (empty)`); if (!hot && !invUi.pick) b.tabIndex = -1;
-          if (hot) b.append(el("span", { class: "hk" }, String(slot + 1)));
+          b.setAttribute("aria-label", hot ? `Hotbar ${slot - HOTBAR_OFFSET + 1} (empty)` : `Slot ${slot + 1} (empty)`); if (!hot && !invUi.pick) b.tabIndex = -1;
+          if (hot) b.append(el("span", { class: "hk" }, String(slot - HOTBAR_OFFSET + 1)));
           return b;
         }
         const b = btn("", `slot-${s.slot}`, (ev?: MouseEvent) => {
@@ -320,7 +320,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         }, { role: "slot", data: { item: String(s.item), icon: s.icon, slot: String(s.slot), drag: ref, drop: ref, ...(s.equip && { equip: s.equip }), ...(s.equipped && { equipped: "" }), ...(s.consume && { use: s.consume }), ...(invUi.sel === s.slot && { sel: "" }), ...(isPicked("p", s.slot) && { picked: "" }) } });
         b.append(el("span", { class: "nm" }, `${s.equipped ? "◆ " : ""}${s.name} ×${s.count}`));
         if (s.count > 1) b.append(el("span", { class: "ct", "aria-hidden": "true" }, String(s.count)));
-        if (hot) b.append(el("span", { class: "hk", "aria-hidden": "true" }, String(slot + 1)));
+        if (hot) b.append(el("span", { class: "hk", "aria-hidden": "true" }, String(slot - HOTBAR_OFFSET + 1)));
         const pl = invUi.pick ? "Put here" : primaryLabel(s); b.setAttribute("aria-label", `${s.name} ×${s.count}${pl ? `. ${pl}` : ""}`); if (pl) { b.dataset["padLabel"] = pl; }
         b.onfocus = () => { if (invUi.sel !== s.slot && !invUi.pick) { invUi.sel = s.slot; invUi.csel = -1; kit.rerender(); } };
         // ADR-204/205: pad X = split, Y = to hotbar on the focused slot (UINav contextual shortcuts + footer hints)
@@ -346,8 +346,8 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       };
       const lay = el("div", { "data-role": "inv-layout", ...(cv && { "data-mode": "container" }) });
       const pack = el("div", { "data-role": "inv-grid", "aria-label": "Pack" }); const bar = el("div", { "data-role": "inv-hotbar", "aria-label": "Hotbar" });
-      for (let i = HOTBAR_SIZE; i < nSlots; i++) pack.append(tile(i));
-      for (let i = 0; i < HOTBAR_SIZE; i++) bar.append(tile(i));
+      for (let i = 0; i < PACK_SLOTS; i++) pack.append(tile(i));
+      for (let i = HOTBAR_OFFSET; i < HOTBAR_OFFSET + HOTBAR_SIZE; i++) bar.append(tile(i));
       const left = el("div", { "data-role": "inv-main" }); if (cv) left.append(heading("Your pack")); left.append(pack, bar); lay.append(left);
       if (!cv) {
         // Paper-doll: a human silhouette in the centre, equipment slots arranged around it (head above, hands at
