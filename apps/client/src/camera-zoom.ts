@@ -17,6 +17,8 @@ export const ZOOM_FLOOR = 0.3, ZOOM_CEIL = 4;
 export const USER_ZOOM_MIN = 0.68, USER_ZOOM_MAX = 1.75;
 /** ADR-206 indoor zoom: extra relative zoom while under a roof (renderer cutaway), eased with time constant INDOOR_TAU_MS. */
 export const INDOOR_GAIN = 1.15, INDOOR_TAU_MS = 280, INDOOR_DEBOUNCE_MS = 180;
+/** Building-mode zoom: even closer than indoor, so pieces can be placed precisely. Eased like the indoor factor. */
+export const BUILD_GAIN = 1.4;
 /** One frame of indoor-zoom easing: exponential approach (frame-rate independent, no pop). Returns the new factor. */
 export function indoorStep(cur: number, indoor: boolean, dtMs: number): number {
   const tgt = indoor ? INDOOR_GAIN : 1; const dt = Math.max(0, Math.min(250, dtMs || 0));
@@ -54,17 +56,24 @@ export const padZoomStep = (user: number, axis: number, dtMs: number): number =>
   clampUserZoom(user * Math.exp(Math.max(-1, Math.min(1, axis || 0)) * PAD_ZOOM_RATE * Math.max(0, Math.min(250, dtMs || 0)) / 1000));
 
 export interface ZoomControl { readonly user: number; /** ADR-206 current indoor factor (1 = outdoors). */ readonly indoor: number;
-  /** ADR-206: per-frame indoor signal (debounced) + easing step; applies camera.zoom when it moved. */ setIndoor(on: boolean, dtMs: number): void; zoom(): number; setUser(z: number): void; apply(): void; /** ADR-177 held-stick/D-pad zoom. */ nudge(axis: number, dtMs: number): void; dispose(): void }
+  /** Current building-mode factor (1 = not building). */ readonly build: number;
+  /** ADR-206: per-frame indoor signal (debounced) + easing step; applies camera.zoom when it moved. */ setIndoor(on: boolean, dtMs: number): void; /** Building-mode signal (same easing as indoor, no debounce — build mode toggles deliberately). */ setBuild(on: boolean, dtMs: number): void; zoom(): number; setUser(z: number): void; apply(): void; /** ADR-177 held-stick/D-pad zoom. */ nudge(axis: number, dtMs: number): void; dispose(): void }
 /** Drives `camera.zoom` = defaultZoom(viewport) × user multiplier, with wheel / pinch / +- input on `el`. */
 export function attachZoom(camera: { zoom: number }, el: HTMLElement, opts: { storage?: KV; viewport?: () => { w: number; h: number }; enabled?: () => boolean } = {}): ZoomControl {
   const vp = opts.viewport ?? (() => ({ w: innerWidth, h: innerHeight }));
   const on = opts.enabled ?? (() => true);
   let user = loadUserZoom(opts.storage); let saveT: ReturnType<typeof setTimeout> | undefined;
   let indoor = 1, want = false, pend = false, pendMs = 0;
-  const zoom = (): number => { const v = vp(); return defaultZoom(v.w, v.h) * user * indoor; };
+  let build = 1;
+  const zoom = (): number => { const v = vp(); return defaultZoom(v.w, v.h) * user * indoor * build; };
   const setIndoor = (on: boolean, dtMs: number): void => {
     if (on !== want) { if (on !== pend) { pend = on; pendMs = 0; } pendMs += Math.max(0, dtMs || 0); if (pendMs >= INDOOR_DEBOUNCE_MS) want = on; } else { pend = want; pendMs = 0; }
     const n = indoorStep(indoor, want, dtMs); if (n !== indoor) { indoor = n; apply(); }
+  };
+  const setBuild = (on: boolean, dtMs: number): void => {
+    const tgt = on ? BUILD_GAIN : 1; const dt = Math.max(0, Math.min(250, dtMs || 0));
+    const n = build + (tgt - build) * (1 - Math.exp(-dt / INDOOR_TAU_MS)); const m = Math.abs(n - tgt) < 1e-4 ? tgt : n;
+    if (m !== build) { build = m; apply(); }
   };
   const apply = (): void => { camera.zoom = zoom(); };
   const setUser = (z: number): void => { user = clampUserZoom(z); apply(); clearTimeout(saveT); saveT = setTimeout(() => saveUserZoom(user, opts.storage), 300); };
@@ -82,6 +91,6 @@ export function attachZoom(camera: { zoom: number }, el: HTMLElement, opts: { st
   el.addEventListener("pointerdown", down); addEventListener("pointermove", move); addEventListener("pointerup", up); addEventListener("pointercancel", up);
   addEventListener("keydown", key); addEventListener("resize", apply); apply();
   const nudge = (axis: number, dtMs: number): void => { if (!on() || !axis) return; const n = padZoomStep(user, axis, dtMs); if (n !== user) setUser(n); };
-  return { get user() { return user; }, get indoor() { return indoor; }, setIndoor, zoom, setUser, apply, nudge,
+  return { get user() { return user; }, get indoor() { return indoor; }, get build() { return build; }, setIndoor, setBuild, zoom, setUser, apply, nudge,
     dispose: () => { el.removeEventListener("wheel", wheel); el.removeEventListener("pointerdown", down); removeEventListener("pointermove", move); removeEventListener("pointerup", up); removeEventListener("pointercancel", up); removeEventListener("keydown", key); removeEventListener("resize", apply); clearTimeout(saveT); } };
 }

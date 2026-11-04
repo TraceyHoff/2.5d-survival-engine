@@ -356,7 +356,7 @@ function render(w: World, alpha: number): void {
   iso?.syncGhost(buildMode.preview, w);
   if (iso) {
     iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
-    { const t = performance.now(); camZoom?.setIndoor(iso.renderer.indoor, indoorT ? t - indoorT : 0); indoorT = t; } // ADR-206: ease in under a roof
+    { const t = performance.now(); const dt = indoorT ? t - indoorT : 0; camZoom?.setIndoor(iso.renderer.indoor, dt); camZoom?.setBuild(buildMode.active, dt); indoorT = t; } // ADR-206: ease in under a roof; building mode zooms in further for precise placement
     iso.corrections = session.client; fxLayer.pre(); iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac);
     try { fxLayer.draw(dayFrac); } catch { /* effects must never break a frame */ }
     diag?.afterRender(); return;

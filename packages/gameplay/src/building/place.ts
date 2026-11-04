@@ -172,6 +172,36 @@ export function hasPrivilege(world: World, builder: Entity, x: number, y: number
   return zonesAt(world, x, y).every((z) => world.getField(z, PrivilegeZone, "tribe") === tribe && tribe !== 0);
 }
 
+/** A wall piece for ceiling support: wall-family or corner wall, not a wall-mounted decor piece. */
+const isWallDef = (def: PieceDef | undefined): boolean =>
+  !!def && (def.family === "wall" || def.family === "corner") && !def.features.mount;
+
+/**
+ * Whether an upper-level deck piece (a ceiling / roof / upper floor) is connected to a wall: a wall directly
+ * below any tile of its own footprint, or below any tile of the already-placed deck cluster it joins at the
+ * same level (so a large roof over a room still works — every tile need not sit on a wall, but the cluster
+ * as a whole must be wall-anchored). Pillar-only or floating decks do not count.
+ */
+export function deckWallConnected(world: World, idx: StructureIndex, slot: Slot, tiles: readonly (readonly [number, number])[]): boolean {
+  const key = (x: number, y: number): string => `${x},${y}`;
+  const wallBelow = (x: number, y: number): boolean =>
+    SIdx.tileEdges(x, y).some(([ex, ey, side]) => {
+      const w = idx.edge(ex, ey, slot.z - 1, side); return !!w && isWallDef(idx.def(w));
+    });
+  const seen = new Set<string>(); const queue: [number, number][] = [];
+  for (const [x, y] of tiles) if (!seen.has(key(x, y))) { seen.add(key(x, y)); queue.push([x, y]); }
+  while (queue.length) {
+    const [x, y] = queue.pop()!;
+    if (wallBelow(x, y)) return true;
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+      if (seen.has(key(nx, ny))) continue;
+      if (!idx.deck(nx, ny, slot.z)) continue;
+      seen.add(key(nx, ny)); queue.push([nx, ny]);
+    }
+  }
+  return false;
+}
+
 /** Candidate stability of a hypothetical placement (server: real values; client: 100 if any support exists). */
 export function candidateStability(world: World, sn: Snapped): number {
   const defs = gameplayDefs(world); const idx = structures(world);
@@ -239,6 +269,9 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   else if (def.snap === "vertex") { if (!vertexTiles(slot.tx, slot.ty).some(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport; }
   else if (def.placement === Placement.Free && !onGround && !onSurface(world, def, tiles, slot.z) && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   if (def.placement === Placement.Cell && def.needsDeck && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
+  // Ceilings and other upper-level deck pieces (roofs, upper floors) must be connected to a wall: a wall below
+  // their own footprint, or below a deck tile they join at the same level. Pillar-only and floating decks fail.
+  if (def.layer === LAYER_DECK && slot.z > 0 && !deckWallConnected(world, idx, slot, tiles)) return BuildFail.NoSupport;
   // creatures in the way of solid pieces
   if (def.solid && slot.z === 0) {
     const [hw, hh] = def.placement === Placement.Edge ? (slot.side === EdgeSide.North ? [0.5, 0.15] : [0.15, 0.5]) : def.snap === "vertex" ? [0.15, 0.15] : [def.footprint.w / 2, def.footprint.h / 2]; // ADR-210: a corner post is a thin pillar at the vertex

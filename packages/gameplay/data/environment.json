@@ -134,8 +134,8 @@
       "kind": "heat",
       "weight": 0,
       "durationSeconds": [
-        150,
-        360
+        120,
+        240
       ],
       "intensity": [
         0.6,
@@ -260,7 +260,7 @@
         },
         {
           "kind": "heat",
-          "weight": 18
+          "weight": 8
         },
         {
           "kind": "rain",

@@ -12,7 +12,7 @@ import { storageDepositActions, storageWithdrawActions } from "./storage_api.js"
 import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, StanceMode, Survival, Viewing, Worn } from "../components.js";
+import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
 import { readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
@@ -247,6 +247,18 @@ export function baseBehaviors(): GameBehavior[] {
           const on = (c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6)) || (bankHours(c) && c.self.thirst > 0.45 && (c.self.hunger > 0.35 || c.world.food === undefined)); /* banking yields to drink / eat */ c.bb.set("warming", on); return on ? 1 : 0; } },
         { name: "canWarm", curve: step01, input: (c) => (warmOption(c) ? 1 : 0) }], // nothing to warm at: the planner's emergency wood/stone goal (gather) takes over
       run: warmRun },
+    // Heat kills as fast as cold (hyperthermia above 39 C): get to shade / the enclosed base first, water first if
+    // thirst is critical — the enclosed base clamps felt temperature to the comfort band, so reaching it saves the bot.
+    { name: "cool_down", inertia: 0.6, considerations: [
+        { name: "overheated", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
+          const on = c.bb.get("cooling") ? ch.body > 38.3 || (ch.felt > 34 && ch.body > 37.5) : ch.body > 38.6 || ch.felt > 36; c.bb.set("cooling", on); return on ? 1 : 0; } },
+        { name: "canCool", curve: step01, input: (c) => (c.world.base || c.world.waterAt ? 1 : 0) }],
+      run: (c, o) => {
+        const w = c.world.waterAt;
+        if (c.self.thirst < 0.35 && w) { if (toward(o, c.self.x, c.self.y, w.x, w.y) > 0.8) { if (stuckOn(c, w.x, w.y)) return false; return; } stop(o); if (cooled(c, "drankAt", 20)) { o.actions.push(`drink:${NO_SLOT}`); c.bb.set("drankAt", c.self.tick); } return; }
+        const b = c.world.base; if (!b) { stop(o); return false; }
+        if (goTo(c, o, b.x + 1, b.y + 1) < 0.6) stop(o);
+      } },
     { name: "leave_base", inertia: 0.2, considerations: [
         { name: "inside", curve: step01, input: (c) => (c.world.base && c.world.bs?.door && insideBase(c.world.base, c.self.x, c.self.y) && night(c.self.phase) === 0 && (c.world.plan?.step || c.world.needs?.length) ? 1 : 0) }],
       run: (c, o) => { const b = c.world.base; if (!b) return false; const x = b.x + DOOR_OUT.x, y = b.y + DOOR_OUT.y + 0.6; if (goTo(c, o, x, y) < 0.6 || stuckOn(c, x, y, 120)) return false; } },

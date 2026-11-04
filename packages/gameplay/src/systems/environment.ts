@@ -86,7 +86,12 @@ export function weatherSystem(world: World, dt: number): void {
   // endsAtTick u32 max = pinned (admin / tests / ?weather=): never re-rolled by the season guard
   if (world.tick < w.endsAtTick && (w.endsAtTick === PINNED || weatherAllowed(env, si, w.kind))) return;
   const table = weatherTable(world, env, si);
-  const def = table[weightedIndex(world, table.map((d) => d.weight))]!;
+  // Heat waves never roll on the first day of a season: a new game starts in summer, and a heat wave on day
+  // one kills before anyone can build shelter or stock water. Heat is re-enabled once the season is a day old.
+  const rollTable = si.lengthDays > 0 && si.into < 1
+    ? table.map((d) => (d.kind === WeatherKind.Heat ? { ...d, weight: 0 } : d))
+    : table;
+  const def = rollTable[weightedIndex(world, rollTable.map((d) => d.weight))]!;
   const from = w.kind as WeatherKind;
   w.kind = def.kind;
   w.intensity = world.rng.range(def.intensity[0], def.intensity[1]);
@@ -182,8 +187,13 @@ export function exposureSystem(world: World, dt: number): void {
     const ambient = ambientTemperature(world, x, y);
     // ADR-239: shelter warms when it is cold and shades (cools) when the air is above the comfort band
     const shelter = (1 - sh.exposure) * (ambient > vt.comfortMax ? -env.shelterTempBonus : env.shelterTempBonus);
-    const felt = ambient + ex.data.insulation[s]! + shelter + heat
+    // Wall insulation pulls felt toward comfort, scaled by how sheltered the spot is (full inside, none in the open);
+    // solid walls insulate twice as well as window walls, and each material tier insulates more than the last.
+    const wallShift = sh.insulation * (1 - sh.exposure) * (ambient > vt.comfortMax ? -1 : ambient < vt.comfortMin ? 1 : 0);
+    let felt = ambient + ex.data.insulation[s]! + shelter + wallShift + heat
       - env.wetChill * wet - env.windChillPerSpeed * Math.sqrt(Math.max(0, w.windSpeed)) * sh.exposure;
+    // Fully enclosed + roofed: protected from the elements and from death by them — felt never leaves the comfort band.
+    if (sh.exposure === 0) felt = Math.min(vt.comfortMax, Math.max(vt.comfortMin, felt));
     ex.data.wetness[s] = wet; ex.data.feltTemp[s] = felt; ex.data.sheltered[s] = sh.covered ? 1 : 0; ex.markChanged(idx);
 
     // render-facing wetness (only write on change)
