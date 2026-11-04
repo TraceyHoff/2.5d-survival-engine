@@ -4,9 +4,11 @@
  * layer (camera-relative movement / aim / pad cursor) and the audio pan, persists the choice in "engine-settings"
  * (key `view`), and shows a small ⟲ / ⟳ HUD pair for mouse and touch under the top-right menu bar.
  * Controls: KBM `[` / `]`, gamepad hold RB + D-pad ←/→ (build mode: LT + D-pad ←/→), touch/mouse the HUD buttons.
- * The view change is a 450 ms spin transition (CSS matrix on the game canvas, snapping the renderer at the end, so
- * the end frame is identical to the snapped view); without a spin target, or under prefers-reduced-motion, it snaps
- * instantly as before. The server and simulation never see the view.
+ * The view change is a 430 ms fade + uniform zoom transition on the game canvas (fade out, snap the renderer
+ * while fully faded, fade back in). The world is never stretched: earlier it spun with an anisotropic CSS matrix
+ * that squashed tiles and sprites mid-turn. Uniform scale + opacity keep every sprite's proportions intact, so
+ * the world looks normal throughout. Without a spin target, or under prefers-reduced-motion, it snaps instantly
+ * as before. The server and simulation never see the view.
  */
 import { rotateScreenVec } from "@engine/input";
 
@@ -50,8 +52,8 @@ export interface CameraRotateOptions {
   root?: HTMLElement;
   /** Hide the HUD (main menu, death screen, open panels). */
   hidden?(): boolean;
-  /** Canvas to spin during a rotation (omit: the view snaps instantly, as before). The canvas is player-centred
-   * (the camera follows the player), so a centre-origin spin keeps the player fixed while the world turns. */
+  /** Canvas to fade/zoom during a rotation (omit: the view snaps instantly, as before). The canvas is
+   * player-centred (the camera follows the player), so a centre-origin zoom keeps the player fixed. */
   spinTarget?(): HTMLElement | undefined;
   /** Rotation transition length in ms (default 450). */
   spinMs?: number;
@@ -67,28 +69,22 @@ export interface CameraRotateControl {
   dispose(): void;
 }
 /**
- * CSS transform matrix for a rotation transition: the screen-space map from the old view to a view rotated by
- * `theta` radians in view space. The iso projection P maps view (u, v) to screen ((u-v)*32, (u+v)*16) for 64x32
- * tiles, so the map is P * R(theta) * P^-1, a continuous 2x2 matrix: identity at 0, and exactly the quarter-turn
- * map at ±90° (CW: screen (x, y) -> (-2y, x/2)), so snapping the renderer at the end of the spin and clearing the
- * transform lands on the identical image, with no jump. The rendered frame itself is spun (sprites stay upright
- * billboards, depth order stays the old view's for the 450 ms), which is what a spin of an isometric view looks
- * like without touching the renderer's discrete quarter-turn projection.
- * Returns [a, b, c, d] for CSS `matrix(a, b, c, d, 0, 0)` (x' = a*x + c*y, y' = b*x + d*y).
+ * Fade + uniform-zoom state of the rotation transition at normalised time `t` (0..1).
+ * First `FADE_OUT` of the transition the canvas fades out and shrinks uniformly to 0.85x; at exactly
+ * `FADE_OUT` it is fully transparent, which is when the renderer snaps to the new quarter (invisible);
+ * then it fades back in and grows back to 1x. Only uniform scale and opacity are ever used, so no sprite
+ * or tile is ever stretched: `scale` is the same on both axes, and the world looks normal at every `t`.
  */
-export function rotateTransitionMatrix(theta: number): [number, number, number, number] {
-  const hw = 32, hh = 16, c = Math.cos(theta), s = Math.sin(theta);
-  // P = [[hw, -hw], [hh, hh]]; P^-1 = [[1/(2hw), 1/(2hh)], [-1/(2hw), 1/(2hh)]]
-  const m00 = hw * c + (-hw) * s, m01 = hw * (-s) + (-hw) * c;
-  const m10 = hh * c + hh * s, m11 = hh * (-s) + hh * c;
-  const a = m00 / (2 * hw) + m01 * (-1 / (2 * hw));
-  const cc = m00 / (2 * hh) + m01 / (2 * hh);
-  const b = m10 / (2 * hw) + m11 * (-1 / (2 * hw));
-  const d = m10 / (2 * hh) + m11 / (2 * hh);
-  return [a, b, cc, d];
-}
+export const ROTATE_FADE_OUT = 0.42;
+export const ROTATE_MIN_SCALE = 0.85;
 /** Ease in-out cubic for the rotation transition (0 -> 1). */
 export const spinEase = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+export function rotateFadeAt(t: number): { opacity: number; scale: number; snapped: boolean } {
+  const k = Math.max(0, Math.min(1, t));
+  if (k < ROTATE_FADE_OUT) { const p = spinEase(k / ROTATE_FADE_OUT); return { opacity: 1 - p, scale: 1 - (1 - ROTATE_MIN_SCALE) * p, snapped: false }; }
+  const p = spinEase((k - ROTATE_FADE_OUT) / (1 - ROTATE_FADE_OUT));
+  return { opacity: p, scale: ROTATE_MIN_SCALE + (1 - ROTATE_MIN_SCALE) * p, snapped: true };
+}
 
 export const CAM_ROTATE_CSS = `#cam-rotate{position:absolute;right:calc(6px + var(--sar,0px));top:calc(56px + var(--sat,0px));z-index:11;display:flex;gap:6px;pointer-events:auto}
 #cam-rotate[hidden]{display:none}
@@ -99,15 +95,15 @@ export const CAM_ROTATE_CSS = `#cam-rotate{position:absolute;right:calc(6px + va
 export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl {
   const st = o.storage ?? (typeof localStorage !== "undefined" ? localStorage : undefined);
   let view = st ? loadView(st) : 0;
-  /** Quarter actually on the renderer (lags `view` while a spin transition runs). */
+  /** Quarter actually on the renderer (lags `view` while a fade transition runs). */
   let shown = view;
-  /** In-flight spin: renderer still shows `from`, canvas transform spins toward `to` by `dir` quarter turns. */
-  let spin: { from: number; to: number; dir: number; start: number | undefined; el: HTMLElement; raf: number } | undefined;
+  /** In-flight transition: renderer still shows `from` until the canvas is fully faded, then snaps to `to`. */
+  let spin: { from: number; to: number; start: number | undefined; el: HTMLElement; raf: number; snapped: boolean } | undefined;
   const reducedMotion = typeof matchMedia !== "undefined" && (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
   const finishSpin = (): void => {
     if (!spin) return; const s = spin; spin = undefined;
     try { cancelAnimationFrame(s.raf); } catch { /* no rAF */ }
-    s.el.style.transform = ""; s.el.style.transformOrigin = "";
+    s.el.style.transform = ""; s.el.style.transformOrigin = ""; s.el.style.opacity = "";
     shown = s.to; sync();
   };
   /** Push the quarter actually on screen to the renderer + input (input follows what is actually on screen). */
@@ -123,18 +119,17 @@ export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl 
     const el = o.spinTarget?.();
     if (!el || reducedMotion || !o.target()) { if (spin) finishSpin(); shown = view; sync(); return; }
     if (spin) finishSpin();
-    const dir = stepView(prev, 1) === n ? 1 : stepView(prev, -1) === n ? -1 : 1;
-    const ms = o.spinMs ?? 450; let start: number | undefined;
+    const ms = o.spinMs ?? 430; let start: number | undefined;
     el.style.transformOrigin = "50% 50%";
     const step = (now: number): void => {
       if (!spin) return;
       if (start === undefined) start = now;
-      const t = Math.min(1, (now - start) / ms); const th = spinEase(t) * dir * (Math.PI / 2);
-      const [a, b, c, d] = rotateTransitionMatrix(th);
-      el.style.transform = `matrix(${a},${b},${c},${d},0,0)`;
+      const t = Math.min(1, (now - start) / ms); const f = rotateFadeAt(t);
+      if (f.snapped && !spin.snapped) { spin.snapped = true; shown = spin.to; sync(); } // snap while fully faded
+      el.style.opacity = String(f.opacity); el.style.transform = `scale(${f.scale})`;
       if (t >= 1) finishSpin(); else spin.raf = requestAnimationFrame(step);
     };
-    spin = { from: prev, to: n, dir, start, el, raf: 0 };
+    spin = { from: prev, to: n, start, el, raf: 0, snapped: false };
     spin.raf = requestAnimationFrame(step);
   };
   const rotate = (dir: number): void => { if (dir) set(stepView(view, dir)); };
