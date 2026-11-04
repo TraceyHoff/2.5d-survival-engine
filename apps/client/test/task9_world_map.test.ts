@@ -34,7 +34,9 @@ describe("world-map panel (DOM, no canvas context in jsdom)", () => {
   it("Mark my location opens the form; Place sends a marker intent", () => {
     const { m, el, sent } = mk();
     (el.querySelector("button") as HTMLButtonElement | null); // controls exist
-    const markBtn = [...el.querySelectorAll("button")].find((b) => b.textContent === "Mark my location")!; markBtn.click();
+    // Array.from, not [...querySelectorAll(...)]: the project's lib has no DOM.Iterable, so spreading a
+    // NodeListOf fails typecheck (TS2488) and broke CI's pnpm check, even though it works at runtime.
+    const markBtn = Array.from(el.querySelectorAll("button")).find((b) => b.textContent === "Mark my location")!; markBtn.click();
     const form = el.querySelector('[data-role="marker-form"]') as HTMLElement; expect(form.hidden).toBe(false);
     (form.querySelector("input") as HTMLInputElement).value = "Home base";
     (form.querySelector('[data-role="submit"]') as HTMLButtonElement).click();
