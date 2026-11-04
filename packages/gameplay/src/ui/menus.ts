@@ -11,7 +11,7 @@ import { BuildPiece, CraftingStation, Dead, Container, LootBag, ClanInvitePendin
 import { gameplayDefs } from "../config.js";
 import { carriedBags } from "../stance.js";
 import type { ItemCount } from "../defs.js";
-import { countItem, listSlots, readSlots } from "../inventory.js";
+import { countItem, listSlots, readSlots, slotsWeight } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
@@ -87,6 +87,23 @@ export function equipmentView(c: MenuCtx): EquipSlotView[] {
   for (let i = 0; i < WEAR_SLOTS; i++) { const sl = st && s >= 0 ? st.data.slot[s * WEAR_SLOTS + i]! : 0; out.push(mk(i, EQUIP_SLOT_LABELS[i]!, sl - 1, sl ? st!.data.item[s * WEAR_SLOTS + i]! : 0)); }
   return out;
 }
+// ---- holding capacity (pack / container / station storage) -----------------------------------------------
+/** Weight + slot capacity of any inventory-like entity (pack, container, station storage): weight is recomputed
+ * from contents, maxWeight already includes the carry skill for packs (readSlots). `pct` is the weight fraction;
+ * encumbrance starts at 0.7 (movement.json encumberedFrom) and slows to 0.45x at full weight. */
+export interface CapacityView { weight: number; maxWeight: number; freeWeight: number; slotsUsed: number; slotCount: number; freeSlots: number; pct: number }
+export function capacityView(c: MenuCtx, e: Entity): CapacityView | undefined {
+  const w = c.world; let v: ReturnType<typeof readSlots>;
+  try { v = readSlots(w, e); } catch { return undefined; }
+  const defs = gameplayDefs(w); let used = 0; for (let i = 0; i < v.slotCount; i++) if (v.item(i)) used++;
+  const weight = slotsWeight(v, defs); const max = v.maxWeight;
+  return { weight, maxWeight: max, freeWeight: Math.max(0, max - weight), slotsUsed: used, slotCount: v.slotCount, freeSlots: Math.max(0, v.slotCount - used), pct: max > 0 ? weight / max : 0 };
+}
+/** One-line capacity summary, e.g. "42.3/60 kg · 12/16 slots · 17.7 kg + 4 slots free". */
+export function capacityText(cv: CapacityView): string {
+  return `${Math.round(cv.weight * 10) / 10}/${Math.round(cv.maxWeight * 10) / 10} kg · ${cv.slotsUsed}/${cv.slotCount} slots · ${Math.round(cv.freeWeight * 10) / 10} kg + ${cv.freeSlots} slots free`;
+}
+
 /** ADR-128: drink straight from an adjacent water tile (UseCmd with NO_SLOT). */
 export function drinkWaterIntent(): MenuIntent { return intent(UseCmd, { slot: NO_SLOT }); }
 function equippedSlots(c: MenuCtx): Set<number> { const o = new Set<number>(); for (const v of equipmentView(c)) if (v.invSlot >= 0) o.add(v.invSlot); return o; }

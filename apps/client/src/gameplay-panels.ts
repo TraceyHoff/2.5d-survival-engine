@@ -15,7 +15,7 @@ import "./gameplay-panels.css";
 import { installSlotDrag, slotRef, type SlotDrag, type SlotKind, type SlotRef } from "./slot-drag.js";
 import { iconForItem, ROADS, clanTintIndex,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
-  clanPromoteIntent, takeAllIntent, LootBag, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
+  clanPromoteIntent, takeAllIntent, LootBag, Container, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL, capacityView, capacityText,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
@@ -64,6 +64,18 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string,
   if (text !== undefined) e.textContent = text; return e;
 };
 const grid = (): HTMLElement => el("div", { class: "gm-grid" });
+/** Capacity bar for a pack / container / station storage: weight + slots, with what is left, and an encumbrance
+ * note for the player's own pack (movement slows from 70% of max weight). */
+const capacityBar = (c: MenuCtx, e: Entity, label: string): HTMLElement | undefined => {
+  const cv = capacityView(c, e); if (!cv) return undefined;
+  const sec = el("section", { "data-role": "capacity" });
+  const p = el("p", { "data-role": "capacity-text" }, `${label} · ${capacityText(cv)}`);
+  const bar = el("div", { "data-role": "capacity-bar" }); bar.style.setProperty("--p", String(Math.min(1, cv.pct)));
+  sec.append(p, bar);
+  if (label === "Pack" && cv.pct >= 0.7) sec.append(el("p", { "data-role": "capacity-note" }, `Encumbered: at ${Math.round(cv.pct * 100)}% of max weight your movement is slowed (down to 45% speed at full weight).`));
+  return sec;
+};
+
 const heading = (t: string): HTMLElement => { const h = el("p", { "data-role": "section" }); const b = el("strong", {}, t); h.append(b); return h; };
 
 /** Build-panel selection survives re-renders. */
@@ -189,6 +201,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const v = inventoryView(c); const box = openContainer(c); const cv = box !== undefined ? containerView(c, box, containerPage) : undefined;
       if (cv) containerPage = cv.page;
       const out: Node[] = [];
+      const packCap = capacityBar(c, c.player, "Pack"); if (packCap) out.push(packCap);
       // ADR-108: fired stations / lights show a fuel section — status, Light/Put out toggle (X on pad), and one button
       // per fuel item in the pack (adds the whole stack). All plain focusable buttons: touch, D-pad and keys work alike.
       const fv = cv ? fuelView(c, cv.entity) : undefined;
@@ -284,8 +297,15 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (invUi.sel >= 0 && !bySlot.has(invUi.sel)) invUi.sel = -1;
       if (invUi.csel >= 0 && !byC.has(invUi.csel)) invUi.csel = -1;
       if (invUi.pick && !entOf(invUi.pick)) invUi.pick = undefined;
+      const equippedIn = (slot: number): string | undefined => { const q = eqv.find((x) => x.invSlot === slot); return q?.item ? q.label : undefined; };
       const tile = (slot: number): HTMLElement => {
         const s = bySlot.get(slot); const hot = slot < HOTBAR_SIZE; const ref = slotRef("p", slot);
+        if (s?.equipped) { // equipped pieces live in the paper-doll slot, not in the pack: show where they went
+          const label = equippedIn(s.slot) ?? "Equipment";
+          const b = btn(`→ ${label}`, `slot-${slot}`, () => kit.status(`${s.name} is equipped in ${label} — unequip it there to return it to your pack.`), { alt: true, role: "slot", data: { slot: String(slot), equipped: label } });
+          b.setAttribute("aria-label", `${s.name} equipped in ${label}`); if (hot) b.append(el("span", { class: "hk" }, String(slot + 1)));
+          return b;
+        }
         if (!s) { // empty slot: a drop target; hotbar empties are focusable so the bar reads as 8 cells on every input
           const b = btn("", `slot-${slot}`, () => { if (placePick({ kind: "p", slot })) return; invUi.sel = -1; kit.rerender(); }, { alt: true, role: "slot", data: { slot: String(slot), empty: "", drop: ref } });
           b.setAttribute("aria-label", hot ? `Hotbar ${slot + 1} (empty)` : `Slot ${slot + 1} (empty)`); if (!hot && !invUi.pick) b.tabIndex = -1;
@@ -330,12 +350,17 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       for (let i = 0; i < HOTBAR_SIZE; i++) bar.append(tile(i));
       const left = el("div", { "data-role": "inv-main" }); if (cv) left.append(heading("Your pack")); left.append(pack, bar); lay.append(left);
       if (!cv) {
+        // Paper-doll: a human silhouette in the centre, equipment slots arranged around it (head above, hands at
+        // the sides, feet below), so equipped pieces are seen on the body, not as a list of large slots. Equipped
+        // pieces no longer appear as items in the pack grid above: they live here until unequipped.
         const eq = el("section", { "data-role": "equipment", "aria-label": "Equipment" });
+        const doll = el("div", { "data-role": "doll", "aria-hidden": "true" }, "🧍");
+        eq.append(doll);
         for (const q of eqv) {
           const ref = slotRef("e", q.slot);
-          const b = btn(q.label, `equip-${q.slot}`, () => { if (placePick({ kind: "e", slot: q.slot })) return; if (!q.item) return kit.status(`Drag an item here, or double-tap / press A on it to equip it (${q.label}).`); send(q.slot < 0 ? equipIntent(q.invSlot) : wearIntent(q.invSlot), `Unequipped ${q.name}.`); },
-            { role: "equip", alt: !q.item, data: { slot: String(q.slot), drop: ref, ...(q.item && { item: String(q.item), icon: q.icon, drag: ref }), ...(isPicked("e", q.slot) && { picked: "" }) } });
-          b.setAttribute("aria-label", `${q.label}: ${q.item ? `${q.name}. Unequip` : "empty"}`); if (q.item) b.append(el("span", { class: "nm" }, q.name));
+          const b = btn(q.item ? q.name : q.label, `equip-${q.slot}`, () => { if (placePick({ kind: "e", slot: q.slot })) return; if (!q.item) return kit.status(`Drag an item here, or double-tap / press A on it to equip it (${q.label}).`); send(q.slot < 0 ? equipIntent(q.invSlot) : wearIntent(q.invSlot), `Unequipped ${q.name}.`); },
+            { role: "equip", alt: !q.item, data: { slot: String(q.slot), equip: q.label, drop: ref, ...(q.item && { item: String(q.item), icon: q.icon, drag: ref }), ...(isPicked("e", q.slot) && { picked: "" }) } });
+          b.setAttribute("aria-label", `${q.label}: ${q.item ? `${q.name}. Unequip` : "empty"}`);
           eq.append(b);
         }
         lay.append(eq);
@@ -343,7 +368,9 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // ADR-098 paged container grid (CONTAINER_PAGE_SIZE per page) as tiles beside / below the pack. Every slot is a focusable
         // button so the D-pad / arrows walk the grid; ◀ ▶ (touch), PgUp/PgDn (keyboard) and LB/RB (gamepad) change pages.
         const right = el("section", { "data-role": "container-side", "aria-label": "Storage" });
-        right.append(heading(`Storage · ${cv.slotCount} slots${cv.maxWeight > 0 ? ` · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg` : ""}`));
+        const ccap = capacityView(c, cv.entity);
+        right.append(heading(`Storage · ${cv.slotCount} slots${ccap ? ` · ${ccap.slotsUsed} used · ${ccap.freeSlots} free` : ""}${cv.maxWeight > 0 ? ` · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg · ${Math.round(ccap?.freeWeight ?? 0)} kg free` : ""}`));
+        const cbar = capacityBar(c, cv.entity, "Storage"); if (cbar) right.append(cbar);
         // ADR-160: loot bags (zombie / animal / death / dropped) get a "Take all" first (focusable: click, tap, D-pad + A)
         if (c.world.isRegistered(LootBag) && c.world.has(cv.entity, LootBag) && cv.slots.some((x) => x.item)) right.append(btn("Take all", "take-all", () => send(takeAllIntent(cv.entity), "Took everything that fits."), { role: "use", title: "Move every stack into your pack" }));
         const g = el("div", { "data-role": "container-grid", "aria-label": "Storage slots" }); g.dataset["page"] = String(cv.page);
@@ -404,12 +431,16 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const v = craftingView(c, st?.kind ?? 0); const out: Node[] = [];
       if (st) {
         out.push(el("p", { "data-role": "station-name" }, v.stationName));
+        if (c.world.isRegistered(Container) && c.world.has(st.entity, Container)) { const sc = capacityBar(c, st.entity, "Station storage"); if (sc) out.push(sc); }
+        const pc = capacityBar(c, c.player, "Pack"); if (pc) out.push(pc); // crafted outputs go to your pack: its free space decides whether they are owed
         const fv = fuelView(c, st.entity); // fired stations (campfire, furnace): light / fuel without leaving the panel
         if (fv) { const secs = Math.round(fv.secondsLeft); const fs = el("section", { "data-role": "station-fuel" });
           fs.append(el("p", { "data-role": "fuel-time" }, `${fv.lit ? "Lit" : "Out — light it to craft"} · fuel ${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, "0")}s`));
           fs.append(btn(fv.lit ? "Put out" : "Light", "fire-toggle", () => send(toggleFireIntent(st.entity), fv.lit ? "Put out." : "Lit."), { role: "toggle", pressed: fv.lit, disabled: !fv.lit && secs <= 0, title: fv.lit ? "Extinguish (X)" : secs > 0 ? "Light (X)" : "Add fuel first", data: { pad: "X" } }));
           const f0 = fv.fuels[0]; if (f0) fs.append(btn(`Add ${f0.name} ×${f0.count}`, `fuel-${f0.item}`, () => send(depositIntent(st.entity, f0.item, f0.count), `Added ${f0.name} ×${f0.count}.`), { role: "slot", title: `${f0.seconds}s each · add as fuel` }));
           out.push(fs); }
+      } else {
+        const pc = capacityBar(c, c.player, "Pack"); if (pc) out.push(pc);
       }
       if (v.queue.length) { out.push(heading("Queue")); const g = grid(); for (const j of v.queue) g.append(btn(`✕ ${j.name} ×${j.count} · ${JOB_STATE_LABEL[j.state] ?? ""} ${Math.round(j.progress * 100)}%`, `job-${j.slot}`, () => send(cancelQueuedCraftIntent(j.slot), `Cancelled ${j.name}.`), { alt: true, role: "job", p: j.progress, title: `${Math.ceil(j.secondsLeft)}s left. Cancel refunds unfinished units.` })); out.push(g); }
       if (v.owed.length) { out.push(heading("Owed (delivered when you have space)")); for (const o of v.owed) { const p = kit.para(`${o.name} ×${o.count}${o.crafterName ? ` · crafted by ${o.crafterName}` : ""}`); p.dataset["role"] = "owed"; out.push(p); } }

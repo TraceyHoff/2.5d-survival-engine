@@ -1153,14 +1153,32 @@ html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-m
 .gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-equipped]{outline:3px solid #FFD45A;outline-offset:-3px}
 .gm-modal .gm-panel [data-role=inv-layout] button:is([data-role=slot],[data-role=cslot])[data-sel]{box-shadow:0 0 0 3px #5A9A4A}
 .gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-use]::before{content:"";position:absolute;left:-5px;bottom:-6px;width:9px;height:9px;border-radius:50%;background:#5A9A4A;border:2px solid #F6EAD2;z-index:1}
-.gm-modal .gm-panel [data-role=equipment]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:min(230px,34vw)}
-.gm-modal .gm-panel [data-role=equipment] button[data-role=equip]{min-height:48px;padding:4px 6px;font-size:13px;line-height:1.1;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
-.gm-modal .gm-panel [data-role=equipment] button[data-role=equip] .nm{position:static;width:auto;height:auto;clip-path:none;font-size:11px;font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+/* Paper-doll: human silhouette centre, equipment slots around it (head above, hands at the sides, feet below).
+   Grid areas by slot label: Head top-centre, Accessory top-right, Back left, Main hand right, Off hand left,
+   Hands right, Body centre-right, Legs bottom-centre, Feet bottom-right. */
+.gm-modal .gm-panel [data-role=equipment]{display:grid;grid-template-columns:1fr 72px 1fr;grid-template-rows:repeat(4,auto);gap:4px;width:min(230px,34vw);align-items:center}
+.gm-modal .gm-panel [data-role=equipment] [data-role=doll]{grid-column:2;grid-row:2/span 2;font-size:64px;line-height:1;text-align:center;pointer-events:none}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip]{min-height:44px;padding:4px 6px;font-size:12px;line-height:1.1;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Head]{grid-column:2;grid-row:1}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Accessory]{grid-column:3;grid-row:1}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Back]{grid-column:1;grid-row:2}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip="Main hand"]{grid-column:3;grid-row:2}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip="Off hand"]{grid-column:1;grid-row:3}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Hands]{grid-column:3;grid-row:3}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Body]{grid-column:1;grid-row:4}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Legs]{grid-column:2;grid-row:4}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip][data-equip=Feet]{grid-column:3;grid-row:4}
+/* Capacity bar: weight + slots, with what is left */
+.gm-modal .gm-panel [data-role=capacity]{padding:6px 10px;border-radius:10px;background:rgba(116,67,44,.10)}
+.gm-modal .gm-panel [data-role=capacity] [data-role=capacity-text]{font-size:13px;font-weight:700}
+.gm-modal .gm-panel [data-role=capacity] [data-role=capacity-note]{font-size:12px;color:#8A3B12}
+.gm-modal .gm-panel [data-role=capacity] [data-role=capacity-bar]{height:10px;border-radius:6px;background:rgba(59,36,51,.16);overflow:hidden}
+.gm-modal .gm-panel [data-role=capacity] [data-role=capacity-bar]::after{content:"";display:block;height:100%;width:calc(100% * clamp(0,var(--p,0),1));background:linear-gradient(#5A9A4A,#FFD45A)}
 .gm-modal .gm-panel [data-role=inv-details]{margin-top:8px;padding:8px 10px;min-height:92px;border-radius:10px;background:#FFFAF0;border:2px solid #E6C47E;display:flex;flex-direction:column;gap:6px}
 .gm-modal .gm-panel [data-role=inv-details] [data-role=inv-name]{font-weight:700}
 .gm-modal .gm-panel [data-role=inv-details] [data-role=inv-tip]{font-size:13px;color:#61402E;overflow-wrap:anywhere}
 .gm-modal .gm-panel [data-role=inv-details] .gm-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
-@media (max-width:620px){.gm-modal .gm-panel [data-role=inv-layout]{grid-template-columns:minmax(0,1fr)}.gm-modal .gm-panel [data-role=equipment]{width:auto;grid-template-columns:repeat(4,minmax(0,1fr));order:-1}
+@media (max-width:620px){.gm-modal .gm-panel [data-role=inv-layout]{grid-template-columns:minmax(0,1fr)}.gm-modal .gm-panel [data-role=equipment]{width:auto;order:-1}
   .gm-modal .gm-panel [data-role=inv-layout]{--inv-t:min(48px,calc((94vw - 72px) / 8))}.gm-modal .gm-panel [data-role=inv-hotbar]{justify-content:center}}
 @media (max-height:760px){.gm-modal .gm-panel [data-role=inv-grid]{max-height:min(28vh,200px)}.gm-modal .gm-panel [data-role=inv-details]{min-height:72px}}
 

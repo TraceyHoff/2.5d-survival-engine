@@ -4,11 +4,14 @@
  * layer (camera-relative movement / aim / pad cursor) and the audio pan, persists the choice in "engine-settings"
  * (key `view`), and shows a small ⟲ / ⟳ HUD pair for mouse and touch under the top-right menu bar.
  * Controls: KBM `[` / `]`, gamepad hold RB + D-pad ←/→ (build mode: LT + D-pad ←/→), touch/mouse the HUD buttons.
- * The view change is a 430 ms fade + uniform zoom transition on the game canvas (fade out, snap the renderer
- * while fully faded, fade back in). The world is never stretched: earlier it spun with an anisotropic CSS matrix
- * that squashed tiles and sprites mid-turn. Uniform scale + opacity keep every sprite's proportions intact, so
- * the world looks normal throughout. Without a spin target, or under prefers-reduced-motion, it snaps instantly
- * as before. The server and simulation never see the view.
+ * The view change is a 500 ms cross-fade: a screenshot of the old view is laid over the game canvas, the
+ * renderer snaps to the new quarter underneath it at once, and the screenshot fades out while shrinking
+ * uniformly to 0.95x, revealing the new view. The screen never goes black (the earlier fade-out did, which
+ * read as a blink), and nothing is ever stretched: earlier versions spun with an anisotropic CSS matrix that
+ * squashed tiles and sprites mid-turn, then faded the canvas to transparent. Uniform scale + opacity keep
+ * every sprite's proportions intact, so the world looks normal throughout. Without a spin target, a usable
+ * screenshot, or under prefers-reduced-motion, it snaps instantly as before. The server and simulation never
+ * see the view.
  */
 import { rotateScreenVec } from "@engine/input";
 
@@ -52,10 +55,12 @@ export interface CameraRotateOptions {
   root?: HTMLElement;
   /** Hide the HUD (main menu, death screen, open panels). */
   hidden?(): boolean;
-  /** Canvas to fade/zoom during a rotation (omit: the view snaps instantly, as before). The canvas is
-   * player-centred (the camera follows the player), so a centre-origin zoom keeps the player fixed. */
+  /** Game canvas to cross-fade over during a rotation (omit: the view snaps instantly, as before). */
   spinTarget?(): HTMLElement | undefined;
-  /** Rotation transition length in ms (default 450). */
+  /** Screenshot of the spin target for the cross-fade (tests inject a fake; production snapshots the canvas).
+   * Returning undefined means the screenshot failed: the view snaps instantly rather than blinking. */
+  captureTarget?: (el: HTMLElement) => HTMLCanvasElement | undefined;
+  /** Rotation transition length in ms (default 500). */
   spinMs?: number;
 }
 export interface CameraRotateControl {
@@ -69,21 +74,28 @@ export interface CameraRotateControl {
   dispose(): void;
 }
 /**
- * Fade + uniform-zoom state of the rotation transition at normalised time `t` (0..1).
- * First `FADE_OUT` of the transition the canvas fades out and shrinks uniformly to 0.85x; at exactly
- * `FADE_OUT` it is fully transparent, which is when the renderer snaps to the new quarter (invisible);
- * then it fades back in and grows back to 1x. Only uniform scale and opacity are ever used, so no sprite
- * or tile is ever stretched: `scale` is the same on both axes, and the world looks normal at every `t`.
+ * Cross-fade state of the rotation transition at normalised time `t` (0..1): the old-view screenshot starts
+ * opaque and full-size and fades to transparent while shrinking uniformly to `ROTATE_CROSSFADE_MIN_SCALE`.
+ * The live canvas underneath already shows the new view, so the screen never goes black and no layer is ever
+ * stretched: `scale` is the same on both axes at every `t`.
  */
-export const ROTATE_FADE_OUT = 0.42;
-export const ROTATE_MIN_SCALE = 0.85;
+export const ROTATE_CROSSFADE_MIN_SCALE = 0.95;
 /** Ease in-out cubic for the rotation transition (0 -> 1). */
 export const spinEase = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-export function rotateFadeAt(t: number): { opacity: number; scale: number; snapped: boolean } {
-  const k = Math.max(0, Math.min(1, t));
-  if (k < ROTATE_FADE_OUT) { const p = spinEase(k / ROTATE_FADE_OUT); return { opacity: 1 - p, scale: 1 - (1 - ROTATE_MIN_SCALE) * p, snapped: false }; }
-  const p = spinEase((k - ROTATE_FADE_OUT) / (1 - ROTATE_FADE_OUT));
-  return { opacity: p, scale: ROTATE_MIN_SCALE + (1 - ROTATE_MIN_SCALE) * p, snapped: true };
+export function rotateCrossfadeAt(t: number): { opacity: number; scale: number } {
+  const p = spinEase(Math.max(0, Math.min(1, t)));
+  return { opacity: 1 - p, scale: 1 - (1 - ROTATE_CROSSFADE_MIN_SCALE) * p };
+}
+/** Screenshot of a canvas element for the cross-fade overlay, or undefined when it cannot be captured
+ * (WebGL without preserveDrawingBuffer may already have cleared its buffer: then the caller snaps instantly
+ * instead of fading to black). */
+export function snapshotCanvas(el: HTMLElement): HTMLCanvasElement | undefined {
+  try {
+    const src = el as HTMLCanvasElement; if (typeof src.width !== "number" || !src.width || !src.height) return undefined;
+    const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+    const g = c.getContext("2d"); if (!g) return undefined;
+    g.drawImage(src, 0, 0); return c;
+  } catch { return undefined; }
 }
 
 export const CAM_ROTATE_CSS = `#cam-rotate{position:absolute;right:calc(6px + var(--sar,0px));top:calc(56px + var(--sat,0px));z-index:11;display:flex;gap:6px;pointer-events:auto}
@@ -95,16 +107,15 @@ export const CAM_ROTATE_CSS = `#cam-rotate{position:absolute;right:calc(6px + va
 export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl {
   const st = o.storage ?? (typeof localStorage !== "undefined" ? localStorage : undefined);
   let view = st ? loadView(st) : 0;
-  /** Quarter actually on the renderer (lags `view` while a fade transition runs). */
+  /** Quarter actually on the renderer (with a cross-fade it snaps to `view` at once; the overlay lags behind). */
   let shown = view;
-  /** In-flight transition: renderer still shows `from` until the canvas is fully faded, then snaps to `to`. */
-  let spin: { from: number; to: number; start: number | undefined; el: HTMLElement; raf: number; snapped: boolean } | undefined;
+  /** In-flight cross-fade: the old-view screenshot fading over the already-snapped live canvas. */
+  let spin: { from: number; to: number; start: number | undefined; overlay: HTMLCanvasElement; raf: number } | undefined;
   const reducedMotion = typeof matchMedia !== "undefined" && (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
   const finishSpin = (): void => {
     if (!spin) return; const s = spin; spin = undefined;
     try { cancelAnimationFrame(s.raf); } catch { /* no rAF */ }
-    s.el.style.transform = ""; s.el.style.transformOrigin = ""; s.el.style.opacity = "";
-    shown = s.to; sync();
+    s.overlay.remove(); shown = s.to; sync();
   };
   /** Push the quarter actually on screen to the renderer + input (input follows what is actually on screen). */
   const sync = (): void => {
@@ -119,17 +130,23 @@ export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl 
     const el = o.spinTarget?.();
     if (!el || reducedMotion || !o.target()) { if (spin) finishSpin(); shown = view; sync(); return; }
     if (spin) finishSpin();
-    const ms = o.spinMs ?? 430; let start: number | undefined;
-    el.style.transformOrigin = "50% 50%";
+    // Capture the old view BEFORE snapping: the live canvas shows the new view underneath the overlay.
+    const overlay = (o.captureTarget ?? snapshotCanvas)(el);
+    if (!overlay) { shown = view; sync(); return; }
+    shown = view; sync();
+    const r = el.getBoundingClientRect();
+    overlay.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:2;pointer-events:none;transform-origin:50% 50%`;
+    overlay.dataset["role"] = "rotate-fade";
+    (el.parentElement ?? document.body).append(overlay);
+    const ms = o.spinMs ?? 500; let start: number | undefined;
     const step = (now: number): void => {
       if (!spin) return;
       if (start === undefined) start = now;
-      const t = Math.min(1, (now - start) / ms); const f = rotateFadeAt(t);
-      if (f.snapped && !spin.snapped) { spin.snapped = true; shown = spin.to; sync(); } // snap while fully faded
-      el.style.opacity = String(f.opacity); el.style.transform = `scale(${f.scale})`;
+      const t = Math.min(1, (now - start) / ms); const f = rotateCrossfadeAt(t);
+      spin.overlay.style.opacity = String(f.opacity); spin.overlay.style.transform = `scale(${f.scale})`;
       if (t >= 1) finishSpin(); else spin.raf = requestAnimationFrame(step);
     };
-    spin = { from: prev, to: n, start, el, raf: 0, snapped: false };
+    spin = { from: prev, to: n, start, overlay, raf: 0 };
     spin.raf = requestAnimationFrame(step);
   };
   const rotate = (dir: number): void => { if (dir) set(stepView(view, dir)); };
