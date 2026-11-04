@@ -9,6 +9,8 @@ export interface ProbeSample {
   buildActive: boolean; buildRot: number; menuTop?: string | undefined;
   /** build pieces within ~12 tiles of the player: "place" counts only a piece that really appeared (a refused place, e.g. "Spot taken", does not) */
   pieces?: number | undefined;
+  /** Of those pieces: campfires (for the cooking-guide checkpoint) and pieces with a station (any station checkpoint). */
+  campfires?: number | undefined; stations?: number | undefined;
 }
 export class TutorialProber {
   private c: Record<string, number> = {};
@@ -31,6 +33,9 @@ export class TutorialProber {
     if (l && s.buildActive && s.buildRot !== l.buildRot) this.add("rotate");
     if (s.menuTop && s.menuTop !== l?.menuTop) this.add(`menu:${s.menuTop === "camper" ? "station" : s.menuTop}`);
     if ((s.buildActive || l?.buildActive) && l?.pieces !== undefined && s.pieces !== undefined && s.pieces > l.pieces) this.add("place", s.pieces - l.pieces);
+    // Checkpoint events (Task 10): fire once when the first nearby campfire / station appears.
+    if (s.campfires !== undefined && s.campfires > 0 && !(l?.campfires)) this.add("campfire");
+    if (s.stations !== undefined && s.stations > 0 && !(l?.stations)) this.add("stationBuilt");
     this.last = s;
   }
   probe(): Probe { return { ...this.c }; }

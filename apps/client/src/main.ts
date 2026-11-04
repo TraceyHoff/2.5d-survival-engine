@@ -54,7 +54,7 @@ import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
 import { mountHotbar, hotbarCells, hotbarCycle } from "./hotbar.js";
 import { createWorldMap } from "./world-map.js";
-import { mountCompassHud } from "./compass-hud.js";
+import { mountCompassHud, createIdleTracker, idleCompass } from "./compass-hud.js";
 import { CLIENT_FRAME_MAPPING, gateEdges } from "./frame-mapping.js";
 import { buildSignEditor } from "./sign-editor.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
@@ -600,14 +600,14 @@ tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input
   hidden: () => session.player === undefined || !!deathUi?.dead || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
   probe: () => {
     const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; const c = menuCtx();
-    let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let sv: { hunger: number; thirst: number } | undefined;
+    let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let campfires: number | undefined; let stations: number | undefined; let sv: { hunger: number; thirst: number } | undefined;
     if (c) { try { items = new Map(); for (const v of inventoryView(c)) if (v.item) items.set(v.name, (items.get(v.name) ?? 0) + v.count); } catch { items = undefined; }
       try { tk = heldTool(world, c.player, gameplayDefs(world)).kind; } catch { tk = 0; }
-      try { if (pt && world.isRegistered(BuildPiece)) { pieces = 0; for (const e of world.query([BuildPiece, Transform])) { const t = world.get(e, Transform)!; if ((t.x - pt.x) ** 2 + (t.y - pt.y) ** 2 < 144) pieces++; } } } catch { pieces = undefined; }
+      try { if (pt && world.isRegistered(BuildPiece)) { pieces = 0; campfires = 0; stations = 0; const defs = gameplayDefs(world); for (const e of world.query([BuildPiece, Transform])) { const t = world.get(e, Transform)!; if ((t.x - pt.x) ** 2 + (t.y - pt.y) ** 2 < 144) { pieces++; const def = defs.pieces.get(world.getField(e, BuildPiece, "type") ?? -1); if (def?.key === "campfire") campfires++; if (def && def.station !== 0) stations++; /* StationKind.None = 0 */ } } } } catch { pieces = undefined; campfires = undefined; stations = undefined; }
       try { if (world.has(c.player, Survival)) sv = world.get(c.player, Survival) as { hunger: number; thirst: number }; } catch { /* none */ } }
     const av = input.vector("Aim");
     tutProber.sample({ pos: pt ? { x: pt.x, y: pt.y } : undefined, sprinting: input.down("Sprint"), zoom: iso?.renderer.camera.zoom, aiming: Math.hypot(av[0], av[1]) > 0.3 || input.down("Primary"),
-      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top, pieces });
+      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top, pieces, campfires, stations });
     return tutProber.probe();
   } });
 input.onDeviceChange(() => tutorialUi?.update());
@@ -632,7 +632,9 @@ const hotbar = mountHotbar({ device: promptDevice, equip: (slot) => { const c = 
 let hotbarT = 0;
 const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !buildMode.active && !worldTools?.tool.active && !document.querySelector("[data-boot=menu]");
 // Compass HUD (Task 9): top-centre strip, same visibility as the hotbar, updated with it.
-const compassHud = mountCompassHud({ heading: () => { const p = session.player; if (p === undefined) return undefined; const t = world.get(p, Transform); return t ? compassOf(t.facing) : undefined; } });
+// Task 10: while the player moves the compass shows their facing; once they stand still it settles north.
+const compassIdle = createIdleTracker();
+const compassHud = mountCompassHud({ heading: () => { const p = session.player; if (p === undefined) return undefined; const t = world.get(p, Transform); if (!t) return undefined; return compassIdle.isIdle(t, performance.now()) ? idleCompass() : compassOf(t.facing); } });
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
 vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
   toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });

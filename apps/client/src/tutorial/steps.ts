@@ -3,6 +3,10 @@
  *   {A:Action} or {A:Action@Context}  the controls bound to an input action on the active device
  *   {M:menuId}                        how to open a game menu on the active device
  * "do" steps finish when the probe shows the player did the thing; "info" steps wait for Next.
+ * Checkpoint gating (Task 10): a step with `gate` stays hidden until its checkpoint probe is true, so the guide
+ * no longer runs start-to-finish in one sitting — it pauses (with a slim "what unlocks this" chip) and resumes
+ * when the player actually reaches that part of the game. Gates are absolute ("has ever happened"), never
+ * relative to a per-step baseline, so a checkpoint reached early still opens its steps later.
  */
 import type { TutDevice } from "./labels.js";
 
@@ -17,8 +21,14 @@ export interface TutStep {
   done?: (cur: Probe, base: Probe) => boolean;
   /** CSS selector of the UI element to spotlight (per device). */
   target?: (d: TutDevice) => string | undefined;
+  /** Checkpoint: while false the step (and its card) stays hidden and the guide waits. Missing = always shown. */
+  gate?: (p: Probe) => boolean;
+  /** What the "guide paused" chip says while this step's gate is closed. */
+  gateHint?: string;
 }
 const grew = (k: string, by = 1) => (c: Probe, b: Probe): boolean => (c[k] ?? 0) - (b[k] ?? 0) >= by;
+/** Absolute checkpoint: the probe counter has ever reached 1 (e.g. the player has ever opened the Build menu). */
+const has = (k: string) => (p: Probe): boolean => (p[k] ?? 0) >= 1;
 const any = (...fs: ((c: Probe, b: Probe) => boolean)[]) => (c: Probe, b: Probe): boolean => fs.some((f) => f(c, b));
 const touchOr = (touchSel: string, other?: string) => (d: TutDevice): string | undefined => d === "touch" ? touchSel : other;
 const menuBtn = (id: string) => (): string => `#game-menubar [data-open=${id}]`;
@@ -37,16 +47,16 @@ export const TUTORIAL_STEPS: readonly TutStep[] = [
   { id: "eat", section: "Gather", title: "Eat and drink", text: { all: "Eat or drink something. Pick food or water in your bag and choose Use. You can also drink at a lake with {A:QuickUse}.", touch: "Eat or drink something. Pick food or water in your bag and choose Use. You can also drink at a lake with the {A:QuickUse}." }, done: grew("eat"), target: stat("hunger") },
   // ---- crafting ----
   { id: "craft", section: "Craft", title: "Make things", text: "Open crafting with {M:crafting}. You only see things you can make by hand here. Pick one to make it.", done: grew("craft"), target: menuBtn("crafting") },
-  { id: "craft-station", section: "Craft", title: "Stations", text: "Bigger things need a station, like a campfire or a workbench. Those recipes are at the station." },
+  { id: "craft-station", section: "Craft", title: "Stations", text: "Bigger things need a station, like a campfire or a workbench. Those recipes are at the station.", gate: has("stationBuilt"), gateHint: "Build a station, like a campfire or a workbench, to continue the guide." },
   { id: "equip", section: "Craft", title: "Hold a tool", text: { all: "Hold a tool, like a stone axe. Pick it in your hotbar with {A:Hotbar1}, or choose Equip in your bag.", gamepad: "Hold a tool, like a stone axe. Pick it with {A:Hotbar1}, or choose Equip in your bag.", touch: "Hold a tool, like a stone axe. Tap its slot, or choose Equip in your bag." }, done: (c) => (c["tool"] ?? 0) > 0 },
   { id: "chop", section: "Craft", title: "Chop a tree", text: "Stand next to a tree. Hold {A:Primary} to chop it. You get logs.", done: grew("gainLog"), target: touchOr("[data-touch=attack]") },
   // ---- building ----
-  { id: "build", section: "Build", title: "Build mode", text: { all: "Open build mode with {A:ToggleBuild}. Pick the campfire.", touch: "Tap the {A:ToggleBuild}. Pick the campfire." }, done: grew("build"), target: menuBtn("build") },
-  { id: "rotate", section: "Build", title: "Turn it", text: "Turn the piece with {A:Build.RotateCW@Building}.", done: grew("rotate"), target: touchOr("[data-touch=rotate]") },
-  { id: "ghost", section: "Build", title: "Green or red", text: "Green means you can build here. Red means you can't. The red note tells you why, like \"Too far away\".", target: () => ".build-hud .bh-chip" },
-  { id: "place", section: "Build", title: "Place it", text: "Put it down with {A:Build.PlaceConfirm@Building}.", done: grew("place"), target: touchOr("[data-touch=confirm]", ".build-hud .bh-chip") },
-  { id: "roads", section: "Build", title: "Roads and signs", text: { keyboardMouse: "Lay roads with {A:RoadTool}. Put up signs with {A:PlaceSign}. Both are in the Build menu too.", all: "Roads and signs are in the Build menu. Roads help you find your way home." } },
-  { id: "station", section: "Build", title: "Use a station", text: "Walk to your campfire. Press {A:Interact} to use it. Light it to cook food.", done: grew("menu:station"), target: touchOr("[data-touch=context]") },
+  { id: "build", section: "Build", title: "Build mode", text: { all: "Open build mode with {A:ToggleBuild}. Pick the campfire.", touch: "Tap the {A:ToggleBuild}. Pick the campfire." }, done: grew("build"), target: menuBtn("build"), gate: has("menu:build"), gateHint: "Open the Build menu to continue the building guide." },
+  { id: "rotate", section: "Build", title: "Turn it", text: "Turn the piece with {A:Build.RotateCW@Building}.", done: grew("rotate"), target: touchOr("[data-touch=rotate]"), gate: has("menu:build"), gateHint: "Open the Build menu to continue the building guide." },
+  { id: "ghost", section: "Build", title: "Green or red", text: "Green means you can build here. Red means you can't. The red note tells you why, like \"Too far away\".", target: () => ".build-hud .bh-chip", gate: has("menu:build"), gateHint: "Open the Build menu to continue the building guide." },
+  { id: "place", section: "Build", title: "Place it", text: "Put it down with {A:Build.PlaceConfirm@Building}.", done: grew("place"), target: touchOr("[data-touch=confirm]", ".build-hud .bh-chip"), gate: has("menu:build"), gateHint: "Open the Build menu to continue the building guide." },
+  { id: "roads", section: "Build", title: "Roads and signs", text: { keyboardMouse: "Lay roads with {A:RoadTool}. Put up signs with {A:PlaceSign}. Both are in the Build menu too.", all: "Roads and signs are in the Build menu. Roads help you find your way home." }, gate: has("menu:build"), gateHint: "Open the Build menu to continue the building guide." },
+  { id: "station", section: "Build", title: "Use a station", text: "Walk to your campfire. Press {A:Interact} to use it. Light it to cook food.", done: grew("menu:station"), target: touchOr("[data-touch=context]"), gate: has("campfire"), gateHint: "Build a campfire to continue the cooking guide." },
   { id: "skills", section: "Grow", title: "Skills", text: "Open skills with {M:skills}.", done: grew("menu:skills"), target: menuBtn("skills") },
   { id: "skills-info", section: "Grow", title: "XP and levels", text: { all: "You get XP when you gather, craft and fight. Each new level gives you a skill point. Use the tabs on top to see each group.", gamepad: "You get XP when you gather, craft and fight. Each new level gives you a skill point. Switch tabs with {A:UI.TabNext@Inventory}." }, target: () => ".gm-modal[data-modal=skills] .gm-panel" },
   // ---- staying alive ----
@@ -101,8 +111,12 @@ export class TutorialProgress {
   back(): void { this.go(this.i - 1); }
   skip(): void { this.status = "skipped"; this.save(); }
   finish(): void { this.status = "done"; this.save(); }
+  /** True when the current step is waiting on its checkpoint: the guide stays active but shows nothing yet, and
+   * no per-step baseline is captured until the gate opens (so "do" steps measure progress after the checkpoint). */
+  gated(p: Probe): boolean { return this.active && !!this.step.gate && !this.step.gate(p); }
   observe(p: Probe): boolean {
     if (!this.active) return false;
+    if (this.gated(p)) return false;
     const s = this.step; if (!s.done) return false;
     if (!this.base) this.base = { ...p };
     if (s.done(p, this.base)) { this.next(); return true; }

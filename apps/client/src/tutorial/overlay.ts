@@ -122,6 +122,15 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
       + (d === "gamepad" ? `<div class="tut-hint">${isDo ? `Stuck? Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip <b class="tut-hold"><i></i></b>` : `${nextKeys} Next · ${renderTokens("{A:QuickUse}", o.bindings, d)} Back`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Next</div>` : "");
     el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = isDo ? "do" : "info";
   };
+  /** Slim "guide paused" chip while the current step waits on its checkpoint: the hint, plus a way out. */
+  const buildPaused = (d: TutDevice): void => {
+    const s = p.step;
+    el.innerHTML = `<div class="tut-head"><span>${esc(s.section)} · Guide paused</span><button type="button" class="x" data-tut="skip" aria-label="Skip the guide" title="Skip the guide">✕</button></div>`
+      + `<p>${esc(s.gateHint ?? "Keep playing — the guide continues when you reach the next checkpoint.")}</p>`
+      + `<div class="tut-btns"><button type="button" class="alt" data-tut="next">Skip this step</button></div>`
+      + (d === "gamepad" ? `<div class="tut-hint">Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip this step</div>` : "");
+    el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = "gated";
+  };
   el.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>("[data-tut]"); if (!b) return; e.stopPropagation();
     const a = b.dataset["tut"]; if (a === "next") p.next(); else if (a === "back") p.back(); else if (a === "skip") p.skip();
@@ -156,9 +165,18 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
   function update(): void {
     if (!p.active || o.hidden() || p.step.ghost === undefined || o.device() !== "touch") ghost.hidden = true;
     if (!p.active || o.hidden()) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
-    if (p.observe(o.probe())) o.onChange?.();
+    const d = o.device(); const probe = o.probe();
+    if (p.gated(probe)) {
+      // Checkpoint not reached yet: slim chip at the bottom, no spotlight, no card for the step itself.
+      const gk = `gated|${p.step.id}|${d}`;
+      if (gk !== key) { key = gk; buildPaused(d); }
+      el.hidden = false; spot.hidden = true; arrow.hidden = true; ghost.hidden = true;
+      const rr = rootRect(); el.style.left = `${Math.max(8, (rr.width - el.offsetWidth) / 2)}px`; el.style.top = `${Math.max(8, rr.height - el.offsetHeight - 16)}px`;
+      return;
+    }
+    if (p.observe(probe)) o.onChange?.();
     if (!p.active) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
-    const d = o.device(); const k = `${p.step.id}|${d}`;
+    const k = `${p.step.id}|${d}`;
     if (k !== key) { key = k; build(d); }
     el.hidden = false; layout(d);
   }
@@ -169,15 +187,16 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
     /** Per input update: info cards move on with Jump (A / Space); gamepad B goes back. Skipped while a menu is open. */
     frame(i: { pressed(a: string): boolean; down(a: string): boolean }, menuOpen: boolean): void {
       if (!p.active || menuOpen || el.hidden) { if (yStart > 0) yStart = 0; return; }
-      const d = o.device();
-      if (d === "gamepad" && p.step.done) { // ADR-144: hold Y (Reload) 1 s to skip an action card
+      const d = o.device(); const gated = p.gated(o.probe());
+      if (d === "gamepad" && (p.step.done || gated)) { // ADR-144: hold Y (Reload) 1 s to skip an action card (also the way out of a gated step on gamepad)
         const down = i.down("Reload"); const now = performance.now();
         if (!down) { if (yStart) { yStart = 0; setHold(0); } }
         else if (yStart < 0) { /* wait for release after a skip */ }
         else { if (!yStart) yStart = now; yHeld = (now - yStart) / HOLD_MS; setHold(yHeld); if (yHeld >= 1) { yStart = -1; setHold(0); p.next(); o.onChange?.(); update(); return; } }
       }
-      if (!p.step.done && d !== "touch" && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
-      else if (d === "gamepad" && !p.step.done && p.index > 0 && i.pressed("QuickUse")) { p.back(); o.onChange?.(); update(); }
+      // While gated, Jump/Back must not silently skip the waiting step — only the chip buttons (or hold-Y) skip it.
+      if (!p.step.done && d !== "touch" && !gated && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
+      else if (d === "gamepad" && !p.step.done && !gated && p.index > 0 && i.pressed("QuickUse")) { p.back(); o.onChange?.(); update(); }
     },
     destroy(): void { clearInterval(timer); removeEventListener("resize", update); el.remove(); ghost.remove(); spot.remove(); arrow.remove(); },
   };

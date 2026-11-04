@@ -2,7 +2,9 @@
  * World map (Task 9): a north-up top-down canvas of the client's known terrain, the player's position + facing, and
  * map markers. North is up (world -y), east is right (world +x). Tiles are coloured with the renderer's TILE_COLORS
  * by TileId; only chunks the client has received are drawn (unknown tiles stay dark), so the map never invents terrain.
- * Input: touch/mouse drag to pan, wheel to zoom, tap/click to place a marker (opens a creation form: label + visibility
+ * Input: touch/mouse drag to pan, wheel to zoom, two-finger pinch to zoom on mobile (the world point under the
+ * pinch midpoint stays under it, so spreading fingers zooms in on that spot and dragging both fingers pans),
+ * tap/click to place a marker (opens a creation form: label + visibility
  * Private/Party/Clan, set at creation and enforced server-side). Gamepad/keyboard: the panel is a normal UINav modal —
  * pan buttons move the centre crosshair, "Mark here" (pad X) places a marker at the crosshair, "Mark my location"
  * places one at the player, "Centre on me" (pad Y) recentres; D-pad/Tab/Enter navigate the controls (UINav owns the
@@ -12,6 +14,7 @@
 import { Transform, type Entity, type World } from "@engine/core";
 import { compassOf, placeMapMarkerIntent, removeMapMarkerIntent, visibleMarkers, type MenuIntent } from "@engine/gameplay";
 import { TILE_COLORS } from "@engine/render";
+import { createIdleTracker, idleCompass } from "./compass-hud.js";
 import type { TileMap } from "@engine/world";
 
 export interface WorldMapSource {
@@ -32,13 +35,23 @@ export function canvasToWorld(px: number, py: number, w: number, h: number, cent
 export function worldToCanvas(x: number, y: number, w: number, h: number, centre: { x: number; y: number }, scale: number): { px: number; py: number } {
   return { px: (x - centre.x) * scale + w / 2, py: (y - centre.y) * scale + h / 2 };
 }
+/** One pinch step (pure, for tests): zoom by the finger-distance ratio, clamped to the map's [2, 32] px/tile range,
+ * and re-centre so the world point that was under the previous midpoint stays under the current midpoint — so a
+ * pure spread zooms in on that spot and dragging both fingers together pans. Midpoints are canvas pixels. */
+export function pinchStep(o: { centre: { x: number; y: number }; scale: number; midPrevPx: number; midPrevPy: number; midPx: number; midPy: number; canvasW: number; canvasH: number; prevDist: number; curDist: number }): { centre: { x: number; y: number }; scale: number } {
+  const scale = Math.min(32, Math.max(2, o.scale * (o.prevDist > 0 ? o.curDist / o.prevDist : 1)));
+  const under = canvasToWorld(o.midPrevPx, o.midPrevPy, o.canvasW, o.canvasH, o.centre, o.scale);
+  return { centre: { x: under.x - (o.midPx - o.canvasW / 2) / scale, y: under.y - (o.midPy - o.canvasH / 2) / scale }, scale };
+}
 
 export function createWorldMap(src: WorldMapSource, doc: Document = document): { el: HTMLElement; destroy(): void } {
   const el = doc.createElement("div"); el.dataset["role"] = "world-map"; el.style.cssText = "display:flex;flex-direction:column;gap:8px";
   const canvas = doc.createElement("canvas"); canvas.dataset["role"] = "map-canvas"; canvas.width = 480; canvas.height = 360;
   canvas.style.cssText = "width:100%;height:360px;touch-action:none;background:#1b1f1a;border:2px solid #74432C;border-radius:8px;cursor:crosshair";
-  canvas.setAttribute("aria-label", "World map — drag to pan, tap a spot to place a marker");
-  const state = { centre: { x: 0, y: 0 }, scale: 8, following: true, drag: null as null | { px: number; py: number; cx: number; cy: number }, placed: null as null | { x: number; y: number } };
+  canvas.setAttribute("aria-label", "World map — drag to pan, pinch to zoom, tap a spot to place a marker");
+  const state = { centre: { x: 0, y: 0 }, scale: 8, following: true, drag: null as null | { px: number; py: number; cx: number; cy: number }, placed: null as null | { x: number; y: number },
+    pointers: new Map<number, { x: number; y: number }>(), pinch: null as null | { d: number; mx: number; my: number }, pinched: false };
+  const mapIdle = createIdleTracker();
   const controls = doc.createElement("div"); controls.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;align-items:center";
   const btn = (t: string, fn: () => void, extra?: Record<string, string>): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; if (extra) for (const [k, v] of Object.entries(extra)) b.dataset[k] = v; b.addEventListener("click", fn); controls.append(b); return b; };
   const pan = (dx: number, dy: number): void => { state.following = false; state.centre.x += dx; state.centre.y += dy; draw(); };
@@ -73,12 +86,33 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
       rm.addEventListener("click", () => { const ok = src.send(removeMapMarkerIntent(m.entity)); note.textContent = ok ? "Marker removed." : "Could not remove marker (only the owner can remove it)."; src.status?.(note.textContent); });
       row.append(rm); list.append(row); } };
   el.append(canvas, controls, note, form, list);
-  // Pointer: drag pans; a click without drag opens the creation form at that spot.
-  canvas.addEventListener("pointerdown", (e) => { canvas.setPointerCapture(e.pointerId); state.drag = { px: e.clientX, py: e.clientY, cx: state.centre.x, cy: state.centre.y }; });
-  canvas.addEventListener("pointermove", (e) => { if (!state.drag) return; const r = canvas.getBoundingClientRect(); const sx = canvas.width / Math.max(1, r.width), sy = canvas.height / Math.max(1, r.height);
+  // Pointer: one finger/mouse drag pans; two fingers pinch-zoom (and pan together); a tap without drag opens the form.
+  // (touch-action:none on the canvas keeps the browser from hijacking the pinch for page zoom.)
+  const toCanvasPx = (clientX: number, clientY: number): { px: number; py: number } => { const r = canvas.getBoundingClientRect(); return { px: (clientX - r.left) * canvas.width / Math.max(1, r.width), py: (clientY - r.top) * canvas.height / Math.max(1, r.height) }; };
+  const endPointer = (e: { pointerId: number; clientX: number; clientY: number }): void => {
+    state.pointers.delete(e.pointerId);
+    if (state.pointers.size < 2) state.pinch = null;
+    if (state.pointers.size === 0) {
+      const d = state.drag; state.drag = null;
+      if (d && !state.pinched && Math.hypot(e.clientX - d.px, e.clientY - d.py) < 6) { const p = toCanvasPx(e.clientX, e.clientY); state.placed = canvasToWorld(p.px, p.py, canvas.width, canvas.height, state.centre, state.scale); showForm(); }
+      state.pinched = false;
+    } else if (state.pointers.size === 1) {
+      // One finger left after a pinch: keep panning from where it is.
+      const [rem] = [...state.pointers.values()] as [{ x: number; y: number }]; state.drag = { px: rem.x, py: rem.y, cx: state.centre.x, cy: state.centre.y };
+    }
+  };
+  canvas.addEventListener("pointerdown", (e) => { try { canvas.setPointerCapture(e.pointerId); } catch { /* no capture (jsdom) */ } state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (state.pointers.size === 2) { const [a, b] = [...state.pointers.values()] as [{ x: number; y: number }, { x: number; y: number }]; state.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; state.pinched = true; state.drag = null; }
+    else if (state.pointers.size === 1) state.drag = { px: e.clientX, py: e.clientY, cx: state.centre.x, cy: state.centre.y }; });
+  canvas.addEventListener("pointermove", (e) => { if (!state.pointers.has(e.pointerId)) return; state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (state.pinch && state.pointers.size === 2) { const [a, b] = [...state.pointers.values()] as [{ x: number; y: number }, { x: number; y: number }]; const d = Math.hypot(a.x - b.x, a.y - b.y); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const prev = toCanvasPx(state.pinch.mx, state.pinch.my), cur = toCanvasPx(mx, my);
+      const step = pinchStep({ centre: state.centre, scale: state.scale, midPrevPx: prev.px, midPrevPy: prev.py, midPx: cur.px, midPy: cur.py, canvasW: canvas.width, canvasH: canvas.height, prevDist: state.pinch.d, curDist: d });
+      state.centre = step.centre; state.scale = step.scale; state.pinch = { d, mx, my }; state.following = false; draw(); return; }
+    if (!state.drag) return; const r = canvas.getBoundingClientRect(); const sx = canvas.width / Math.max(1, r.width), sy = canvas.height / Math.max(1, r.height);
     state.centre.x = state.drag.cx - (e.clientX - state.drag.px) * sx / state.scale; state.centre.y = state.drag.cy - (e.clientY - state.drag.py) * sy / state.scale; state.following = false; draw(); });
-  canvas.addEventListener("pointerup", (e) => { const d = state.drag; state.drag = null; if (!d) return; const moved = Math.hypot(e.clientX - d.px, e.clientY - d.py);
-    if (moved < 6) { const r = canvas.getBoundingClientRect(); state.placed = canvasToWorld((e.clientX - r.left) * canvas.width / Math.max(1, r.width), (e.clientY - r.top) * canvas.height / Math.max(1, r.height), canvas.width, canvas.height, state.centre, state.scale); showForm(); } });
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", endPointer);
   canvas.addEventListener("wheel", (e) => { e.preventDefault(); state.scale = Math.min(32, Math.max(2, state.scale * (e.deltaY < 0 ? 1.25 : 0.8))); draw(); }, { passive: false });
   const draw = (): void => { const ctx = canvas.getContext("2d"); if (!ctx) return; const w = src.world(), p = src.player(); if (w && p !== undefined) { const t = w.get(p, Transform); if (t && state.following) state.centre = { x: t.x, y: t.y }; }
     const W = canvas.width, H = canvas.height, s = state.scale, c = state.centre;
@@ -91,13 +125,14 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
     if (w && p !== undefined) for (const m of visibleMarkers(w, p)) { const { px, py } = worldToCanvas(m.x, m.y, W, H, c, s); if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
       ctx.fillStyle = markerPinColor(m.visibility); ctx.beginPath(); ctx.arc(px, py - 4, 5, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(px - 1, py - 4, 2, 8);
       ctx.font = "bold 11px system-ui,sans-serif"; ctx.strokeStyle = "rgba(0,0,0,.8)"; ctx.lineWidth = 3; ctx.strokeText(m.label || "Marker", px + 8, py); ctx.fillStyle = "#FFFAF0"; ctx.fillText(m.label || "Marker", px + 8, py); }
-    // Player arrow + compass rose.
+    // Player arrow (always the true facing) + compass rose (settles north when standing still, like the HUD compass).
     if (w && p !== undefined) { const t = w.get(p, Transform); if (t) { const { px, py } = worldToCanvas(t.x, t.y, W, H, c, s); const { heading } = compassOf(t.facing);
       ctx.save(); ctx.translate(px, py); ctx.rotate(heading * Math.PI / 180); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(6, 8); ctx.lineTo(0, 4); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.restore();
-      // Rose: fixed N/E/S/W, needle = facing.
+      // Rose: fixed N/E/S/W, needle = facing, or north when idle.
+      const rose = mapIdle.isIdle(t, performance.now()) ? idleCompass() : compassOf(t.facing);
       const rx = W - 34, ry = 34; ctx.save(); ctx.translate(rx, ry); ctx.fillStyle = "rgba(43,28,36,.85)"; ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#FFFAF0"; ctx.font = "bold 11px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("N", 0, -17); ctx.fillText("S", 0, 17); ctx.fillText("E", 17, 0); ctx.fillText("W", -17, 0);
-      ctx.rotate(heading * Math.PI / 180); ctx.fillStyle = "#ff6b5e"; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill(); ctx.restore(); } }
+      ctx.rotate(rose.heading * Math.PI / 180); ctx.fillStyle = "#ff6b5e"; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill(); ctx.restore(); } }
     rebuildList(); };
   let raf = 0; const loop = (): void => { if (!el.isConnected) return; draw(); raf = requestAnimationFrame(loop); }; raf = requestAnimationFrame(loop);
   draw();

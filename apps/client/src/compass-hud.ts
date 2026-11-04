@@ -23,3 +23,18 @@ export function mountCompassHud(o: { heading(): { heading: number; dir: string }
 }
 /** Heading/dir from a raw facing angle (kept tiny for tests that don't want a DOM mount). */
 export const compassHudText = (facing: number): string => { const { heading, dir } = compassOf(facing); return `${dir} ${Math.round(heading)}°`; };
+/**
+ * Idle tracker for the "compass settles north" rule: the compass shows the player's facing while they move, and
+ * points north once they have stood still for `idleAfterMs`. Movement is a position change bigger than `moveEps`
+ * tiles since the last sample (the HUD samples every ~120 ms, the map every frame, so the epsilon is per-sample,
+ * not per-second). `now` is injected so tests can drive the clock.
+ */
+export function createIdleTracker(idleAfterMs = 250, moveEps = 0.05): { isIdle(pos: { x: number; y: number }, now: number): boolean } {
+  let last: { x: number; y: number } | undefined; let lastMove = 0;
+  return { isIdle(pos, now): boolean {
+    if (!last || Math.hypot(pos.x - last.x, pos.y - last.y) > moveEps) { last = { x: pos.x, y: pos.y }; lastMove = now; return false; }
+    return now - lastMove >= idleAfterMs;
+  } };
+}
+/** The compass reading for a standing-still player: north, exactly as compassOf(-PI/2) reports it. */
+export const idleCompass = (): { heading: number; dir: string } => compassOf(-Math.PI / 2);
