@@ -127,6 +127,10 @@ function provoker(world: World, z: Entity, x: number, y: number, def: ZombieDef,
 /** ADR-108 Snuffer targets: zombie -> light entity it is going for (sim-local, server). */
 const snuffs = new WeakMap<World, Map<Entity, Entity>>();
 const snuffsOf = (w: World): Map<Entity, Entity> => { let m = snuffs.get(w); if (!m) snuffs.set(w, (m = new Map())); return m; };
+/** Task 15: chase give-ups — zombie -> tick until which it will not re-acquire (retaliation still re-engages). */
+const giveUps = new WeakMap<World, Map<Entity, number>>();
+const giveUpsOf = (w: World): Map<Entity, number> => { let m = giveUps.get(w); if (!m) giveUps.set(w, (m = new Map())); return m; };
+const GIVE_UP_SECONDS = 10;
 /** Light-shy zombies are active in lightAvoid.phases (night, dusk by default). */
 export const lightAvoidActive = (world: World): boolean => gameplayDefs(world).lightAvoid.phases.includes(currentPhaseKey(world));
 /** The Snuffer a zombie entity is chasing a light for, if any (render / tests). */
@@ -152,7 +156,14 @@ export function zombieAISystem(world: World, dt: number): void {
       if (!anyNear && !horde && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
       const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
       const aggr = horde || zombieAggressive(world, z, todT);
-      const tgt = aggr ? acquire(world, x, y, def) : provoker(world, z, x, y, def, dt);
+      let tgt = aggr ? acquire(world, x, y, def) : provoker(world, z, x, y, def, dt);
+      // Task 15: a zombie that just gave up a chase does not instantly re-acquire the same player next think
+      // (they are usually still in sight). Retaliation still breaks the cooldown: hitting the zombie re-engages it.
+      const gu = giveUpsOf(world).get(z);
+      if (gu !== undefined && world.tick < gu && tgt) {
+        const la = lastAttacker(world, z);
+        if (!(la && la.e === tgt.e && world.tick - la.tick <= secondsToTicks(ai.retaliateSeconds, dt))) tgt = undefined;
+      }
       if (!aggr && !tgt && (state === ZState.Chase || state === ZState.AttackPlayer || state === ZState.Investigate)) setState(world, z, ZState.Wander);
       if (tgt) {
         br.data.target[s] = tgt.e; const tt = world.get(tgt.e, Transform)!;
@@ -174,6 +185,25 @@ export function zombieAISystem(world: World, dt: number): void {
         if (nl) { sn.set(z, nl.e); br.data.goalX[s] = nl.x; br.data.goalY[s] = nl.y; if (br.data.state[s] !== ZState.AttackStructure) setState(world, z, ZState.Chase); }
         else sn.delete(z);
       } else sn.delete(z);
+      // Task 15: chase limit — a zombie chasing a living player farther than chaseLimitTiles from its spawn
+      // anchor gives up and wanders home. Exempt: horde members (structure march), light chasing (sn), and
+      // structure attacks (state AttackStructure is not a player chase). Disengage happens at think cadence
+      // only, and a swing due this tick still lands in the act phase below (attacks are instant, so there is
+      // no wind-up to cut short — the zombie finishes its due hit, then gives up on the next think).
+      const st1 = br.data.state[s]! as ZState;
+      if (!horde && !sn.has(z) && (st1 === ZState.Chase || st1 === ZState.AttackPlayer)) {
+        const ct2 = br.data.target[s]!;
+        const chaseLimit = ai.chaseLimitTiles ?? 20;
+        if (world.isAlive(ct2) && !world.has(ct2, Dead) && world.has(ct2, Survival)) {
+          const homeD = dist(x, y, br.data.homeX[s]!, br.data.homeY[s]!);
+          const ctt = world.get(ct2, Transform);
+          const swingDue = st1 === ZState.AttackPlayer && !!ctt && dist(x, y, ctt.x, ctt.y) <= def.attackRange + 0.3 && world.tick >= br.data.attackAt[s]!;
+          if (homeD > chaseLimit && !swingDue) {
+            setState(world, z, ZState.Wander); br.data.target[s] = 0; br.data.repathAt[s] = 0;
+            giveUpsOf(world).set(z, world.tick + secondsToTicks(GIVE_UP_SECONDS, dt));
+          }
+        }
+      }
       const st2 = br.data.state[s]! as ZState;
       if (st2 === ZState.Wander && (!ps.has(z) || world.tick >= br.data.repathAt[s]!)) {
         const rng = world.rngFor("zwander", world.getField(z, NetId, "id") ?? z);

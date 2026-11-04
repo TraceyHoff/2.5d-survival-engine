@@ -5,12 +5,13 @@
  * of one kind at a trough breed (cap maxPerTrough). Fences + trough = pen. Animal/AnimState are re-added after a load.
  */
 import { DEFAULT_TICK_HZ, entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { Animal, AnimState, BuildPiece, Container, Dead, Equipment, IntentAction, PlayerIntent, Tamed } from "../components.js";
+import { Animal, AnimState, BuildPiece, Container, Dead, Equipment, IntentAction, PlayerIntent, Tamed, AnimalSkills } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { emit, ev } from "../events.js";
 import { addItem, slotItem, takeFromSlot } from "../inventory.js";
 import { animalDefs, spawnAnimal } from "../population.js";
 import { awardXp } from "./progression.js";
+import { animalSkillMods, awardAnimalXp, ensureAnimalSkills } from "../animal_skills.js";
 import { hasPerk, SKILLS, skillLevelOf, skillMod } from "./tree.js";
 
 const H = SKILLS.husbandry;
@@ -41,7 +42,7 @@ export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: Tam
   const tamed = world.get(a, Tamed);
   if (tamed) {
     if (tamed.owner !== e && tamed.owner !== 0) return { fail: TameFail.NotYours, tame: false, consumed: false };
-    if (!dryRun) { world.set(a, Tamed, { fedUntil: world.tick + sec(H.fedSeconds) }); awardXp(world, e, "husbandry"); }
+    if (!dryRun) { world.set(a, Tamed, { fedUntil: world.tick + sec(H.fedSeconds) }); awardXp(world, e, "husbandry"); awardAnimalXp(world, a, gameplayDefs(world).animalSkillsTuning.xp.feedXp); }
     return { fail: TameFail.None, tame: false, consumed: true };
   }
   const kind = world.get(a, Animal)!.kind; if (!domestic(kind)) return { fail: TameFail.NotDomestic, tame: true, consumed: false };
@@ -51,6 +52,7 @@ export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: Tam
   if (world.rngFor(`husbandry.tame.${world.tick}`, a).next() >= chance) return { fail: TameFail.Failed, tame: true, consumed: true };
   const now = world.tick; const p = H.animals[animalDefs()[kind]!.key]!;
   world.add(a, Tamed, { kind, owner: e, fedUntil: now + sec(H.fedSeconds), produceAt: now + sec(p.seconds), breedAt: now + sec(H.breedSeconds) });
+  ensureAnimalSkills(world, a); // Task 15: fresh farm animal starts with its level-1 skill point
   emit(world, AnimalTamed, { entity: e, animal: a }); awardXp(world, e, "tame");
   return { fail: TameFail.None, tame: true, consumed: true };
 }
@@ -70,6 +72,7 @@ export function husbandrySystem(world: World): void {
     const t = world.get(a, Transform)!; world.add(a, Animal, { kind: world.get(a, Tamed)!.kind, homeX: t.x, homeY: t.y, goalX: t.x, goalY: t.y, thinkAt: now });
     if (!world.has(a, AnimState)) world.add(a, AnimState, { anim: 0, startTick: now });
   }
+  for (const a of animals) if (!world.has(a, AnimalSkills)) ensureAnimalSkills(world, a); // Task 15: legacy/loaded farm animals
   const atTrough = (a: Entity): Entity | undefined => { const t = world.get(a, Transform)!; return tr.find((b) => { const bt = world.get(b, Transform)!; return (bt.x - t.x) ** 2 + (bt.y - t.y) ** 2 <= H.troughRange ** 2; }); };
   const perTrough = new Map<Entity, Entity[]>();
   for (const a of animals) { const b = canUsePens(world, world.get(a, Tamed)!.owner) ? atTrough(a) : undefined; if (b !== undefined) { const l = perTrough.get(b) ?? []; l.push(a); perTrough.set(b, l); } }
@@ -79,9 +82,10 @@ export function husbandrySystem(world: World): void {
       const bt = world.get(b, Transform)!; world.set(a, Animal, { homeX: bt.x, homeY: bt.y });
       const p = H.animals[animalDefs()[t.kind]?.key ?? ""]; if (!p || t.produceAt > now) continue;
       const owner = t.owner && world.isAlive(t.owner) ? t.owner : 0;
-      const mul = 1 + (owner ? skillMod(world, owner, "produce") : 0);
+      const mods = animalSkillMods(world, a); // Task 15: production + produce-speed nodes
+      const mul = (1 + (owner ? skillMod(world, owner, "produce") : 0)) * (1 + mods.produceSpeed);
       world.set(a, Tamed, { produceAt: now + sec(p.seconds / mul) });
-      try { addItem(world, b, defs.itemId(p.produce), 1); } catch { /* unknown produce item */ }
+      try { addItem(world, b, defs.itemId(p.produce), 1 + mods.produce); awardAnimalXp(world, a, defs.animalSkillsTuning.xp.produceXp); } catch { /* unknown produce item */ }
     }
     if (list.length >= H.maxPerTrough) continue;
     const byKind = new Map<number, Entity[]>();
@@ -90,7 +94,8 @@ export function husbandrySystem(world: World): void {
       if (l.length < 2) continue; const [m, f] = l as [Entity, Entity]; const owner = world.get(m, Tamed)!.owner;
       const ft = world.get(f, Transform)!; const baby = spawnAnimal(world, kind, ft.x + 0.5, ft.y);
       world.add(baby, Tamed, { kind, owner, fedUntil: now, produceAt: now + sec(H.breedSeconds), breedAt: now + sec(H.breedSeconds * 2) });
-      for (const x of [m, f]) world.set(x, Tamed, { breedAt: now + sec(H.breedSeconds) });
+      ensureAnimalSkills(world, baby); // Task 15: newborn starts with its level-1 skill point
+      for (const x of [m, f]) { const fm = Math.min(0.9, animalSkillMods(world, x).fertility); world.set(x, Tamed, { breedAt: now + sec(H.breedSeconds * (1 - fm)) }); }
       emit(world, AnimalBred, { owner, baby }); awardXp(world, owner, "tame", 0.5);
       break;
     }

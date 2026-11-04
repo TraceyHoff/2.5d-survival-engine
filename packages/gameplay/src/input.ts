@@ -9,6 +9,7 @@ import { slotItem } from "./inventory.js";
 import { gameplayDefs } from "./config.js";
 import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
+import { ANIMAL_SKILL_COMMANDS } from "./animal_skills.js";
 import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
 import { MAP_MARKER_COMMANDS, MAP_MARKER_ENTITY_FIELDS } from "./map_marker_commands.js";
 import { READY_COMMANDS } from "./ready.js";
@@ -106,6 +107,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of MAP_MARKER_COMMANDS) reg.register(d); // append-only: world-map markers
   for (const [d] of DISEASE_COMMANDS) reg.register(d); // append-only (Task 13): boil water at a lit campfire
   for (const d of READY_COMMANDS) reg.register(d); // append-only (Task 14): client loaded-in signal
+  for (const d of ANIMAL_SKILL_COMMANDS) reg.register(d); // append-only (Task 15): animal skill purchase
   return reg;
 }
 

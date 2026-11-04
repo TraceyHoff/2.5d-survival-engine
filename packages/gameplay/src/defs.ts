@@ -233,6 +233,8 @@ export interface AiTuning {
   readonly thinkTicks: number; readonly repathTicks: number; readonly maxSearchRadius: number; readonly maxExpandedNodes: number;
   readonly breakCostMul: number; readonly wanderRadius: number; readonly loseTargetMul: number; readonly investigateSeconds: number;
   /** ADR-194 aggression window (time-of-day fractions) + per-zombie stagger; calm zombies retaliate for retaliateSeconds. */ readonly aggroStartT: number; readonly aggroEndT: number; readonly aggroStaggerT: number; readonly retaliateSeconds: number; readonly despawnDistance: number; readonly corpseSeconds: number;
+  /** Task 15: max chase distance from a zombie's spawn anchor (homeX/homeY), in tiles. Beyond it a chasing zombie gives up and wanders (horde members and light/structure chasing are exempt). */
+  readonly chaseLimitTiles: number;
 }
 export interface NoiseTuning { readonly gather: number; readonly build: number; readonly attack: number; readonly structureHit: number; readonly door: number; readonly decayPerSec: number }
 export interface WorldgenBand { readonly max: number; readonly tile: number; readonly nodes: readonly number[]; readonly nodeChance: number; readonly temp: number; readonly humidity: number }
@@ -273,6 +275,10 @@ export interface GameDefs {
   readonly diseaseTuning: DiseasesTuning;
   /** 0-based index of a disease key, or -1 when unknown. */
   diseaseIndex(key: string): number;
+  /** Per-animal skill trees (data/animal_skills.json), keyed by animal kind (e.g. animal_cow). */
+  readonly animalSkills: ReadonlyMap<string, AnimalSkillTree>;
+  readonly animalSkillsTuning: AnimalSkillsTuning;
+  animalSkillTree(kind: string): AnimalSkillTree | undefined;
   readonly environment: EnvironmentTuning;
   readonly movement: MovementTuning;
   readonly worldgen: WorldgenDef;
@@ -319,12 +325,20 @@ export interface RawPiece extends RawVisual {
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
 export interface RawDisease { key: string; name: string; short: string; color: string; contagious?: boolean; durationSeconds: number; hpDps?: number; hungerMul?: number; thirstMul?: number; staminaDrainPerSec?: number; moveMul?: number; cure?: string | null }
 export interface RawDiseases { $comment?: string; diseases: RawDisease[]; causes: DiseasesTuning["causes"]; transmission: DiseasesTuning["transmission"]; exposure: DiseasesTuning["exposure"] }
+/** One animal skill node (data/animal_skills.json). `requires` names the previous rank in the same tree (null = no prereq). */
+export type AnimalSkillEffectType = "produce" | "produceSpeed" | "fertility" | "damage" | "health" | "speed";
+export interface RawAnimalSkillNode { key: string; name: string; desc: string; cost: number; requires?: string; effect: { type: AnimalSkillEffectType; value: number } }
+export interface RawAnimalSkills { $comment?: string; pointsEvery: number; trees: Record<string, { nodes: RawAnimalSkillNode[] }>; xp: { base: number; growth: number; maxLevel: number; produceXp: number; feedXp: number } }
+export interface AnimalSkillNode { key: string; name: string; desc: string; cost: number; requires: string | null; effect: { type: AnimalSkillEffectType; value: number } }
+export interface AnimalSkillTree { kind: string; nodes: readonly AnimalSkillNode[] }
+export interface AnimalSkillsTuning { pointsEvery: number; xp: { base: number; growth: number; maxLevel: number; produceXp: number; feedXp: number } }
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
   resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number }; depletion?: Partial<DepletionDef> & { $comment?: string } };
   vitals: VitalsTuning & { $comment?: string };
   diseases: RawDiseases;
+  animalSkills: RawAnimalSkills;
   environment: Omit<EnvironmentTuning, "weather" | "seasons"> & { weather: RawWeather[]; seasons?: RawSeasons; $comment?: string };
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
@@ -389,6 +403,33 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   }
   const diseaseTuning: DiseasesTuning = { causes: { ...raw.diseases.causes }, transmission: { ...raw.diseases.transmission }, exposure: { ...raw.diseases.exposure } };
   const diseaseKeys = new Set(diseases.map((d) => d.key));
+
+  // animal skill trees (Task 15): one small tree per tameable/farmable animal kind.
+  const animalSkills = new Map<string, AnimalSkillTree>(); let animalSkillsTuning: AnimalSkillsTuning = { pointsEvery: 5, xp: { base: 20, growth: 1.35, maxLevel: 20, produceXp: 2, feedXp: 1 } };
+  {
+    const ra = raw.animalSkills; const where = "animalSkills";
+    if (!ra || !Number.isInteger(ra.pointsEvery) || ra.pointsEvery < 1) err(`${where}.pointsEvery must be a positive integer`);
+    const xp = ra?.xp;
+    if (!xp || !(xp.base > 0) || !(xp.growth >= 1) || !Number.isInteger(xp.maxLevel) || xp.maxLevel < 1 || xp.maxLevel > 255 || !Number.isInteger(xp.produceXp) || xp.produceXp < 0 || !Number.isInteger(xp.feedXp) || xp.feedXp < 0) err(`${where}.xp: need base > 0, growth >= 1, maxLevel 1..255, produceXp/feedXp >= 0 integers`);
+    animalSkillsTuning = { pointsEvery: ra.pointsEvery, xp: { base: xp.base, growth: xp.growth, maxLevel: xp.maxLevel, produceXp: xp.produceXp, feedXp: xp.feedXp } };
+    const EFFECTS: readonly string[] = ["produce", "produceSpeed", "fertility", "damage", "health", "speed"];
+    for (const [kind, tree] of Object.entries(ra?.trees ?? {})) {
+      if (!KEY.test(kind)) err(`${where}: bad tree kind "${kind}"`);
+      const nodes = tree?.nodes ?? [];
+      if (nodes.length < 1 || nodes.length > 32) err(`${where}.${kind}: need 1..32 nodes (AnimalSkills bitmask width)`);
+      const seen = new Set<string>(); const out: AnimalSkillNode[] = [];
+      for (const n of nodes) {
+        if (!KEY.test(n.key)) err(`${where}.${kind}: bad node key "${n.key}"`); if (seen.has(n.key)) err(`${where}.${kind}: duplicate node ${n.key}`); seen.add(n.key);
+        if (!Number.isInteger(n.cost) || n.cost < 1) err(`${where}.${kind}.${n.key}: cost must be a positive integer`);
+        if (n.requires !== undefined && !out.some((o) => o.key === n.requires)) err(`${where}.${kind}.${n.key}: requires "${n.requires}" must be an earlier node in the same tree`);
+        if (!EFFECTS.includes(n.effect?.type)) err(`${where}.${kind}.${n.key}: unknown effect type "${n.effect?.type}"`);
+        if (n.effect.type === "produce") { if (!Number.isInteger(n.effect.value) || n.effect.value < 1) err(`${where}.${kind}.${n.key}: produce value must be a positive integer`); }
+        else if (!(n.effect.value > 0) || (n.effect.type === "fertility" && n.effect.value >= 1)) err(`${where}.${kind}.${n.key}: effect value must be > 0 (fertility < 1)`);
+        out.push({ key: n.key, name: n.name, desc: n.desc, cost: n.cost, requires: n.requires ?? null, effect: { type: n.effect.type, value: n.effect.value } });
+      }
+      animalSkills.set(kind, { kind, nodes: out });
+    }
+  }
 
   const items = new Map<number, ItemDef>();
   for (const r of raw.items.items) {
@@ -595,6 +636,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   return {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
     diseases, diseaseTuning, diseaseIndex: (key: string): number => diseases.findIndex((d) => d.key === key),
+    animalSkills, animalSkillsTuning, animalSkillTree: (kind: string): AnimalSkillTree | undefined => animalSkills.get(kind),
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
     vitals: strip(raw.vitals), environment: { ...envRest, weather, ...(seasons ? { seasons } : {}) }, movement: { ...strip(raw.movement), deckStandHeight: raw.movement.deckStandHeight ?? 0.75, floorStandHeight: raw.movement.floorStandHeight ?? 0.3125, stepRate: raw.movement.stepRate ?? 6, swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },

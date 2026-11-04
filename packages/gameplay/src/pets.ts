@@ -14,7 +14,7 @@ import { defineCommand, DEFAULT_TICK_HZ, entityIndex, PlayerId, Transform, type 
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/pets.json";
 import {
-  Anim, Animal, AnimState, BuildPiece, Container, ContainerViewers, Dead, Health, Inventory, LootBag, Pet, PET_NAME_MAX, PetBrain, PetCmd, PetGuard, PetStatus, PetStatusComp, PieceOwner,
+  Anim, Animal, AnimalSkills, AnimState, BuildPiece, Container, ContainerViewers, Dead, Health, Inventory, LootBag, Pet, PET_NAME_MAX, PetBrain, PetCmd, PetGuard, PetStatus, PetStatusComp, PieceOwner,
   Survival, Tamed, Tribe, TroughOwner, Zombie,
 } from "./components.js";
 import { pieceOf } from "./building/links.js";
@@ -24,6 +24,7 @@ import { gameplayDefs, isAuthority } from "./config.js";
 import { emit, ev, Damaged, PiecePlaced, PieceDamaged } from "./events.js";
 import { addItem, canAddItem, countItem, listSlots, moveSlotTuples, removeItem, takeFromSlot, transferItem } from "./inventory.js";
 import { animalDefs, populationTile } from "./population.js";
+import { animalSkillMods, animalXpToNext, ensureAnimalSkills, reconcileAnimalSkills } from "./animal_skills.js";
 import { applyDamage, setAnim } from "./combat/combat.js";
 import { awardXp } from "./skills/progression.js";
 import { indexEntity } from "./spawn.js";
@@ -66,6 +67,15 @@ export function petStats(species: number, level: number): PetStats {
   const s = petSpecies(species); const def = s ? animalDefs().find((a) => a.key === s.animal) : undefined; const l = Math.max(1, level) - 1;
   const base = def?.hp ?? 30; const dmg = (def?.attack?.damage ?? 3) * (s?.damageMul ?? 1); const fast = def?.fleeSpeed ?? 3.5;
   return { maxHp: Math.round(base * (1 + T.hpPerLevel * l)), damage: dmg * (1 + T.damagePerLevel * l), walk: fast * 0.62 * (1 + T.speedPerLevel * l), run: fast * 1.25 * (1 + T.speedPerLevel * l), attackRange: T.attackRange };
+}
+/**
+ * Task 15: petStats with bought animal-skill multipliers applied (damage / health / speed nodes). No skills row
+ * (wild animals, legacy pets before their first petSystem tick) behaves exactly like petStats.
+ */
+export function petStatsWithSkills(world: World, e: Entity, species: number, level: number): PetStats {
+  const base = petStats(species, level); if (!world.has(e, AnimalSkills)) return base;
+  const m = animalSkillMods(world, e);
+  return { maxHp: Math.round(base.maxHp * m.healthMul), damage: base.damage * m.damageMul, walk: base.walk * m.speedMul, run: base.run * m.speedMul, attackRange: base.attackRange };
 }
 // ---- names --------------------------------------------------------------------------------------------
 export function sanitizePetName(rawName: string): string {
@@ -117,6 +127,7 @@ export function makePet(world: World, animal: Entity, owner: Entity, species = s
   const ownerId = pidOf(world, owner); const t = world.get(animal, Transform)!; const st = petStats(species, 1);
   const kind = world.getField(animal, Animal, "kind")!;
   world.add(animal, Pet, { species, owner: ownerId, cmd: PetCmd.Follow, level: 1, xp: 0, fullness: 80, loyalty: T.startLoyalty, hp: st.maxHp, stayX: t.x, stayY: t.y, len: 0 });
+  ensureAnimalSkills(world, animal); // Task 15: fresh pet starts with its level-1 skill point
   if (!world.has(animal, Tamed)) world.add(animal, Tamed, { kind, owner, fedUntil: world.tick, produceAt: world.tick + sec(600), breedAt: world.tick + sec(1e6) });
   if (!world.has(animal, Container)) world.add(animal, Container, { slotCount: T.inventorySlots, maxWeight: 0 }).add(animal, ContainerViewers);
   world.set(animal, Health, { hp: st.maxHp, max: st.maxHp });
@@ -294,8 +305,9 @@ export function grantXp(world: World, pet: Entity, amount: number): void {
   while (level < T.maxLevel && xp >= petXpToNext(level)) { xp -= petXpToNext(level); level++; up = true; }
   if (level >= T.maxLevel) xp = Math.min(xp, petXpToNext(level));
   world.set(pet, Pet, { xp, level });
+  reconcileAnimalSkills(world, pet); // Task 15: level-ups grant points at levels 1/6/11/16 (never removes spent)
   if (up) {
-    const st = petStats(p.species, level); const h = world.get(pet, Health)!; const hp = Math.min(st.maxHp, h.hp + (st.maxHp - h.max));
+    const st = petStatsWithSkills(world, pet, p.species, level); const h = world.get(pet, Health)!; const hp = Math.min(st.maxHp, h.hp + (st.maxHp - h.max));
     world.set(pet, Health, { max: st.maxHp, hp }); world.setField(pet, Pet, "hp", hp);
     const owner = playerEntity(world, p.owner); emit(world, PetEvent, { entity: owner ?? pet, pet, result: PetResult.LevelUp, value: level });
   }
@@ -398,7 +410,8 @@ export function petSystem(world: World, dt: number): void {
     moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Animal); indexEntity(world, bag);
   }
   for (const e of [...world.query([Pet, Transform], [Dead])].sort((a, b) => a - b)) {
-    const p = world.get(e, Pet)!; const st = petStats(p.species, p.level);
+    const p = world.get(e, Pet)!; if (!world.has(e, AnimalSkills)) ensureAnimalSkills(world, e); // Task 15: legacy/loaded pets
+    const st = petStatsWithSkills(world, e, p.species, p.level);
     if (!world.has(e, PetBrain)) world.add(e, PetBrain, { nextEat: now, nextStarve: now + sec(10) });
     if (!world.has(e, Animal) || !world.has(e, AnimState)) continue; // husbandrySystem restores these after a load
     if (!world.has(e, ContainerViewers)) world.add(e, ContainerViewers);
@@ -502,12 +515,29 @@ export interface PetOffer { item: number; key: string; name: string; count: numb
 export interface PetView {
   entity: Entity; species: number; speciesName: string; name: string; owned: boolean; wild: boolean; ownerId: number;
   level: number; xp: number; xpNext: number; hp: number; maxHp: number; fullness: number; loyalty: number; cmd: number; offers: PetOffer[];
-  status: number; guard: string | undefined;
+  status: number; guard: string | undefined; livestock: boolean;
 }
+/** Display name for an animal kind key ("animal_dog_dachshund" -> "Dog Dachshund"). */
+export const animalDisplayName = (key: string): string => key.replace(/^animal_/, "").split("_").map((w) => w ? w[0]!.toUpperCase() + w.slice(1) : w).join(" ");
+/** True when `player` owns this tamed farm animal (Tamed.owner is the owner entity). */
+export const isTamedOwner = (world: World, player: Entity, e: Entity): boolean => {
+  const owner = world.getField(e, Tamed, "owner"); if (owner === undefined) return false;
+  const id = pidOf(world, player); return id !== 0 && world.isAlive(owner) && pidOf(world, owner) === id;
+};
 /** Pet / tameable animal panel data for `player` looking at `e` (undefined = not a pet species). */
 export function petView(world: World, player: Entity, e: Entity): PetView | undefined {
-  if (!world.isAlive(e) || world.has(e, Dead)) return undefined; const p = world.get(e, Pet); const sp = p?.species ?? speciesOfAnimal(world, e); const s = petSpecies(sp); if (!s) return undefined;
-  if (!p && world.has(e, Tamed)) return undefined; // husbandry livestock
+  if (!world.isAlive(e) || world.has(e, Dead)) return undefined; const p = world.get(e, Pet); const sp = p?.species ?? speciesOfAnimal(world, e); const s = petSpecies(sp);
+  if (!p && world.has(e, Tamed)) {
+    // Task 15: owned husbandry livestock gets a panel too (status + skills), so farm skill points are spendable.
+    const kind = animalDefs()[world.getField(e, Animal, "kind") ?? -1]?.key; if (!kind) return undefined;
+    const name = animalDisplayName(kind); const sk = world.get(e, AnimalSkills); const h = world.get(e, Health);
+    return {
+      entity: e, species: 0, speciesName: name, name, owned: isTamedOwner(world, player, e), wild: false, ownerId: pidOf(world, world.getField(e, Tamed, "owner") ?? 0) ?? 0,
+      level: sk?.level ?? 1, xp: sk?.xp ?? 0, xpNext: animalXpToNext(world, sk?.level ?? 1), hp: h?.hp ?? 0, maxHp: h?.max ?? 0, fullness: 0, loyalty: 0, cmd: 0, offers: [],
+      status: PetStatus.Idle, guard: undefined, livestock: true,
+    };
+  }
+  if (!s) return undefined;
   const defs = gameplayDefs(world); const offers: PetOffer[] = [];
   for (const sl of listSlots(world, player)) {
     if (!sl.item || !sl.count || offers.some((o) => o.item === sl.item)) continue; const d = defs.items.get(sl.item); if (!d) continue;
@@ -516,19 +546,22 @@ export function petView(world: World, player: Entity, e: Entity): PetView | unde
     else if (pref) offers.push({ item: d.id, key: d.key, name: d.name, count: countItem(world, player, d.id), chance: tameChance(sp, d.key), pref, fullness: full });
   }
   offers.sort((a, b) => b.chance - a.chance || b.fullness - a.fullness || a.item - b.item);
-  const level = p?.level ?? 1; const st = petStats(sp, level); const h = world.get(e, Health);
+  const level = p?.level ?? 1; const st = p ? petStatsWithSkills(world, e, sp, level) : petStats(sp, level); const h = world.get(e, Health);
   return {
     entity: e, species: sp, speciesName: s.name, name: p ? petName(world, e) : `Wild ${s.name}`, owned: !!p && isPetOwner(world, player, e), wild: !p, ownerId: p?.owner ?? 0,
     level, xp: p?.xp ?? 0, xpNext: petXpToNext(level), hp: h?.hp ?? p?.hp ?? st.maxHp, maxHp: h?.max ?? st.maxHp, fullness: p?.fullness ?? 0, loyalty: p?.loyalty ?? 0, cmd: p?.cmd ?? 0, offers,
     status: world.has(e, PetStatusComp) ? world.getField(e, PetStatusComp, "status")! : p?.cmd === PetCmd.Guard ? PetStatus.Guard : p?.cmd === PetCmd.Stay ? PetStatus.Stay : PetStatus.Idle,
-    guard: p?.cmd === PetCmd.Guard ? guardTargetLabel(world, e) : undefined,
+    guard: p?.cmd === PetCmd.Guard ? guardTargetLabel(world, e) : undefined, livestock: false,
   };
 }
-/** Nearest pet (own first) or tameable wild animal within `range` of the player. */
+/** Nearest pet (own first), tameable wild animal, or owned farm animal within `range` of the player. */
 export function nearestPet(world: World, player: Entity, range = T.interactRange + 0.5): { entity: Entity; d: number } | undefined {
   const me = world.get(player, Transform); if (!me) return undefined; let best: { entity: Entity; d: number } | undefined;
   for (const e of world.query([Animal, Transform], [Dead])) {
-    if (!world.has(e, Pet) && (world.has(e, Tamed) || !speciesOfAnimal(world, e))) continue;
+    if (!world.has(e, Pet)) {
+      if (world.has(e, Tamed)) { if (!isTamedOwner(world, player, e)) continue; } // Task 15: own livestock opens its panel
+      else if (!speciesOfAnimal(world, e)) continue;
+    }
     const t = world.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y) - (isPetOwner(world, player, e) ? 0.3 : 0);
     if (d <= range && (!best || d < best.d)) best = { entity: e, d };
   }
@@ -542,4 +575,5 @@ export const PET_HELP = [
   "Hungry pets eat from their bag, food lying on the ground, then your pet trough (Build > pet trough). Starving pets lose health slowly and trust, but never die of it.",
   "Pets gain XP fighting; every level adds health, damage and speed.",
   "Guard: in your pet's panel, pick Guard here (this spot), Guard me, or a nearby building, station, player, pet, farm animal or AI human — the pet stays near it, fights threats to it, and returns after. A small symbol above the pet shows what it is doing.",
+  "Animal skills: every tameable or farmable animal has its own small skill tree (cows make more milk, dogs bite harder). Animals earn a skill point at levels 1, 6, 11, 16 — spend them in the animal's panel. Farm animals level up by producing and being fed.",
 ] as const;

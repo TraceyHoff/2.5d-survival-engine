@@ -37,7 +37,7 @@ export interface ArchetypeBehavior {
   aggro: { mode: AggroMode; range: number; leashRange: number }; flee: { hpFrac: number; range: number };
   wander: { radius: number; idleSeconds: [number, number] }; attack?: AttackData | null; loot: LootEntry[];
 }
-export interface AiData { archetypes: Record<string, ArchetypeBehavior> }
+export interface AiData { archetypes: Record<string, ArchetypeBehavior>; tuning?: { chaseLimitTiles?: number } }
 /** Fully resolved behavior (zombie fields merged from zombies.json). */
 export interface ResolvedBehavior extends ArchetypeBehavior { hp: number; speed: number; perception: Perception; attack: AttackData | null }
 

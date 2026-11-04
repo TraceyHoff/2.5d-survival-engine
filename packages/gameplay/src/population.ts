@@ -15,7 +15,7 @@ import { gameplayDefs, isAuthority } from "./config.js";
 import { indexEntity } from "./spawn.js";
 import { currentPhaseKey, PopulationZombies, spawnZombie } from "./combat/zombies.js";
 import { zombieKindAllowed } from "./combat/zombie_gate.js";
-import { applyDamage, setAnim } from "./combat/combat.js";
+import { applyDamage, lastAttacker, setAnim } from "./combat/combat.js";
 import { addItem } from "./inventory.js";
 import { structures } from "./building/structure.js";
 import { TerrainRes } from "./world.js";
@@ -126,8 +126,28 @@ export function animalAISystem(world: World, dt: number): void {
       if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: pt.x, y: pt.y, d };
     }
     let state = a.state, gx = a.goalX, gy = a.goalY;
+    // Task 15: chase limit — an engaged animal gives up once it is farther than this from home (tighter than
+    // the old 2x leashRange rule when the limit is smaller). Territory defenders below are exempt: they use
+    // their own claim-range branch, not this one.
+    const chaseLimit = populationData().ai.tuning?.chaseLimitTiles ?? 18;
+    const pressHome = Math.min(def.aggro.leashRange * 2, chaseLimit);
+    // Task 15: retaliation — a hurt wild animal engages its recent attacker even outside aggro.range, as long
+    // as the attacker is close (within leashRange) and recent (retaliateSeconds). The attacker overrides the
+    // scanned threat (defending yourself takes priority over a bystander). Scared animals never retaliate
+    // (aggressive already excludes them). This keeps a calmer moose (range 2) defending itself.
+    let retaliating = false;
+    if (!tame && aggressive && hurt) {
+      const la = lastAttacker(world, e);
+      if (la && world.tick - la.tick <= gameplayDefs(world).ai.retaliateSeconds * DEFAULT_TICK_HZ) {
+        const at = world.get(la.e, Transform);
+        if (at && world.has(la.e, Survival) && !world.has(la.e, Dead)) {
+          const d = Math.hypot(at.x - t.x, at.y - t.y);
+          if (d <= def.aggro.leashRange) { threat = { e: la.e, x: at.x, y: at.y, d }; retaliating = true; }
+        }
+      }
+    }
     const engaged = state === AnimalState.Attack;
-    const wants = aggressive && threat && (engaged ? threat.d <= def.aggro.leashRange && homeD <= def.aggro.leashRange * 2
+    const wants = aggressive && threat && ((engaged || retaliating) ? threat.d <= def.aggro.leashRange && homeD <= pressHome
       : threat.d <= def.aggro.range && (def.aggro.mode === "hostile" || (def.aggro.mode === "territorial" && homeD <= def.aggro.leashRange) || (def.aggro.mode === "defensive" && hurt)));
     // Task 14: tame animals defend their owner's claim. Passive farm animals have no species attack, so they
     // get a generic bite; goat/cow reuse their own attack. Movement still goes through creatureStep, so a

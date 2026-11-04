@@ -29,6 +29,7 @@
     "aggroEndT": 0.27,
     "aggroStaggerT": 0.05,
     "retaliateSeconds": 30,
+    "chaseLimitTiles": 20,
     "despawnDistance": 60,
     "corpseSeconds": 5
   },

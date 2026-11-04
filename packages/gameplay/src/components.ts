@@ -196,6 +196,15 @@ export const Diseases = defineComponent("Diseases", {
   untilTick: { type: "u32", length: MAX_DISEASES },
   coldTicks: "u32", heatTicks: "u32", sprintTicks: "u32", restTicks: "u32", contactTicks: "u32",
 }, { networked: true, persistent: true });
+/** Task 15 animal skills: per-animal level/XP (farm animals; pets mirror Pet.level), unspent skill points, and a
+ * bitmask of bought tree nodes (bit i = tree node i). Networked (panels read it on every peer) and persistent
+ * (points and purchases survive restarts; see reconcileAnimalSkills for the level-based migration rule). */
+export const AnimalSkills = defineComponent("AnimalSkills", {
+  level: { type: "u16", default: 1 },
+  xp: "u32",
+  points: "u16",
+  nodes: "u32",
+}, { networked: true, persistent: true });
 export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
 export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
 export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
@@ -400,4 +409,5 @@ export const GAMEPLAY_COMPONENTS = [
   Diseases, // append-only (Task 13: diseases)
   PetGuard, PetStatusComp, // append-only (Task 14: pet guarding + status)
   PlayerReady, // append-only (Task 14: second loading screen — joined players wait for their client to load in)
+  AnimalSkills, // append-only (Task 15: per-animal skill points + spent-node bitmask)
 ] as const;

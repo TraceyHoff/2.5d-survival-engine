@@ -21,7 +21,7 @@ import { iconForItem, ROADS, clanTintIndex,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
-  petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
+  petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
@@ -800,6 +800,24 @@ const PREF_TEXT: Record<string, string> = { love: "loves it", like: "likes it", 
 const bar = (label: string, v: number, max: number, role: string): HTMLElement => {
   const p = el("p", { "data-role": role }, `${label} ${Math.round(v)}/${Math.round(max)}`); p.setAttribute("style", `--p:${Math.max(0, Math.min(1, max ? v / max : 0)).toFixed(3)}`); return p;
 };
+// ---- Task 15: animal skill tree section (pet + livestock panels) ---------------------------------------
+function skillNodes(c: MenuCtx, kit: PanelKit, btn: Btn, send: (i: MenuIntent, ok: string) => void, v: { entity: Entity; name: string }): Node[] {
+  const out: Node[] = []; const sk = animalSkillView(c.world, v.entity);
+  if (!sk) return out;
+  out.push(heading(`Skills · Lv ${sk.level} · ${sk.points} point${sk.points === 1 ? "" : "s"}`));
+  const g = grid(); g.dataset["role"] = "animal-skills";
+  for (const n of sk.nodes) {
+    if (n.owned) g.append(btn(`${n.name} — ${n.desc}`, `skill-${n.index}`, () => kit.status(`${n.name} already learned.`), { pressed: true, role: "toggle", title: "Learned" }));
+    else if (n.available) g.append(btn(`${n.name} — ${n.desc} (${n.cost} pt)`, `skill-${n.index}`, () => send(animalSkillIntent(v.entity, n.index), `${v.name} learned ${n.name}.`), { title: "Spend a skill point" }));
+    else {
+      const req = n.requires ? sk.nodes.find((o) => o.key === n.requires) : undefined;
+      const why = n.requires && !req?.owned ? `Requires ${req?.name ?? n.requires}` : `Needs ${n.cost} point${n.cost === 1 ? "" : "s"} (have ${sk.points})`;
+      g.append(btn(`${n.name} — ${n.desc}`, `skill-${n.index}`, () => kit.status(why), { disabled: true, title: why }));
+    }
+  }
+  out.push(g);
+  return out;
+}
 function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send: (i: MenuIntent, ok: string) => void): Node[] {
   const w = c.world; const me = w.getField(c.player, PlayerId, "id") ?? 0; const out: Node[] = [];
   const target = src.pet?.(); const v = target !== undefined ? petView(w, c.player, target) : undefined;
@@ -821,6 +839,12 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
   if (!v.wild) head.append(bar("Fed", v.fullness, 100, "pet-fullness"), bar("Trust", v.loyalty, 100, "pet-loyalty"), bar("XP", v.xp, v.xpNext, "pet-xp"));
   out.push(head);
   if (!v.wild && !v.owned) { out.push(kit.para(`Someone else's ${v.speciesName.toLowerCase()}.`)); return out; }
+  if (v.livestock) {
+    // Task 15: farm animals get only status + skills (Follow/Stay/Guard/bag are pet-only).
+    out.push(...skillNodes(c, kit, btn, send, v));
+    out.push(kit.para("Feed with animal feed to keep it producing. Farm animals earn skill XP when they produce and when fed."));
+    return out;
+  }
   if (v.owned) {
     const g = grid(); g.dataset["role"] = "pet-commands";
     g.append(btn("Follow", "pet-follow", () => send(petCommandIntent(v.entity, 0), `${v.name} follows you.`), { pressed: v.cmd === 0, role: "toggle", title: "Follow, defend you, fetch dropped items" }));
@@ -847,6 +871,7 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
     }
     out.push(heading("Guard"), gg);
   }
+  if (v.owned) out.push(...skillNodes(c, kit, btn, send, v));
   // treats / food offers (tame chance for wild animals)
   const og = grid(); og.dataset["role"] = "pet-offers";
   for (const o of v.offers) {

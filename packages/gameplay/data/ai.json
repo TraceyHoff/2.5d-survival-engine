@@ -887,7 +887,7 @@
    },
    "aggro": {
     "mode": "territorial",
-    "range": 4,
+    "range": 2,
     "leashRange": 12
    },
    "flee": {
@@ -2112,5 +2112,9 @@
     }
    ]
   }
+ },
+ "tuning": {
+  "$comment": "Task 15: max chase distance from a wild animal's home anchor, in tiles. Beyond it an engaged animal gives up and returns to wander/home (territory defenders and guard pets are exempt).",
+  "chaseLimitTiles": 18
  }
 }

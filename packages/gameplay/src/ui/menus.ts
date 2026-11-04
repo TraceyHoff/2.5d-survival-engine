@@ -1,5 +1,6 @@
 import { ContainerToSlotCmd, MoveSlotCmd, SplitStackCmd } from "../inventory_ops.js";
 import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetGuardCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
+import { AnimalSkillCmd } from "../animal_skills.js";
 import { ReadyCmd } from "../ready.js";
 /**
  * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
@@ -419,6 +420,8 @@ export const petOfferIntent = (target: Entity, item: number): MenuIntent => inte
 export const petCommandIntent = (pet: Entity, cmd: number): MenuIntent => intent(PetCommandCmd, { pet, cmd }, ["pet"]);
 /** Task 14: guard a location (kind 1; target is ignored server-side, send the pet as the wire placeholder) or an entity (kind 2). */
 export const petGuardIntent = (pet: Entity, kind: number, target: Entity, x: number, y: number): MenuIntent => intent(PetGuardCmd, { pet, kind, target, x, y }, ["pet", "target"]);
+/** Task 15: buy an animal skill-tree node (node = index into the animal's tree). */
+export const animalSkillIntent = (animal: Entity, node: number): MenuIntent => intent(AnimalSkillCmd, { animal, node }, ["animal"]);
 /** Task 14: tell the server this client has finished loading (second loading screen dismissed). */
 export const readyIntent = (): MenuIntent => intent(ReadyCmd, {});
 export const petRenameIntent = (pet: Entity, name: string): MenuIntent => intent(PetRenameCmd, { pet, ...encodePetName(name) } as never, ["pet"]);

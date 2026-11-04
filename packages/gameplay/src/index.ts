@@ -104,5 +104,6 @@ export * from "./roads.js";
 export * from "./signs.js";
 export * from "./hordes.js";
 export * from "./pets.js"; // ADR-145
+export * from "./animal_skills.js"; // Task 15: per-animal skill trees
 export * from "./inventory_ops.js"; // ADR-204
 export * from "./stance.js"; // ADR-244
