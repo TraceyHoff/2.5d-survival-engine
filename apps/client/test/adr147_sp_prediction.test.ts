@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { MemoryWorldStore } from "@engine/persist";
 import { createGameLoop, Transform } from "@engine/core";
-import { Survival } from "@engine/gameplay";
-import { Act } from "@engine/server/protocol";
+import { readyIntent, Survival } from "@engine/gameplay";
+import { Act, gameplayNet } from "@engine/server/protocol";
 import { createLocalServer } from "../src/local.js";
 import { ClientSession, type KeyValue } from "../src/session.js";
 
@@ -20,7 +20,12 @@ async function runSp(jitter: boolean): Promise<{ corrections: number; max: numbe
   const session = new ClientSession({ storage: new S(), slot: "1", sampleInput: () => ({ buttons, aimX: 0, aimY: 0 }) });
   const c = session.connect("local", "T", local.createTransport());
   let world; for (let i = 0; i < 50 && !world; i++) { local.pump(5); world = await Promise.race([c, Promise.resolve(undefined)]); }
-  world ??= await c; const loop = createGameLoop(world);
+  world ??= await c;
+  // Task 14: a real client sends gameplay.ready once its loading screen dismisses; without it the server
+  // freezes the joining player's vitals (stamina would never drain). The harness models that lifecycle.
+  session.client!.sendCommand(gameplayNet(readyIntent().cmd), {});
+  for (let i = 0; i < 5; i++) local.pump(5);
+  const loop = createGameLoop(world);
   let tc = 0, ts = 0, corrections = 0, max = 0, x0 = 0, staminaMin = 100;
   for (let f = 0; f < 1100; f++) {
     if (f === 100) { buttons = Act.MoveRight | Act.Sprint; x0 = world.get(session.player!, Transform)!.x; }

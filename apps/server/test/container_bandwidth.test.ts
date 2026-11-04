@@ -22,7 +22,10 @@ describe("96-slot Container replication bandwidth", () => {
     expect(stats.changes).toBe(1);
     // whole-array cost is ~96 x (2+2+4+2+4) = 1344 B; one slot must be tiny
     expect(spawnBytes).toBeGreaterThan(N * 14);
-    expect(deltaBytes).toBeLessThanOrEqual(24); // mostly the per-record component masks
+    // Task 14: 25, not 24 — a Change record carries changedMask + removedMask, one bit per networked
+    // component, so the three new networked components (PetGuard, PetStatus, PlayerReady) pushed the
+    // record over a byte boundary. The assertion's point stands: 25 B vs the ~1344 B whole array.
+    expect(deltaBytes).toBeLessThanOrEqual(25); // mostly the per-record component masks
 
     // a full stack move (item+count+tick+durability+crafter in 2 slots) is still well under 5% of the array
     for (const f of ["items", "counts", "createdTick", "durability", "crafterId"] as const) { st.data[f][slot * N + 10] = 0; st.data[f][slot * N + 95] = 3; }

@@ -21,7 +21,7 @@ import { iconForItem, ROADS, clanTintIndex,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
-  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet,
+  petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
@@ -816,6 +816,7 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
   }
   const head = el("section", { "data-role": "pet-status", "data-species": petSpecies(v.species)?.key ?? "" });
   head.append(el("p", { "data-role": "pet-name" }, petTitle(v)));
+  if (!v.wild) head.append(el("p", { "data-role": "pet-doing" }, `Doing: ${petStatusLabel(v.status)}${v.guard ? ` · ${v.guard}` : ""}`));
   head.append(bar("HP", v.hp, v.maxHp, "pet-hp"));
   if (!v.wild) head.append(bar("Fed", v.fullness, 100, "pet-fullness"), bar("Trust", v.loyalty, 100, "pet-loyalty"), bar("XP", v.xp, v.xpNext, "pet-xp"));
   out.push(head);
@@ -826,6 +827,25 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
     g.append(btn("Stay", "pet-stay", () => send(petCommandIntent(v.entity, 1), `${v.name} stays here.`), { pressed: v.cmd === 1, role: "toggle", title: "Guard this spot, your buildings and pets" }));
     g.append(btn("Rename", "pet-rename", () => src.renamePet?.(v.entity, v.name), { alt: true, title: "Give your pet a name" }));
     out.push(g);
+    // Task 14: guard assignment — this spot, the player, or a nearby guardable target
+    const gg = grid(); gg.dataset["role"] = "pet-guard";
+    const me = w.get(c.player, Transform);
+    if (me) gg.append(btn("Guard here", "pet-guard-here", () => send(petGuardIntent(v.entity, 1, v.entity, me.x, me.y), `${v.name} guards this spot.`), { pressed: v.cmd === 2 && (v.guard ?? "").startsWith("Location"), role: "toggle", title: "Stay near this spot and fight threats to it" }));
+    gg.append(btn("Guard me", "pet-guard-me", () => send(petGuardIntent(v.entity, 2, c.player, 0, 0), `${v.name} guards you.`), { pressed: v.cmd === 2 && v.guard === "Player", role: "toggle", title: "Stay near you and fight anything that threatens you" }));
+    if (me) {
+      const defs = gameplayDefs(w); const near: { e: Entity; label: string; d: number }[] = [];
+      for (const e of w.query([Transform])) {
+        if (e === v.entity || e === c.player) continue;
+        const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d > 12) continue;
+        if (w.has(e, Pet)) { if (w.getField(e, Pet, "owner") === w.getField(c.player, PlayerId, "id")) near.push({ e, label: petName(w, e), d }); }
+        else if (w.has(e, PlayerId)) near.push({ e, label: "Player", d });
+        else if (w.has(e, BuildPiece)) { const def = defs.pieces.get(w.getField(e, BuildPiece, "type") ?? 0); if (def) near.push({ e, label: def.key.replace(/_/g, " "), d }); }
+        else if (w.has(e, Animal) && w.has(e, Tamed)) near.push({ e, label: "Farm animal", d });
+      }
+      near.sort((a, b) => a.d - b.d);
+      for (const t of near.slice(0, 12)) gg.append(btn(`Guard ${t.label}`, `pet-guard-${t.e}`, () => send(petGuardIntent(v.entity, 2, t.e, 0, 0), `${v.name} guards ${t.label}.`), { pressed: v.cmd === 2 && v.guard === t.label, role: "toggle", title: `Stay near ${t.label} and fight threats to it` }));
+    }
+    out.push(heading("Guard"), gg);
   }
   // treats / food offers (tame chance for wild animals)
   const og = grid(); og.dataset["role"] = "pet-offers";

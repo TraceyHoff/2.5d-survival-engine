@@ -327,7 +327,7 @@ export const NodeRegrow = defineComponent("NodeRegrow", { kind: "u16", respawnAt
 
 /** ADR-145 pet name buffer width (printable ASCII). */
 export const PET_NAME_MAX = 16;
-export const enum PetCmd { Follow = 0, Stay = 1 }
+export const enum PetCmd { Follow = 0, Stay = 1, Guard = 2 }
 /**
  * ADR-145 companion pet (authority writes; networked to all + persistent). species = pets.json index + 1; owner = PlayerId
  * (stable across sessions/restarts); cmd = PetCmd; fullness/loyalty 0..100; hp mirrors Health (Health is not persistent);
@@ -343,6 +343,25 @@ export const Pet = defineComponent("Pet", {
 export const TroughOwner = defineComponent("TroughOwner", { player: "u32" }, { networked: true, persistent: true });
 /** ADR-145 server-only pet runtime (timers + current target). */
 export const PetBrain = defineComponent("PetBrain", { target: "u32", nextAttack: "u32", nextEat: "u32", nextStarve: "u32", goal: "u32", lastSeen: "u32" });
+/**
+ * Task 14: a pet's guard assignment (authority writes; networked, NOT persistent — a guard target is a live
+ * entity whose id is meaningless after a restart, so a reload reverts a guarding pet to Follow; see petSystem).
+ * kind: 0 = none, 1 = world location (x, y), 2 = entity (target; x, y snapshot its last-known position).
+ */
+export const PetGuard = defineComponent("PetGuard", { kind: "u8", target: "u32", x: "f32", y: "f32" }, { networked: true });
+/** Task 14: what a pet is currently doing (authority writes when it changes; networked, not persistent). */
+export const enum PetStatus { Idle = 0, Follow = 1, Stay = 2, Guard = 3, Fight = 4, Return = 5, Eat = 6 }
+export const PetStatusComp = defineComponent("PetStatus", { status: "u8" }, { networked: true });
+/**
+ * Task 14: a joined player's load-in state (networked, NOT persistent — re-added on every join).
+ * The server adds it with ready=0 when a client joins; the client sends gameplay.ready when its second
+ * loading screen dismisses (connected + player spawned + chunks streamed), and the server flips ready=1.
+ * Virtual players (singleplayer bots) are marked ready at join by markVirtual. Systems that drain a player
+ * (vitals, diseases, pet hunger, spoilage) skip entities whose PlayerReady is still 0 — so nothing ticks
+ * down while the player is still loading. Entities without PlayerReady (test worlds, respawns, NPCs) are
+ * unaffected: the gate is opt-in per joined player, not a global behavior change.
+ */
+export const PlayerReady = defineComponent("PlayerReady", { ready: "u8" }, { networked: true });
 
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
@@ -379,4 +398,6 @@ export const GAMEPLAY_COMPONENTS = [
   Stance, // ADR-244 (append-only)
   MapMarker, // append-only (world-map markers)
   Diseases, // append-only (Task 13: diseases)
+  PetGuard, PetStatusComp, // append-only (Task 14: pet guarding + status)
+  PlayerReady, // append-only (Task 14: second loading screen — joined players wait for their client to load in)
 ] as const;

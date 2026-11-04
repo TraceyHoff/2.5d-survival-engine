@@ -10,6 +10,7 @@ import { BuildPiece, Container, Exposure, Inventory, type InvSchema } from "../c
 import { pieceOf } from "../building/links.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { freshness, mapSlots, rebaseCreated, slotsAdd } from "../inventory.js";
+import { pendingReady } from "../ready.js";
 import { ambientTemperature } from "./environment.js";
 import type { ComponentDef } from "@engine/core";
 
@@ -26,7 +27,8 @@ export function spoilageSystem(world: World, dt: number): void {
   const run = (def: ComponentDef<InvSchema>): void => {
     const st = world.store(def);
     for (let k = st.size - 1; k >= 0; k--) {
-      const e = st.dense[k]!; const idx = entityIndex(e);
+      const e = st.dense[k]!; if (pendingReady(world, e)) continue; // Task 14: a loading player's pack does not spoil
+      const idx = entityIndex(e);
       const temp = world.has(e, Exposure) ? world.getField(e, Exposure, "feltTemp")! : world.has(e, Transform) ? ambientTemperature(world, world.getField(e, Transform, "x")!, world.getField(e, Transform, "y")!) : sp.tempRefC;
       const tempMul = Math.min(sp.maxMul, Math.max(sp.minMul, 1 + sp.mulPerDegree * (temp - sp.tempRefC)));
       const want = baseMul(world, e) * tempMul; const cur = st.data.spoilMul[k]!;

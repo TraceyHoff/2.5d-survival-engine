@@ -60,6 +60,8 @@ export * from "./combat/arms.js";
 export * from "./net_hooks.js";
 export * from "./input_hooks.js";
 export * from "./population.js";
+export * from "./territory.js"; // Task 14: territory defense helpers
+export * from "./ready.js"; // Task 14: second loading screen — client loaded-in signal
 export * from "./agents.js";
 export * from "./systems/craft_queue.js";
 export * from "./ai/population.js";

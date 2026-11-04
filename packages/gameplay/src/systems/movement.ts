@@ -65,7 +65,12 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   return false;
 }
 export const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): boolean => {
-  for (let la = 1; la < 4; la++) { const c = idx.cell(tx, ty, level, la); const d = c ? idx.def(c) : undefined; if (d?.solid && d.snap !== "vertex") return true; }
+  for (let la = 1; la < 4; la++) {
+    const c = idx.cell(tx, ty, level, la); const d = c ? idx.def(c) : undefined;
+    // Task 14: an OPEN free-placement gate (garden gate, clan gate) is passable — its DoorState attachment says so.
+    // Edge doors were already handled by edgeBlocker; this is the grid-cell half, which used to block open gates too.
+    if (d?.solid && d.snap !== "vertex" && !(d.door && idx.doorOpen(c))) return true;
+  }
   return false;
 };
 

@@ -53,6 +53,8 @@ export class EasedBar {
   shown = 0; private target = 0;
   constructor(public reducedMotion = false, private readonly rate = 6) {}
   set(t: number): void { if (Number.isFinite(t)) this.target = Math.max(this.target, Math.max(0, Math.min(1, t))); }
+  /** Task 14: start over (the second loading screen reuses the bar after the first screen finished at 100%). */
+  reset(): void { this.shown = 0; this.target = 0; }
   get goal(): number { return this.target; }
   /** Advance by dt seconds; returns the shown value. Exponential ease plus a small minimum speed so it lands on 1. */
   step(dt: number): number {

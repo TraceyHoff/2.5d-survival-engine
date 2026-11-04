@@ -14,9 +14,12 @@ import { defineCommand, DEFAULT_TICK_HZ, entityIndex, PlayerId, Transform, type 
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/pets.json";
 import {
-  Anim, Animal, AnimState, BuildPiece, Container, ContainerViewers, Dead, Health, Inventory, LootBag, Pet, PET_NAME_MAX, PetBrain, PetCmd, PieceOwner,
+  Anim, Animal, AnimState, BuildPiece, Container, ContainerViewers, Dead, Health, Inventory, LootBag, Pet, PET_NAME_MAX, PetBrain, PetCmd, PetGuard, PetStatus, PetStatusComp, PieceOwner,
   Survival, Tamed, Tribe, TroughOwner, Zombie,
 } from "./components.js";
+import { pieceOf } from "./building/links.js";
+import { nearestClaimHostile } from "./territory.js";
+import { pendingReady } from "./ready.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { emit, ev, Damaged, PiecePlaced, PieceDamaged } from "./events.js";
 import { addItem, canAddItem, countItem, listSlots, moveSlotTuples, removeItem, takeFromSlot, transferItem } from "./inventory.js";
@@ -96,8 +99,8 @@ export const enum PetResult { Tamed = 1, Refused = 2, Shied = 3, Fed = 4, NotHun
 export const PetEvent = ev<{ entity: Entity; pet: Entity; result: PetResult; value: number }>("gameplay.PetEvent");
 export const PetAte = ev<{ pet: Entity; item: number; source: number }>("gameplay.PetAte");
 // ---- taming / feeding by hand -------------------------------------------------------------------------
-export const enum PetFail { None = 0, NotFound = 1, TooFar = 2, NotPetSpecies = 3, NoItem = 4, NotTreat = 5, NotOwner = 6, NotFood = 7 }
-export const PET_FAIL_REASONS = ["", "not_found", "too_far", "not_pet", "no_item", "not_treat", "not_owner", "not_food"] as const;
+export const enum PetFail { None = 0, NotFound = 1, TooFar = 2, NotPetSpecies = 3, NoItem = 4, NotTreat = 5, NotOwner = 6, NotFood = 7, BadTarget = 8 }
+export const PET_FAIL_REASONS = ["", "not_found", "too_far", "not_pet", "no_item", "not_treat", "not_owner", "not_food", "bad_target"] as const;
 const near = (world: World, a: Entity, b: Entity, r: number): boolean => { const p = world.get(a, Transform), q = world.get(b, Transform); return !!p && !!q && Math.hypot(p.x - q.x, p.y - q.y) <= r; };
 export function checkOffer(world: World, actor: Entity, target: Entity, item: number): PetFail {
   if (!world.isAlive(target) || world.has(target, Dead) || !world.has(target, Animal)) return PetFail.NotFound;
@@ -143,8 +146,73 @@ export function offerTreat(world: World, actor: Entity, target: Entity, item: nu
 export function setPetCommand(world: World, actor: Entity, pet: Entity, cmd: number): PetFail {
   if (!world.isAlive(pet) || !world.has(pet, Pet)) return PetFail.NotFound; if (!isPetOwner(world, actor, pet)) return PetFail.NotOwner;
   const t = world.get(pet, Transform)!; world.set(pet, Pet, { cmd: cmd === PetCmd.Stay ? PetCmd.Stay : PetCmd.Follow, stayX: t.x, stayY: t.y });
+  if (world.has(pet, PetGuard)) world.remove(pet, PetGuard); // Follow / Stay replaces any guard assignment
   world.setField(pet, PetBrain, "target", 0); emit(world, PetEvent, { entity: actor, pet, result: PetResult.Command, value: cmd }); return PetFail.None;
 }
+// ---- guarding (Task 14) -------------------------------------------------------------------------------------
+/** Guard target kinds for PetGuard.kind / PetGuardCmd.kind. */
+export const enum GuardKind { None = 0, Location = 1, Entity = 2 }
+/** Position of a guardable entity: its own Transform, or its piece's Transform for attachments (door, fire, …). */
+export function guardTargetPos(world: World, target: Entity): { x: number; y: number } | undefined {
+  const t = world.get(target, Transform); if (t) return { x: t.x, y: t.y };
+  const piece = pieceOf(world, target); if (piece !== undefined) { const pt = world.get(piece, Transform); if (pt) return { x: pt.x, y: pt.y }; }
+  return undefined;
+}
+/** Dead for guard purposes: destroyed, flagged Dead, or a living thing at 0 HP (death has not ticked yet). */
+export function guardTargetDead(world: World, target: Entity): boolean {
+  if (!world.isAlive(target) || world.has(target, Dead)) return true;
+  const hp = world.getField(target, Health, "hp"); return hp !== undefined && hp <= 0;
+}
+/** Pure guard validation (no side effects; used by the command handler's validate step). */
+export function setGuardValidate(world: World, actor: Entity, pet: Entity, kind: number, target: Entity, x: number, y: number): PetFail {
+  if (!world.isAlive(pet) || !world.has(pet, Pet)) return PetFail.NotFound; if (!isPetOwner(world, actor, pet)) return PetFail.NotOwner;
+  if (!near(world, actor, pet, 40)) return PetFail.TooFar;
+  if (kind === GuardKind.Location) return Number.isFinite(x) && Number.isFinite(y) ? PetFail.None : PetFail.BadTarget;
+  if (kind === GuardKind.Entity) return !guardTargetDead(world, target) && !!guardTargetPos(world, target) ? PetFail.None : PetFail.BadTarget;
+  return PetFail.BadTarget;
+}
+/** Assign `pet` to guard a location (kind 1) or an entity (kind 2: player, pet, farm animal, AI human, piece, station). */
+export function setGuard(world: World, actor: Entity, pet: Entity, kind: number, target: Entity, x: number, y: number): PetFail {
+  const fail = setGuardValidate(world, actor, pet, kind, target, x, y); if (fail) return fail;
+  if (kind === GuardKind.Location) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return PetFail.BadTarget;
+    world.set(pet, Pet, { cmd: PetCmd.Guard });
+    if (world.has(pet, PetGuard)) world.set(pet, PetGuard, { kind, target: 0, x, y }); else world.add(pet, PetGuard, { kind, target: 0, x, y });
+  } else if (kind === GuardKind.Entity) {
+    if (!world.isAlive(target) || world.has(target, Dead)) return PetFail.BadTarget;
+    const pos = guardTargetPos(world, target); if (!pos) return PetFail.BadTarget;
+    world.set(pet, Pet, { cmd: PetCmd.Guard });
+    if (world.has(pet, PetGuard)) world.set(pet, PetGuard, { kind, target, x: pos.x, y: pos.y }); else world.add(pet, PetGuard, { kind, target, x: pos.x, y: pos.y });
+  } else return PetFail.BadTarget;
+  world.setField(pet, PetBrain, "target", 0); emit(world, PetEvent, { entity: actor, pet, result: PetResult.Command, value: PetCmd.Guard }); return PetFail.None;
+}
+/** Live anchor for a guarding pet; undefined when the assignment is gone or its target is dead/destroyed. */
+export function guardAnchor(world: World, pet: Entity): { x: number; y: number } | undefined {
+  if (!world.has(pet, PetGuard)) return undefined; const g = world.get(pet, PetGuard)!;
+  if (g.kind === GuardKind.Location) return { x: g.x, y: g.y };
+  if (g.kind === GuardKind.Entity) {
+    if (guardTargetDead(world, g.target)) return undefined;
+    return guardTargetPos(world, g.target);
+  }
+  return undefined;
+}
+/** Human-readable guard target for the pet panel (best effort; falls back to the stored position). */
+export function guardTargetLabel(world: World, pet: Entity): string {
+  if (!world.has(pet, PetGuard)) return ""; const g = world.get(pet, PetGuard)!;
+  if (g.kind === GuardKind.Location) return `Location (${g.x.toFixed(1)}, ${g.y.toFixed(1)})`;
+  if (g.kind === GuardKind.Entity && world.isAlive(g.target)) {
+    const t = g.target;
+    if (world.has(t, Pet)) return petName(world, t);
+    if (world.isRegistered(PlayerId) && world.has(t, PlayerId)) return "Player";
+    if (world.has(t, BuildPiece)) { const def = gameplayDefs(world).pieces.get(world.getField(t, BuildPiece, "type") ?? 0); if (def) return def.key.replace(/_/g, " "); }
+    if (world.has(t, Animal)) { const key = animalDefs()[world.getField(t, Animal, "kind") ?? 0]?.key; if (key) return key.replace(/^animal_/, "").replace(/_/g, " "); }
+    if (world.has(t, Tamed)) return "Farm animal";
+    return "Target";
+  }
+  return `Location (${g.x.toFixed(1)}, ${g.y.toFixed(1)})`;
+}
+/** Panel / marker label for a PetStatus value. */
+export const petStatusLabel = (s: number): string => ["Idle", "Following", "Staying", "Guarding", "Fighting", "Returning", "Eating"][s] ?? "Idle";
 export function renamePet(world: World, actor: Entity, pet: Entity, name: string): PetFail {
   if (!world.isAlive(pet) || !world.has(pet, Pet)) return PetFail.NotFound; if (!isPetOwner(world, actor, pet)) return PetFail.NotOwner;
   writeName(world, pet, sanitizePetName(name)); emit(world, PetEvent, { entity: actor, pet, result: PetResult.Renamed, value: 0 }); return PetFail.None;
@@ -164,9 +232,15 @@ export const PetOfferCmd = defineCommand("gameplay.petOffer", { target: "u32", i
 export const PetCommandCmd = defineCommand("gameplay.petCommand", { pet: "u32", cmd: "u8" });
 export const PetRenameCmd = defineCommand("gameplay.petRename", { pet: "u32", len: "u8", text: { type: "u8", length: PET_NAME_MAX } });
 export const DropItemCmd = defineCommand("gameplay.dropItem", { item: "u16", count: "u16" });
-export const PET_COMMANDS: readonly CommandDef[] = [PetOfferCmd, PetCommandCmd, PetRenameCmd, DropItemCmd];
-export const PET_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PetOfferCmd.name]: ["target"], [PetCommandCmd.name]: ["pet"], [PetRenameCmd.name]: ["pet"] };
-export const PET_REJECT_REASONS = ["not_pet", "not_treat", "not_food"] as const;
+/**
+ * Task 14: assign a pet to guard a target. kind: 1 = world location (x, y; target is ignored on the server but
+ * must still carry a resolvable NetId on the wire, so clients send the pet itself), 2 = entity (target).
+ * Appended to PET_COMMANDS so the existing bridge (protocol.ts ...PET_COMMANDS) picks it up.
+ */
+export const PetGuardCmd = defineCommand("gameplay.petGuard", { pet: "u32", kind: "u8", target: "u32", x: "f32", y: "f32" });
+export const PET_COMMANDS: readonly CommandDef[] = [PetOfferCmd, PetCommandCmd, PetRenameCmd, DropItemCmd, PetGuardCmd];
+export const PET_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PetOfferCmd.name]: ["target"], [PetCommandCmd.name]: ["pet"], [PetRenameCmd.name]: ["pet"], [PetGuardCmd.name]: ["pet", "target"] };
+export const PET_REJECT_REASONS = ["not_pet", "not_treat", "not_food", "bad_target"] as const;
 export const encodePetName = (name: string): { len: number; text: number[] } => {
   const s = sanitizePetName(name); return { len: s.length, text: Array.from({ length: PET_NAME_MAX }, (_, i) => (i < s.length ? s.charCodeAt(i) : 0)) };
 };
@@ -176,6 +250,7 @@ export function installPetCommands(world: World, handlers: CommandHandlers): voi
   const owned = (actor: Entity, pet: Entity): PetFail => (!world.isAlive(pet) || !world.has(pet, Pet) ? PetFail.NotFound : !isPetOwner(world, actor, pet) ? PetFail.NotOwner : near(world, actor, pet, 40) ? PetFail.None : PetFail.TooFar);
   handlers.on(PetOfferCmd, { validate: (v, c) => r(checkOffer(world, c.actor, v.target as Entity, v.item)), handle: (v, c) => { offerTreat(world, c.actor, v.target as Entity, v.item); } });
   handlers.on(PetCommandCmd, { validate: (v, c) => r(owned(c.actor, v.pet as Entity)), handle: (v, c) => { setPetCommand(world, c.actor, v.pet as Entity, v.cmd); } });
+  handlers.on(PetGuardCmd, { validate: (v, c) => r(setGuardValidate(world, c.actor, v.pet as Entity, v.kind, v.target as Entity, v.x, v.y)), handle: (v, c) => { setGuard(world, c.actor, v.pet as Entity, v.kind, v.target as Entity, v.x, v.y); } });
   handlers.on(PetRenameCmd, { validate: (v, c) => r(owned(c.actor, v.pet as Entity)), handle: (v: { pet: number; len: number; text: ArrayLike<number> }, c) => { renamePet(world, c.actor, v.pet as Entity, decode(v.len, v.text)); } });
   handlers.on(DropItemCmd, { validate: (v, c) => (countItem(world, c.actor, v.item) > 0 ? undefined : "no_item"), handle: (v, c) => { dropItem(world, c.actor, v.item, v.count); } });
 }
@@ -333,26 +408,41 @@ export function petSystem(world: World, dt: number): void {
     else if (h.max !== st.maxHp) world.set(e, Health, { max: st.maxHp, hp: Math.min(h.hp, st.maxHp) });
     const hp = world.getField(e, Health, "hp")!; if (Math.abs(hp - p.hp) >= 0.5) world.setField(e, Pet, "hp", hp);
     const b = world.get(e, PetBrain)!; const t = world.get(e, Transform)!;
-    // hunger
-    const fullness = Math.max(0, p.fullness - (T.hungerPerMinute / 60) * dt); if (Math.abs(fullness - p.fullness) > 1e-6) world.setField(e, Pet, "fullness", fullness);
-    if (fullness <= 0 && now >= b.nextStarve) {
+    const ownerE = playerEntity(world, p.owner);
+    // hunger (Task 14: frozen while the pet's owner is still loading in)
+    const ownerPending = ownerE !== undefined && pendingReady(world, ownerE);
+    const fullness = ownerPending ? p.fullness : Math.max(0, p.fullness - (T.hungerPerMinute / 60) * dt); if (Math.abs(fullness - p.fullness) > 1e-6) world.setField(e, Pet, "fullness", fullness);
+    if (!ownerPending && fullness <= 0 && now >= b.nextStarve) {
       world.setField(e, PetBrain, "nextStarve", now + sec(10));
       const cur = world.getField(e, Health, "hp")!; if (cur > 1) world.setField(e, Health, "hp", Math.max(1, cur - T.starveHpPerTenSeconds));
       world.setField(e, Pet, "loyalty", Math.max(0, p.loyalty - T.starveLoyaltyPerTenSeconds));
-    } else if (fullness > 50 && now >= b.nextStarve) { // well fed: slow regen
+    } else if (!ownerPending && fullness > 50 && now >= b.nextStarve) { // well fed: slow regen
       world.setField(e, PetBrain, "nextStarve", now + sec(10)); const cur = world.getField(e, Health, "hp")!; if (cur < st.maxHp) world.setField(e, Health, "hp", Math.min(st.maxHp, cur + 1));
     }
-    const ownerE = playerEntity(world, p.owner); const ot = ownerE !== undefined ? world.get(ownerE, Transform) : undefined;
-    const stay = p.cmd === PetCmd.Stay; const ax = stay ? p.stayX : ot?.x ?? p.stayX, ay = stay ? p.stayY : ot?.y ?? p.stayY;
-    let moved = false; let run = false; let busy = false;
+    const ot = ownerE !== undefined ? world.get(ownerE, Transform) : undefined;
+    const stay = p.cmd === PetCmd.Stay;
+    // Task 14: a guarding pet anchors on its guard target (live position for entities, fixed point for locations).
+    let guard = p.cmd === PetCmd.Guard; let gAnchor = guard ? guardAnchor(world, e) : undefined;
+    if (guard && !gAnchor) { // guard target destroyed / died / assignment lost: end guarding cleanly, back to Follow
+      world.set(e, Pet, { cmd: PetCmd.Follow }); if (world.has(e, PetGuard)) world.remove(e, PetGuard); guard = false;
+    }
+    const ax = guard && gAnchor ? gAnchor.x : stay ? p.stayX : ot?.x ?? p.stayX, ay = guard && gAnchor ? gAnchor.y : stay ? p.stayY : ot?.y ?? p.stayY;
+    let moved = false; let run = false; let busy = false; let fighting = false; let eating = false;
     // defend
     if (!busy) {
       let target = b.target as Entity;
       const guardR = T.defendRange; const leash = Math.hypot(t.x - ax, t.y - ay) > T.leashRange;
-      if (!valid(world, target) || leash) target = (leash ? undefined : threatNear(world, e, ax, ay, guardR)) ?? (0 as Entity);
+      if (!valid(world, target) || leash) {
+        const found = leash ? undefined : threatNear(world, e, ax, ay, guardR);
+        // Task 14: territory defense — a hostile inside the owner's claim near the pet is a defend target too,
+        // even when it is beyond the anchor's defend range (the pet, not the anchor, is near the intruder).
+        let terr: Entity | undefined;
+        if (found === undefined && !leash) { const tribe = ownerE !== undefined ? world.getField(ownerE, Tribe, "id") ?? 0 : 0; if (tribe) terr = nearestClaimHostile(world, t.x, t.y, guardR, tribe); }
+        target = (found ?? terr ?? 0) as Entity;
+      }
       if (target !== b.target) world.setField(e, PetBrain, "target", target);
       if (target && valid(world, target)) {
-        busy = true; const tt = world.get(target, Transform)!; const d = Math.hypot(tt.x - t.x, tt.y - t.y);
+        busy = true; fighting = true; const tt = world.get(target, Transform)!; const d = Math.hypot(tt.x - t.x, tt.y - t.y);
         if (d <= st.attackRange + 0.4) {
           world.set(e, Transform, { facing: Math.atan2(tt.y - t.y, tt.x - t.x) });
           if (now >= b.nextAttack) {
@@ -368,18 +458,18 @@ export function petSystem(world: World, dt: number): void {
     // eat
     const hungry = fullness < T.eatBelow;
     if (!busy && hungry && now >= b.nextEat) { // ADR-145: defence beats dinner (a hungry pet still fights back)
-      if (eatFrom(world, e, e, 0)) { world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); busy = true; }
+      if (eatFrom(world, e, e, 0)) { world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); busy = true; eating = true; }
       else {
         const src = foodSources(world, e, t.x, t.y)[0];
         if (src) {
           const sxy = world.get(src.e, Transform)!; busy = true;
-          if (src.d <= (src.source === 2 ? TROUGH_REACH : 1.0)) { if (eatFrom(world, e, src.e, src.source)) world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); }
+          if (src.d <= (src.source === 2 ? TROUGH_REACH : 1.0)) { if (eatFrom(world, e, src.e, src.source)) { world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); eating = true; } }
           else { moved = step(world, e, sxy.x, sxy.y, st.walk, dt, 0.6); }
         } else world.setField(e, PetBrain, "nextEat", now + sec(2));
       }
     }
-    // fetch dropped items (follow only)
-    if (!busy && !stay && ownerE !== undefined) {
+    // fetch dropped items (follow only — guarding and staying pets hold their post)
+    if (!busy && !stay && !guard && ownerE !== undefined) {
       const bag = pickupTarget(world, e, t.x, t.y);
       if (bag !== undefined) {
         busy = true; const bt = world.get(bag, Transform)!; const d = Math.hypot(bt.x - t.x, bt.y - t.y);
@@ -388,16 +478,22 @@ export function petSystem(world: World, dt: number): void {
         } else moved = step(world, e, bt.x, bt.y, st.walk * 1.3, dt, 0.5) || moved;
       }
     }
-    // follow / stay
+    // follow / stay / guard return (guarding pets walk back — never teleport, so fences still contain them)
     if (!busy) {
       const d = Math.hypot(ax - t.x, ay - t.y);
-      if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, teleportSpot(world, ot)); }
+      if (guard) { if (d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2); }
+      else if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, teleportSpot(world, ot)); }
       else if (!stay && ot && d > T.followDistance) { run = d > T.runDistance; moved = step(world, e, ax, ay, run ? st.run : st.walk, dt, T.followDistance * 0.7); }
       else if (!stay && ot && d > WALLED_STOP && walledOff(world, t.x, t.y, ax, ay, t.z ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-215: close but through a wall: go round
       else if (stay && d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2);
     }
     world.set(e, Animal, { homeX: ax, homeY: ay, state: moved ? (run ? 2 : 1) : 0 });
     animAt(world, e, moved ? (run ? Anim.Run : Anim.Walk) : !busy && stay ? Anim.Sit : Anim.Idle);
+    // Task 14: visible activity status (written only when it changes, so replicas are not spammed every tick)
+    const status = fighting ? PetStatus.Fight : eating ? PetStatus.Eat : guard ? (moved ? PetStatus.Return : PetStatus.Guard) : stay ? PetStatus.Stay : moved ? PetStatus.Follow : PetStatus.Idle;
+    if (!world.has(e, PetStatusComp) || world.getField(e, PetStatusComp, "status") !== status) {
+      if (world.has(e, PetStatusComp)) world.set(e, PetStatusComp, { status }); else world.add(e, PetStatusComp, { status });
+    }
   }
   void defs; void Survival; void Inventory; void addItem; void takeFromSlot;
 }
@@ -406,6 +502,7 @@ export interface PetOffer { item: number; key: string; name: string; count: numb
 export interface PetView {
   entity: Entity; species: number; speciesName: string; name: string; owned: boolean; wild: boolean; ownerId: number;
   level: number; xp: number; xpNext: number; hp: number; maxHp: number; fullness: number; loyalty: number; cmd: number; offers: PetOffer[];
+  status: number; guard: string | undefined;
 }
 /** Pet / tameable animal panel data for `player` looking at `e` (undefined = not a pet species). */
 export function petView(world: World, player: Entity, e: Entity): PetView | undefined {
@@ -423,6 +520,8 @@ export function petView(world: World, player: Entity, e: Entity): PetView | unde
   return {
     entity: e, species: sp, speciesName: s.name, name: p ? petName(world, e) : `Wild ${s.name}`, owned: !!p && isPetOwner(world, player, e), wild: !p, ownerId: p?.owner ?? 0,
     level, xp: p?.xp ?? 0, xpNext: petXpToNext(level), hp: h?.hp ?? p?.hp ?? st.maxHp, maxHp: h?.max ?? st.maxHp, fullness: p?.fullness ?? 0, loyalty: p?.loyalty ?? 0, cmd: p?.cmd ?? 0, offers,
+    status: world.has(e, PetStatusComp) ? world.getField(e, PetStatusComp, "status")! : p?.cmd === PetCmd.Guard ? PetStatus.Guard : p?.cmd === PetCmd.Stay ? PetStatus.Stay : PetStatus.Idle,
+    guard: p?.cmd === PetCmd.Guard ? guardTargetLabel(world, e) : undefined,
   };
 }
 /** Nearest pet (own first) or tameable wild animal within `range` of the player. */
@@ -442,4 +541,5 @@ export const PET_HELP = [
   "Your pet's panel: Follow (fights for you and fetches what you drop) or Stay (guards the spot, your buildings and pets), rename, feed, and a small bag you can fill or empty.",
   "Hungry pets eat from their bag, food lying on the ground, then your pet trough (Build > pet trough). Starving pets lose health slowly and trust, but never die of it.",
   "Pets gain XP fighting; every level adds health, damage and speed.",
+  "Guard: in your pet's panel, pick Guard here (this spot), Guard me, or a nearby building, station, player, pet, farm animal or AI human — the pet stays near it, fights threats to it, and returns after. A small symbol above the pet shows what it is doing.",
 ] as const;

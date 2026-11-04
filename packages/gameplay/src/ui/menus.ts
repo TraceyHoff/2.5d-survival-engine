@@ -1,5 +1,6 @@
 import { ContainerToSlotCmd, MoveSlotCmd, SplitStackCmd } from "../inventory_ops.js";
-import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
+import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetGuardCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
+import { ReadyCmd } from "../ready.js";
 /**
  * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
  * Pure reads over a World (client replica or server world) and plain {cmd, args} intents; no DOM, browser-safe.
@@ -416,6 +417,10 @@ function nearestOpenable(c: MenuCtx, r: number): number {
 const stationDistance = (c: MenuCtx, e: Entity): number => { const a = c.world.get(c.player, Transform), b = c.world.get(e, Transform); return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity; };
 export const petOfferIntent = (target: Entity, item: number): MenuIntent => intent(PetOfferCmd, { target, item }, ["target"]);
 export const petCommandIntent = (pet: Entity, cmd: number): MenuIntent => intent(PetCommandCmd, { pet, cmd }, ["pet"]);
+/** Task 14: guard a location (kind 1; target is ignored server-side, send the pet as the wire placeholder) or an entity (kind 2). */
+export const petGuardIntent = (pet: Entity, kind: number, target: Entity, x: number, y: number): MenuIntent => intent(PetGuardCmd, { pet, kind, target, x, y }, ["pet", "target"]);
+/** Task 14: tell the server this client has finished loading (second loading screen dismissed). */
+export const readyIntent = (): MenuIntent => intent(ReadyCmd, {});
 export const petRenameIntent = (pet: Entity, name: string): MenuIntent => intent(PetRenameCmd, { pet, ...encodePetName(name) } as never, ["pet"]);
 export const dropItemIntent = (item: number, count: number): MenuIntent => intent(DropItemCmd, { item, count });
 /** ADR-136: nearest crafting station (placed piece or spawned) within its own range of the player; opens its crafting panel on Interact. */

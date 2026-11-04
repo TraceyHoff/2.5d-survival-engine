@@ -12,6 +12,7 @@ import { secondsToTicks, type GameDefs } from "../defs.js";
 import { ConsumeFail, ConsumeFailed, emit } from "../events.js";
 import { readSlots, slotItem, writeSlots } from "../inventory.js";
 import { contractDisease, cureDisease, ensureDiseases, hasDisease, activeDiseases, nearLitCampfire, wearsMask } from "../diseases.js";
+import { pendingReady } from "../ready.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
@@ -41,12 +42,13 @@ function transmissionScan(world: World, defs: GameDefs, dt: number): void {
   const idx = installSpatialIndex(world);
   const carriers = new Map<Entity, number[]>();
   for (const e of world.query([Diseases, Transform], [Dead])) {
-    if (wearsMask(world, e)) continue;
+    if (wearsMask(world, e) || pendingReady(world, e)) continue; // loading players neither spread nor catch
     const contagious = activeDiseases(world, e).map((d) => defs.diseaseIndex(d.key)).filter((i) => i >= 0 && defs.diseases[i]!.contagious);
     if (contagious.length) carriers.set(e, contagious);
   }
   const contactThreshold = secondsToTicks(tun.contactSeconds, dt);
   for (const e of world.query([Diseases, Transform], [Dead])) {
+    if (pendingReady(world, e)) continue;
     if (wearsMask(world, e)) { world.setField(e, Diseases, "contactTicks", 0); continue; }
     const t = world.get(e, Transform)!;
     let exposed: number[] = [];
@@ -73,6 +75,7 @@ export function diseaseSystem(world: World, dt: number): void {
   boilIntents(world, defs);
   const intent = world.store(PlayerIntent);
   for (const e of world.query([Survival, Health, Transform], [Dead])) {
+    if (pendingReady(world, e)) continue; // Task 14: no exposure counters or symptom ticks while loading in
     ensureDiseases(world, e);
     const st = world.store(Diseases); const s = st.slot(entityIndex(e)); if (s < 0) continue;
     // expiry (untilTick 0 = no auto-expiry)

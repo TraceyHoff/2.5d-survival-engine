@@ -1,7 +1,7 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
 import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
-import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
+import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -203,6 +203,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
       const at0 = pickSpawnPoint(w, "join", s.clientId); // least crowded of the 4 (+ jitter)
       const at = o.devSandbox ? sandboxSpawn(spawnPoints(w)[0] ?? at0, s.clientId) : at0;
       const e = spawnPlayer(w, { x: at.x, y: at.y, clientId: s.clientId });
+      // Task 14: vitals/disease/pet-hunger/spoilage freeze until this client sends gameplay.ready (or is a bot, see markVirtual)
+      if (!w.has(e, PlayerReady)) w.add(e, PlayerReady, { ready: 0 });
       if (o.devSandbox) log(`sandbox kit: ${giveSandboxKit(w, e).length} items`);
       if (o.devSandbox && !petCorner) { petCorner = true; sandboxPetCorner(w, spawnPoints(w)[0] ?? at0); }
       net.netIds.assign(e);
@@ -238,6 +240,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installRoadCommands(world, handlers); // gameplay.placeRoad / removeRoad (ADR-119)
   installInventoryOpCommands(world, handlers); // gameplay.splitStack / moveSlot (ADR-204)
   installPetCommands(world, handlers); // gameplay.petOffer / petCommand / petRename / dropItem (ADR-145)
+  installReadyCommands(world, handlers); // Task 14: gameplay.ready — client finished loading
   installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
   installVehicleGuard(world, (v) => {
@@ -468,7 +471,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
    */
   const markVirtual = (clientId: number): boolean => {
     const p = players.get(clientId); if (!mode.humanBots || !p || p.bot) return false;
-    p.bot = true; const spot = pendingSpots.shift();
+    p.bot = true; markReady(world, p.entity); // bots perceive the authoritative world directly: never "loading"
+    const spot = pendingSpots.shift();
     if (spot) { world.setField(p.entity, Transform, "x", spot.x); world.setField(p.entity, Transform, "y", spot.y); }
     population?.adopt(p.entity, "human_bot"); return true;
   };

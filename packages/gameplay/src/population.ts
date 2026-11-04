@@ -21,6 +21,7 @@ import { structures } from "./building/structure.js";
 import { TerrainRes } from "./world.js";
 import { swimSpeedMulAt } from "./systems/movement.js";
 import { creatureStep, type TileBlocked } from "./systems/creature_nav.js";
+import { nearestClaimHostile, tamedOwnerTribe, TERRITORY_BITE, TERRITORY_DEFEND_RANGE } from "./territory.js";
 import { installSpatialIndex } from "@engine/world";
 import { populationData, resolveBehavior, toSpawnEntries, type AggroMode, type GameMode, type LootEntry } from "./ai/population.js";
 
@@ -128,7 +129,25 @@ export function animalAISystem(world: World, dt: number): void {
     const engaged = state === AnimalState.Attack;
     const wants = aggressive && threat && (engaged ? threat.d <= def.aggro.leashRange && homeD <= def.aggro.leashRange * 2
       : threat.d <= def.aggro.range && (def.aggro.mode === "hostile" || (def.aggro.mode === "territorial" && homeD <= def.aggro.leashRange) || (def.aggro.mode === "defensive" && hurt)));
-    if (wants && threat && def.attack) {
+    // Task 14: tame animals defend their owner's claim. Passive farm animals have no species attack, so they
+    // get a generic bite; goat/cow reuse their own attack. Movement still goes through creatureStep, so a
+    // fenced-in defender strains at the fence instead of teleporting through it.
+    let territory: { e: Entity; x: number; y: number; d: number } | undefined;
+    if (tame) {
+      const tribe = tamedOwnerTribe(world, e);
+      if (tribe) { const z = nearestClaimHostile(world, t.x, t.y, TERRITORY_DEFEND_RANGE, tribe); if (z !== undefined) { const zt = world.get(z, Transform)!; territory = { e: z, x: zt.x, y: zt.y, d: Math.hypot(zt.x - t.x, zt.y - t.y) }; } }
+    }
+    if (territory) {
+      state = AnimalState.Attack; gx = territory.x; gy = territory.y;
+      const range = def.attack?.range ?? TERRITORY_BITE.range, damage = def.attack?.damage ?? TERRITORY_BITE.damage, cd = def.attack?.cooldownSeconds ?? TERRITORY_BITE.cooldownSeconds;
+      if (territory.d <= range + 0.4) {
+        gx = t.x; gy = t.y;
+        if (world.tick >= a.thinkAt) {
+          applyDamage(world, territory.e, damage, e); animAt(world, e, Anim.Attack);
+          world.setField(e, Animal, "thinkAt", world.tick + Math.max(1, Math.round(cd / dt)));
+        }
+      }
+    } else if (wants && threat && def.attack) {
       state = AnimalState.Attack; gx = threat.x; gy = threat.y;
       if (threat.d <= def.attack.range + 0.4) {
         gx = t.x; gy = t.y;

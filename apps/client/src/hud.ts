@@ -88,6 +88,13 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
   // Task 13: one chip per active disease on the local player (replicated Diseases component); chips vanish on cure
   const chips = document.createElement("div"); chips.dataset["role"] = "disease-chips"; root.append(chips);
   let unit: TempUnit = ov.unit ?? loadTempUnit(), unitAt = 0, tempIcon = "", hudBottom = -1;
+  // Task 14 smoothness: skip DOM writes whose value did not change. The 250 ms update used to rewrite every
+  // text and bar width on every tick (style recalc + paint scheduling for zero visual change); the guards
+  // for low icons, temp icons, disease chips and --hud-bottom already existed, these fields did not.
+  const last = new Map<string, string>();
+  const setText = (k: string, el: HTMLElement, v: string): void => { if (last.get(k) === v) return; last.set(k, v); el.textContent = v; };
+  const setStyle = (k: string, el: HTMLElement, prop: "width" | "left" | "display", v: string): void => { if (last.get(k) === v) return; last.set(k, v); el.style[prop] = v; };
+  const setAttr = (k: string, el: HTMLElement, prop: "title" | "band", v: string): void => { if (last.get(k) === v) return; last.set(k, v); if (prop === "title") el.title = v; else el.dataset["band"] = v; };
   mountUi(root);
   // Art's UI kit: panel_hud plaque, bar_track / bar_fill_* nine-slices, vital_* icons (falls back to the CSS look)
   void uiSprites(base).then((u) => {
@@ -108,32 +115,32 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     try {
       const h = ov.hours ?? dayHours(); const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
       const wk = ov.weather ?? w.env(Weather).kind;
-      clockText.textContent = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}${ov.hours !== undefined ? "*" : ""}`;
-      weatherText.textContent = `${WEATHER_LABEL[wk] ?? "?"}${ov.weather !== undefined ? "*" : ""}`;
-      clock.title = ov.hours !== undefined || ov.weather !== undefined ? "* view override (?time= / ?weather=)" : "";
+      setText("clock", clockText, `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}${ov.hours !== undefined ? "*" : ""}`);
+      setText("weather", weatherText, `${WEATHER_LABEL[wk] ?? "?"}${ov.weather !== undefined ? "*" : ""}`);
+      setAttr("clockTitle", clock, "title", ov.hours !== undefined || ov.weather !== undefined ? "* view override (?time= / ?weather=)" : "");
       const night = h < 6 || h >= 19; if (ui) { const u = ui.url(night ? "ic_moon" : "ic_sun"); if (u && clockIcon.dataset["k"] !== String(night)) { clockIcon.src = u; clockIcon.dataset["k"] = String(night); } }
-    } catch { clockText.textContent = ""; weatherText.textContent = ""; }
+    } catch { setText("clock", clockText, ""); setText("weather", weatherText, ""); }
     try { // ADR-239 season + temperature
       const days = dayCount(), si = ov.season !== undefined ? Math.floor(((ov.season % 3) + 3) % 3) : seasonAtDays(w, days).index;
-      seasonText.textContent = SEASON_GLYPH[si] ?? ""; seasonText.title = `${SEASON_LABEL[si] ?? ""}${ov.season !== undefined ? " (view override ?season=)" : ""}`;
+      setText("season", seasonText, SEASON_GLYPH[si] ?? ""); setAttr("seasonTitle", seasonText, "title", `${SEASON_LABEL[si] ?? ""}${ov.season !== undefined ? " (view override ?season=)" : ""}`);
       const now = Date.now(); if (!ov.unit && now - unitAt > 1000) { unitAt = now; unit = loadTempUnit(); }
       const ovr = ov.season !== undefined || ov.hours !== undefined || ov.weather !== undefined;
       const air = hudAirTemp(w, ovr ? overrideDays(w, days, ov) : days, ov.weather);
       const ex = p !== undefined ? w.get(p, Exposure) : undefined;
       // view-only overrides (?season/?time/?weather) shift the replicated felt temp by the same air delta (clothing/shelter offset kept)
       const felt = ex ? (ovr ? ex.feltTemp + air - hudAirTemp(w, days) : ex.feltTemp) : undefined;
-      const band = tempBand(felt ?? air); tRow.dataset["band"] = band;
-      tAir.style.left = `${(gaugeFrac(air) * 100).toFixed(1)}%`; tVal.textContent = formatTemp(air, unit);
-      if (felt !== undefined && Math.abs(felt - air) >= 1) { tFelt.style.display = ""; tFelt.style.left = `${(gaugeFrac(felt) * 100).toFixed(1)}%`; } else tFelt.style.display = "none";
-      tRow.title = `Air ${formatTemp(air, unit)}${felt !== undefined ? ` · feels like ${formatTemp(felt, unit)}` : ""}`;
+      const band = tempBand(felt ?? air); setAttr("band", tRow, "band", band);
+      setStyle("airLeft", tAir, "left", `${(gaugeFrac(air) * 100).toFixed(1)}%`); setText("tempVal", tVal, formatTemp(air, unit));
+      if (felt !== undefined && Math.abs(felt - air) >= 1) { setStyle("feltDisp", tFelt, "display", ""); setStyle("feltLeft", tFelt, "left", `${(gaugeFrac(felt) * 100).toFixed(1)}%`); } else setStyle("feltDisp", tFelt, "display", "none");
+      setAttr("rowTitle", tRow, "title", `Air ${formatTemp(air, unit)}${felt !== undefined ? ` · feels like ${formatTemp(felt, unit)}` : ""}`);
       if (ui) { const k = band === "mild" ? "icon_temp" : `icon_temp_${band}`; const url = ui.url(k) ?? ui.url("icon_temp"); if (url && tempIcon !== k) { tIc.src = url; tempIcon = k; } }
-    } catch { tVal.textContent = ""; }
+    } catch { setText("tempVal", tVal, ""); }
     const hp = p !== undefined ? w.get(p, Health) : undefined, sv = p !== undefined ? w.get(p, Survival) : undefined;
     const vals = [hp ? hp.hp / (hp.max || 100) : 1, sv ? sv.hunger / 100 : 1, sv ? sv.thirst / 100 : 1, sv ? sv.stamina / (sv.maxStamina || 100) : 1];
     if (ui) vals.forEach((v, i) => { const low = v < 0.25; const ic = icons[i]!; if (ic.dataset["low"] !== String(low)) { const u = ui!.url(`vital_${SPRITE_KEYS[i]}${low ? "_low" : ""}`); if (u) { ic.src = u; ic.dataset["low"] = String(low); } } });
     // ADR-239: publish the HUD's bottom edge so the touch XP chip (gather-fx) stacks under the taller panel, never over it
     const hb = root.offsetTop + root.offsetHeight + 4; if (root.offsetHeight > 0 && hb !== hudBottom) { hudBottom = hb; document.documentElement.style.setProperty("--hud-bottom", `${hb}px`); }
-    vals.forEach((v, i) => { fills[i]!.style.width = `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`; });
+    vals.forEach((v, i) => { setStyle(`fill${i}`, fills[i]!, "width", `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`); });
     // Task 13: disease chips follow the replicated component (added / removed as diseases come and go)
     try {
       const actives = p !== undefined && w.isRegistered(Diseases) ? activeDiseases(w, p) : [];

@@ -11,6 +11,7 @@ import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
 import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
 const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLInputElement && t.type !== "checkbox" && t.type !== "range";
 import { EasedBar, zombiePose } from "./load-progress.js";
+import { TIPS, nextTip } from "./tips.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
@@ -63,7 +64,7 @@ text-shadow:0 3px 0 #74432C,0 6px 0 #432C24,0 10px 18px rgba(0,0,0,.5);-webkit-t
 .boot .version{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 12px);z-index:5;
 font:600 12px system-ui,sans-serif;color:#E6C47E;opacity:.85;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .boot[data-boot=menu] .version{display:block}
-.boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}
+.boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}.boot .tip{font-size:13px;color:#C9C2B8;min-height:2em;max-width:420px;text-align:center}
 .boot .panel{display:flex;flex-direction:column;gap:12px;background:#F6EAD2;border:4px solid #74432C;border-radius:18px;padding:18px 22px;
 box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433;box-sizing:border-box;
 max-height:calc(100vh - 24px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;flex-shrink:0}
@@ -144,6 +145,12 @@ export class BootUI {
   readonly root = document.createElement("div");
   private fill = document.createElement("div");
   private lbl = document.createElement("div");
+  /** Task 14: gameplay tip line, rotating on loading screens only (not the menu). */
+  private tip = document.createElement("p");
+  private tipIdx = 0;
+  private tipTimer = 0;
+  private hideGen = 0;
+  private lane = document.createElement("div");
   private header = document.createElement("div");
   private body = document.createElement("div");
   private zw = document.createElement("div");
@@ -165,10 +172,13 @@ export class BootUI {
     document.title = BR.title;
     if (BR.bg === "parallax") ["sky", "far", "near", "fireflies", "vignette"].forEach((l, i) => { const d = document.createElement("div"); d.className = "px"; d.style.backgroundImage = `url(${base}art/ui/branding/background/parallax/menu_bg_${l}.png)`; d.style.setProperty("--d", String([0, 0.15, 0.35, 0.6, 0][i])); this.root.append(d); });
     const track = document.createElement("div"); track.className = "track"; this.fill.className = "fill"; track.append(this.fill);
-    const lane = document.createElement("div"); lane.className = "lane"; this.zw.className = "zw"; this.zw.dataset["role"] = "loading-zombie"; lane.append(track, this.zw);
+    this.lane.className = "lane"; this.zw.className = "zw"; this.zw.dataset["role"] = "loading-zombie"; this.lane.append(track, this.zw);
     if (BR.loadingAnim) { const cf = document.createElement("div"); cf.className = "cf"; track.append(cf); }
     track.setAttribute("role", "progressbar"); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100"); this.track = track;
-    this.lbl.className = "lbl"; this.lbl.setAttribute("aria-live", "polite"); this.body.append(lane, this.lbl);
+    this.lbl.className = "lbl"; this.lbl.setAttribute("aria-live", "polite");
+    this.tip.className = "tip"; this.tip.dataset["role"] = "tip"; this.tip.textContent = TIPS[0]!;
+    this.body.append(this.lane, this.lbl, this.tip);
+    this.tipsOn(true);
     try { this.bar.reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* old browsers */ }
     this.root.append(this.header, this.body); mountUi(this.root);
     void this.loadLogo();
@@ -193,6 +203,30 @@ export class BootUI {
   }
   /** Error state: stop the walk, red bar, message stays (the caller decides whether boot continues). */
   fail(message: string): void { this.root.dataset["boot"] = "error"; this.lbl.textContent = message; this.paint(0); }
+  /** Task 14: tip rotation on loading screens (every 6 s); off on the menu and once hidden. */
+  private tipsOn(on: boolean): void {
+    if (this.tipTimer) { clearInterval(this.tipTimer); this.tipTimer = 0; }
+    this.tip.style.display = on ? "" : "none";
+    if (on) this.tipTimer = window.setInterval(() => { this.tipIdx = nextTip(this.tipIdx); this.tip.textContent = TIPS[this.tipIdx]!; }, 6000);
+  }
+  /**
+   * Task 14: the SECOND loading screen, same visual style as the first, shown after the player picks a game
+   * mode and kept up until the world is fully loaded (see ready.ts). Reuses this instance after hide(): the
+   * bar resets, the pending hide-removal is cancelled, and the root is re-mounted if it was already removed.
+   */
+  showLoading(label = "Loading world…"): void {
+    this.cleanup?.(); this.cleanup = undefined;
+    if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); this.keyHandler = undefined; }
+    this.hideGen++; // cancel a pending hide() removal so it cannot take this screen down later
+    this.root.classList.remove("hide");
+    this.root.dataset["boot"] = "loading";
+    this.bar.reset();
+    this.lbl.textContent = label;
+    this.body.replaceChildren(this.lane, this.lbl, this.tip); // back to the loading layout (menu() replaced it)
+    this.tipsOn(true);
+    if (!this.root.isConnected) mountUi(this.root);
+    this.kick();
+  }
   private kick(): void {
     if (this.raf) return;
     const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16) as unknown as number;
@@ -216,6 +250,7 @@ export class BootUI {
   /** slot: ?player slot whose browser saves "Manage saves" deletes (ADR-099). */
   /** page: open straight on a sub-page (ADR-236: a multiplayer session ending returns to the Multiplayer page). */
   menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string; page?: "multiplayer"; mp?: MultiplayerPageOpts }): Promise<MenuChoice> {
+    this.tipsOn(false); // the menu is not a loading screen
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
       let notice = opts.notice;
@@ -374,6 +409,8 @@ export class BootUI {
     this.cleanup?.(); this.cleanup = undefined;
     cancelAnimationFrame(this.padTimer); this.padGen++; if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); }
     this.history.sync(false); this.history.destroy();
-    this.root.classList.add("hide"); this.root.dataset["boot"] = "done"; setTimeout(() => this.root.remove(), 400);
+    this.tipsOn(false);
+    this.root.classList.add("hide"); this.root.dataset["boot"] = "done";
+    const g = ++this.hideGen; setTimeout(() => { if (g === this.hideGen) this.root.remove(); }, 400);
   }
 }

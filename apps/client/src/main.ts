@@ -2,6 +2,8 @@ import { markNavFocus } from "./back-history.js";
 import { HeapTrend, MEMORY_BUDGETS, memoryProfileFor } from "./memory-budget.js";
 import { debugCamera, mountLootLabels } from "./loot-labels.js";
 import { mountNameTags } from "./name-tags.js";
+import { mountPetStatus } from "./pet-status.js";
+import { waitForWorldReady } from "./ready.js";
 import { mountSnapOverlay } from "./snap-overlay.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
@@ -43,7 +45,7 @@ import { inventoryOpRejectText } from "./inventory-reject.js";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, moveSlotIntent, hotbarConsumes, gameplayDefs, BuildPiece, compassOf } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
-import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, readyIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountNetStatus, pingLabel } from "./net-status.js";
 import type { SessionInfo } from "./game-menus.js";
@@ -559,6 +561,27 @@ function connectRemote(url: string): void {
 const connectTo = (url: string, name: string): void => { connectRemote(url); session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
 let netStatus: ReturnType<typeof mountNetStatus> | undefined;
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
+/**
+ * Task 14: once the world is loaded (session connected, player spawned, nearby chunks streamed), tell the
+ * server with gameplay.ready — until then the server freezes this player's vitals, diseases, pet hunger
+ * and pack spoilage, so nothing drains while the player is still loading in.
+ */
+const signalReady = async (): Promise<void> => {
+  const ok = await waitForWorldReady(session);
+  if (ok) sendIntent(readyIntent());
+};
+/** Task 14: the second loading screen — same style as the first — over a world start, until it is loaded. */
+const enterWorld = async (start: () => Promise<unknown>): Promise<void> => {
+  if (!boot) { await start(); await signalReady(); return; }
+  boot.showLoading("Loading world…");
+  let started = false;
+  try { await start(); started = true; } catch (e) { console.error("start failed", e); }
+  if (started) {
+    const ok = await waitForWorldReady(session, { onProgress: (f) => boot.progress(f, f >= 1 ? "Ready" : "Loading world…") });
+    if (ok) sendIntent(readyIntent());
+  }
+  boot.hide();
+};
 if (creatorShot) {
   runCreatorShot(creatorShot).catch((e: unknown) => { (window as { __creatorReady?: unknown }).__creatorReady = { ok: false, seed: creatorShot.seed, error: String(e) }; });
 } else if (boot) {
@@ -575,24 +598,26 @@ if (creatorShot) {
     if (!activeChar) { backToMenu(""); return; }
     lookEdited = !before || JSON.stringify(before) !== JSON.stringify(activeChar);
     startMenus();
-    if (choice.kind === "singleplayer") await startSingleplayer();
-    else if (choice.kind === "host") await startHost();
-    else if (choice.kind === "join") await startJoin(choice.code);
-    else { // multiplayer: remote server, no local human bots. ADR-236: no box over the game; a failed first connect returns to the Multiplayer page
-      netStatus ??= mountNetStatus(session, uiRoot());
-      connectRemote(choice.url);
-      session.connect(choice.url, playerName()).then(useWorld, (e: unknown) => backToMenu(`Couldn't connect to ${choice.url}: ${e instanceof Error ? e.message : String(e)}`, "multiplayer"));
-    }
+    await enterWorld(async () => {
+      if (choice.kind === "singleplayer") await startSingleplayer();
+      else if (choice.kind === "host") await startHost();
+      else if (choice.kind === "join") await startJoin(choice.code);
+      else { // multiplayer: remote server, no local human bots. ADR-236: no box over the game; a failed first connect returns to the Multiplayer page
+        netStatus ??= mountNetStatus(session, uiRoot());
+        connectRemote(choice.url);
+        session.connect(choice.url, playerName()).then(useWorld, (e: unknown) => backToMenu(`Couldn't connect to ${choice.url}: ${e instanceof Error ? e.message : String(e)}`, "multiplayer"));
+      }
+    });
   })().catch((e: unknown) => console.error("start failed", e));
 } else if (!serverParam && (params.get("offline") === "1" || (params.get("menu") === "0" && import.meta.env["VITE_DEFAULT_OFFLINE"] === "1"))) {
-  startMenus(); startSingleplayer().catch((e: unknown) => console.error("local server failed", e));
+  startMenus(); startSingleplayer().then(signalReady).catch((e: unknown) => console.error("local server failed", e));
 } else {
   // ?server= / ?menu=0 (tests, QA links): connect straight away, no box over the game (ADR-236); Pause → Session has
   // Reconnect / Disconnect and the tiny indicator shows problems. ?autoconnect=0 = stay idle until Session → Reconnect.
   startMenus(); netStatus ??= mountNetStatus(session, uiRoot());
   const url = serverParam ?? session.savedUrl ?? defaultUrl;
   connectRemote(url);
-  if (params.get("autoconnect") !== "0") connectTo(url, session.savedName ?? "");
+  if (params.get("autoconnect") !== "0") { connectTo(url, session.savedName ?? ""); void signalReady(); }
 }
 
 const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
@@ -659,6 +684,8 @@ mountNameTags(root, { artBase: `${import.meta.env.BASE_URL}art/`, world: () => w
   camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined),
   names: () => { const c = session.client; return c ? { get: (id: number) => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } } : undefined; },
   hidden: () => !!menus?.nav.isOpen });
+// Task 14: floating badge above each pet showing what it is doing (guard / fight / return / follow / stay / eat)
+mountPetStatus(root, { world: () => world, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen, alpha: () => renderAlpha });
 mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
 // ADR-212: hand symbol + Interact hint over the station Interact would open (same pick as interactPanel)

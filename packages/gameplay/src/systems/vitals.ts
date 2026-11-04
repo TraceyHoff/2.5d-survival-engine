@@ -15,6 +15,7 @@ import { readSlots, slotFreshness, slotItem, takeFromSlot } from "../inventory.j
 import { hasPerk, skillMul } from "../skills/tree.js";
 import { fillContainer, spoilStageIndex, spoilStages, takeSip } from "../food.js";
 import { inWater } from "./movement.js";
+import { pendingReady } from "../ready.js";
 import { TerrainRes } from "../world.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -157,7 +158,7 @@ function predictOwnStamina(world: World, dt: number, delayTicks: number): void {
   if (isAuthority(world) || !world.predicted.size) return;
   const sv = world.store(Survival);
   for (const e of world.predicted) {
-    if (!world.isAlive(e) || !world.has(e, Survival) || world.has(e, VitalsState) || world.has(e, Dead)) continue;
+    if (!world.isAlive(e) || !world.has(e, Survival) || world.has(e, VitalsState) || world.has(e, Dead) || pendingReady(world, e)) continue;
     const idx = entityIndex(e); const s = sv.slot(idx);
     stepStamina(world, e, idx, s, sv.data.hunger[s]!, sv.data.thirst[s]!, dt, delayTicks, false);
   }
@@ -170,6 +171,7 @@ export function vitalsSystem(world: World, dt: number): void {
   const delayTicks = Math.min(0xffff, secondsToTicks(vt.staminaRegenDelaySeconds, dt));
 
   for (const e of world.query([Survival, Health, VitalsState], [Dead])) {
+    if (pendingReady(world, e)) continue; // Task 14: nothing drains while the player is still loading in
     const idx = entityIndex(e);
     const s = sv.slot(idx); const h = hs.slot(idx); const v = vs.slot(idx);
     // buff/debuff modifier stack (core): (base + adds) x muls

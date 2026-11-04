@@ -11,6 +11,7 @@ import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
 import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
 import { MAP_MARKER_COMMANDS, MAP_MARKER_ENTITY_FIELDS } from "./map_marker_commands.js";
+import { READY_COMMANDS } from "./ready.js";
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
@@ -104,6 +105,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of INVENTORY_OP_COMMANDS) reg.register(d); // append-only: split / move slot (ADR-204)
   for (const d of MAP_MARKER_COMMANDS) reg.register(d); // append-only: world-map markers
   for (const [d] of DISEASE_COMMANDS) reg.register(d); // append-only (Task 13): boil water at a lit campfire
+  for (const d of READY_COMMANDS) reg.register(d); // append-only (Task 14): client loaded-in signal
   return reg;
 }
 
