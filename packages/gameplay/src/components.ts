@@ -375,6 +375,14 @@ export const PetGuard = defineComponent("PetGuard", { kind: "u8", target: "u32",
 export const enum PetStatus { Idle = 0, Follow = 1, Stay = 2, Guard = 3, Fight = 4, Return = 5, Eat = 6 }
 export const PetStatusComp = defineComponent("PetStatus", { status: "u8" }, { networked: true });
 /**
+ * Task 24: smoothed flame heat (deg C) of the enclosed room an entity stands in — 0 outdoors or with no lit fire
+ * nearby. The exposure system eases it toward the live fire heat (walls occlude, so only fires in the same room
+ * count) with a minutes-long time constant, and it decays back to 0 when the fire goes out. Networked, NOT
+ * persistent: a reload rewarms the room from cold (the rise takes minutes either way). Read by the HUD indoor
+ * gauge and the character sheet; the value is per-entity (each occupant converges to the same room heat).
+ */
+export const RoomHeat = defineComponent("RoomHeat", { heat: "f32" }, { networked: true });
+/**
  * Task 14: a joined player's load-in state (networked, NOT persistent — re-added on every join).
  * The server adds it with ready=0 when a client joins; the client sends gameplay.ready when its second
  * loading screen dismisses (connected + player spawned + chunks streamed), and the server flips ready=1.
@@ -424,4 +432,5 @@ export const GAMEPLAY_COMPONENTS = [
   PlayerReady, // append-only (Task 14: second loading screen — joined players wait for their client to load in)
   AnimalSkills, // append-only (Task 15: per-animal skill points + spent-node bitmask)
   Worker, // append-only (Task 22: AI-human recruitment — wanted item / owner / job / hire anchor)
+  RoomHeat, // append-only (Task 24: smoothed flame heat of the enclosed room an entity stands in)
 ] as const;

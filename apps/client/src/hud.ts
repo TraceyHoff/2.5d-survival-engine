@@ -7,7 +7,7 @@
 import { mountUi } from "./ui-root.js";
 import { Weather, Transform, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
-import { activeDiseases, Diseases, Exposure, Health, Survival } from "@engine/gameplay";
+import { activeDiseases, Diseases, Exposure, Health, RoomHeat, Survival } from "@engine/gameplay";
 import { seasonAtDays } from "@engine/core";
 import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_GLYPH, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
@@ -132,7 +132,9 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       // Task 23: indoors the gauge shows the sheltered air temperature (what the building does to the air);
       // outside it shows the air temperature as before. The outdoor air stays in the tooltip.
       const tf = p !== undefined ? w.get(p, Transform) : undefined;
-      const indoor = !ovr && tf ? hudShelteredTemp(w, days, tf.x, tf.y, tf.z) : undefined;
+      // Task 24: the indoor gauge includes the room's smoothed fire heat (RoomHeat, replicated).
+      const fireHeat = p !== undefined && w.isRegistered(RoomHeat) ? (w.getField(p, RoomHeat, "heat") ?? 0) : 0;
+      const indoor = !ovr && tf ? hudShelteredTemp(w, days, tf.x, tf.y, tf.z, undefined, fireHeat) : undefined;
       const indoors = indoor !== undefined && indoor.sheltered && Math.abs(indoor.temp - air) >= 1;
       const shown = indoors ? indoor!.temp : air;
       const band = tempBand(felt ?? shown); setAttr("band", tRow, "band", band);

@@ -18,14 +18,19 @@ function glStub() {
 
 describe("ADR-114 creator preview (render package sprites)", () => {
   it("?creator=2d forces Canvas2D", () => { expect(previewModeFromQuery(new URLSearchParams("creator=2d"))).toBe("canvas2d"); expect(previewModeFromQuery(new URLSearchParams(""))).toBe("auto"); });
-  it("auto = WebGL2 via createCharacterPreview at the device DPR; falls back to Canvas2D when WebGL2 fails; canvas2d skips GL", async () => {
+  it("auto = Canvas2D first, then WebGL2 in the background; falls back to Canvas2D when WebGL2 fails; canvas2d skips GL", async () => {
     const host = document.createElement("div"); const { calls, createGl } = glStub(); Object.defineProperty(window, "devicePixelRatio", { value: 2.625, configurable: true });
-    const d = await createPreviewDriver(host, { registry, sources: new Map(), createGl }, {} as never, 1);
-    expect(d?.kind).toBe("webgl2"); expect(calls.resize[0]).toEqual([PREVIEW_CSS.w, PREVIEW_CSS.h, 2.625]); d!.dispose(); expect(calls.disposed).toBe(1);
     const mk2d = vi.fn(() => ({ setAppearance: async () => undefined, setFacing: () => undefined, resize: () => undefined, renderNow: () => undefined, facing: 1 }));
+    const d = await createPreviewDriver(host, { registry, sources: new Map(), createGl, create2d: mk2d }, {} as never, 1);
+    // Task 24: 2D-first — the doll mounts before the WebGL2 build (atlas rebuild + prefetch) finishes…
+    expect(d?.kind).toBe("canvas2d"); expect(host.querySelector("canvas")?.dataset["renderer"]).toBe("canvas2d");
+    await d!.upgraded; // …then the background WebGL2 build swaps in (same final quality)
+    expect(d?.kind).toBe("webgl2"); expect(calls.resize[0]).toEqual([PREVIEW_CSS.w, PREVIEW_CSS.h, 2.625]); expect(host.querySelector("canvas")?.dataset["renderer"]).toBe("webgl2");
+    d!.dispose(); expect(calls.disposed).toBe(1);
     const failGl = vi.fn(async () => { throw new Error("no webgl2"); });
     const d2 = await createPreviewDriver(host, { registry, sources: new Map(), createGl: failGl as never, create2d: mk2d }, {} as never, 1);
     expect(d2?.kind).toBe("canvas2d"); expect(host.querySelector("canvas")?.dataset["renderer"]).toBe("canvas2d");
+    await tick(); await tick(); expect(d2?.kind).toBe("canvas2d"); // GL failure leaves the driver on Canvas2D
     const gl3 = glStub(); const d3 = await createPreviewDriver(host, { registry, sources: new Map(), mode: "canvas2d", createGl: gl3.createGl, create2d: mk2d }, {} as never, 1);
     expect(d3?.kind).toBe("canvas2d"); expect(gl3.createGl).not.toHaveBeenCalled();
   });

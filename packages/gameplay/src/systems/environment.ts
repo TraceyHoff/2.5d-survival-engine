@@ -5,19 +5,22 @@
  *  - climate: GameplayClimateModel registered with world installClimate (temperature curve lives here);
  *  - exposure (every 4 ticks = 5 Hz): heat from the world EmitterIndex (sampleField, walls occlude), shelter from
  *    BuildingGrid isCovered/exposure + edge-wall enclosure, wetness, felt temperature, buff modifiers;
+ *    Task 24: inside an enclosed room the fire heat is smoothed into RoomHeat (slow rise/fall), not instant.
  *  - chunk surface wetness (every 20 ticks): rises with rain, dries with wind and sun.
  * WeatherKind values are stable (renderer contract): 0 Clear, 1 Rain, 2 Storm, 3 Snow, 4 Fog, 5 Overcast, 6 Heat, 7 Blizzard, 8 Windy.
  *  - seasons (ADR-239): core Season on the environment; season weather tables + seasonal temperature live here.
  */
 import { addModifier, dayNoise, entityIndex, ModOp, Season, seasonFromDays, timeOfDay, Transform, Weather, type Entity, type SeasonInfo, type TimeOfDayInfo, type World } from "@engine/core";
 import { ClimateRes, climateAt, EmitterIndexRes, type BaseClimate, type ClimateContext, type ClimateModel, type ClimateSample } from "@engine/world";
-import { Buffs, ChunkSurface, Exposure, Stat, Wetness } from "../components.js";
+import { Buffs, ChunkSurface, DamageCause, Exposure, Health, RoomHeat, Stat, VitalsState, Wetness } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, WeatherKind, isSnowing, type EnvironmentTuning, type VitalsTuning, type WeatherDef } from "../defs.js";
 import { DayPhase, DayPhaseChanged, emit, WeatherChanged } from "../events.js";
 import { EmitterKind, isRaining } from "../realism.js";
 import { shelterAt, type Shelter } from "../building/shelter.js";
 import { waterproofOf } from "../combat/arms.js";
+import { pendingReady } from "../ready.js";
+import { HEAT_DAMAGE_ABOVE_C } from "./vitals.js";
 
 export const EXPOSURE_EVERY = 4;
 export const SURFACE_EVERY = 20;
@@ -208,15 +211,17 @@ export function shelterTempShift(sh: Shelter, ambient: number, vt: VitalsTuning,
 /**
  * Task 23: the air temperature where a body stands — outdoor air pulled by shelter (roof + walls); a fully enclosed
  * roofed room clamps to the comfort band, like felt. Display only: felt temperature (exposureSystem) adds clothing
- * insulation, fire heat, wetness and wind on top of this.
+ * insulation, fire heat, wetness and wind on top of this. Task 24: `fireHeat` is the room's smoothed flame heat
+ * (RoomHeat) — inside an enclosed room it adds on top of the clamped indoor base, so a lit fire warms the room
+ * the gauge shows; outdoors it is always 0.
  */
-export function shelteredAirTemp(world: World, x: number, y: number, z = 0, windDir?: number): { temp: number; sheltered: boolean; enclosed: boolean; exposure: number } {
+export function shelteredAirTemp(world: World, x: number, y: number, z = 0, windDir?: number, fireHeat = 0): { temp: number; sheltered: boolean; enclosed: boolean; exposure: number } {
   const env = gameplayDefs(world).environment; const vt = gameplayDefs(world).vitals;
   const ambient = ambientTemperature(world, x, y);
   const sh = shelterAt(world, x, y, z, windDir);
   const t = ambient + shelterTempShift(sh, ambient, vt, env.shelterTempBonus);
   const enclosed = sh.exposure === 0;
-  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) : t, sheltered: sh.exposure < 1, enclosed, exposure: sh.exposure };
+  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) + fireHeat : t, sheltered: sh.exposure < 1, enclosed, exposure: sh.exposure };
 }
 export function threatLevel(world: World): number {
   return dayPhase(timeOfDay(world).t) === DayPhase.Night ? gameplayDefs(world).environment.nightThreatMul : 1;
@@ -226,6 +231,36 @@ export function threatLevel(world: World): number {
 export function heatAt(world: World, x: number, y: number, z = 0): number {
   return world.getResource(EmitterIndexRes)?.sampleField(EmitterKind.Heat, x, y, z) ?? 0;
 }
+
+/**
+ * Task 24: flame heat of an enclosed room rises and falls slowly, not instantly. A lit campfire (18C at its
+ * centre, linear falloff over 4 tiles) warms a small sealed room to a cozy ~15C above the clamped indoor base;
+ * a fireplace (22C / 5 tiles) warms a little more, a torch stand (4C / 1.5 tiles) barely registers.
+ * Time constant: 63% of the way in 2 minutes, ~95% in 6 minutes; the same rate cooling when the fire goes out.
+ */
+export const FIRE_HEAT_TAU_S = 120;
+/** Cap on the smoothed room-heat contribution (deg C): a room full of fires tops out 15C above its indoor base. */
+export const FIRE_HEAT_MAX_C = 15;
+/** Exponential approach of `current` toward `target` over `dt` seconds (pure; shared by the exposure system). */
+export function approachRoomHeat(current: number, target: number, dt: number): number {
+  if (!(dt > 0)) return current;
+  return current + (target - current) * (1 - Math.exp(-dt / FIRE_HEAT_TAU_S));
+}
+/**
+ * Task 24: outdoor cold damage band, 0–10°F in Celsius. Below 0°F the slower body-temperature hypothermia
+ * (vitals) and the cold disease still apply; inside this band the air itself hurts directly, at the same rate
+ * as hypo/hyperthermia. Enclosed players are protected by the room clamp; a roof-only lean-to still counts
+ * as outside (shelter exposure > 0).
+ */
+export const COLD_DAMAGE_LO_C = ((0 - 32) * 5) / 9;
+export const COLD_DAMAGE_HI_C = ((10 - 32) * 5) / 9;
+/**
+ * Task 24: total worn insulation (deg C) that blocks the 0–10°F outdoor cold damage — the same total the
+ * character sheet shows. About a fur coat (7) + a warm hat (3), or a layered wool outfit (sweater 5 +
+ * padded trousers 3 + wool hat 2.5); a basic leather set (~9) is just short. Insulation below this still
+ * warms the slow body-temperature drift — it only stops blocking the fast direct damage.
+ */
+export const COLD_DAMAGE_INSULATION_C = 10;
 
 /**
  * Per entity, every EXPOSURE_EVERY ticks (dt = dt x every): wetness, felt temperature, buffs.
@@ -241,6 +276,18 @@ export function exposureSystem(world: World, dt: number): void {
     const x = tf.data.x[ts]!, y = tf.data.y[ts]!, z = tf.data.z[ts]!;
     const heat = heatAt(world, x, y, z);
     const sh = shelterAt(world, x, y, z, w.windDir);
+    // Task 24: inside a fully enclosed room the fire's heat is not instant — the room itself warms over
+    // minutes (RoomHeat, eased toward the live fire heat; walls occlude, so only fires in the same room
+    // count) and cools back down when the fire goes out. Outdoors the instant heat still applies as before.
+    const enclosed = sh.exposure === 0;
+    const prevHeat = world.isRegistered(RoomHeat) ? (world.getField(e, RoomHeat, "heat") ?? 0) : 0;
+    const roomHeat = approachRoomHeat(prevHeat, enclosed ? Math.min(heat, FIRE_HEAT_MAX_C) : 0, dt);
+    // Write on any change (at equilibrium approachRoomHeat returns the current value exactly, so this stops
+    // on its own). A fixed epsilon here would freeze the tail: the per-call delta shrinks with the value.
+    if (world.isRegistered(RoomHeat) && roomHeat !== prevHeat) {
+      if (world.has(e, RoomHeat)) world.setField(e, RoomHeat, "heat", roomHeat);
+      else world.add(e, RoomHeat, { heat: roomHeat });
+    }
     let wet = ex.data.wetness[s]!;
     if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
@@ -250,11 +297,35 @@ export function exposureSystem(world: World, dt: number): void {
     // (a fur coat no longer cooks its wearer in a heat wave); higher tiers insulate more (items.json).
     const ins = ex.data.insulation[s]!;
     const insShift = ambient > vt.comfortMax ? -ins : ambient < vt.comfortMin ? ins : 0;
-    let felt = ambient + insShift + shelterTempShift(sh, ambient, vt, env.shelterTempBonus) + heat
+    let felt = ambient + insShift + shelterTempShift(sh, ambient, vt, env.shelterTempBonus)
       - env.wetChill * wet - env.windChillPerSpeed * Math.sqrt(Math.max(0, w.windSpeed)) * sh.exposure;
-    // Fully enclosed + roofed: protected from the elements and from death by them — felt never leaves the comfort band.
-    if (sh.exposure === 0) felt = Math.min(vt.comfortMax, Math.max(vt.comfortMin, felt));
+    // Fully enclosed + roofed: protected from the elements and from death by them — felt never leaves the comfort
+    // band, except for the room's own fire heat on top (a sealed room with a roaring fire can still overheat).
+    if (enclosed) felt = Math.min(vt.comfortMax, Math.max(vt.comfortMin, felt)) + roomHeat;
+    else felt += heat;
     ex.data.wetness[s] = wet; ex.data.feltTemp[s] = felt; ex.data.sheltered[s] = sh.covered ? 1 : 0; ex.markChanged(idx);
+
+    // Task 24: temperature damage lives here (not vitals) because it needs ambient + shelter + fire heat together.
+    // Authority-only and skipped while the player is still loading in (Task 14 freeze), like vitals drains.
+    // Direct Health write, mirroring vitalsSystem's environmental damage (silent: no Damaged event / HitReact).
+    if (isAuthority(world) && world.has(e, Health) && !pendingReady(world, e)) {
+      const hurtTemp = (amount: number, cause: DamageCause): void => {
+        const hp = world.getField(e, Health, "hp"); if (hp === undefined || amount <= 0) return;
+        world.setField(e, Health, "hp", Math.max(0, hp - amount));
+        if (world.has(e, VitalsState)) world.setField(e, VitalsState, "lastDamageCause", cause);
+      };
+      // Heat: felt at/above 90F hurts. Outdoors the instant fire heat is subtracted — a campfire's warmth is a
+      // controllable heat source, not the weather (Task 23). Inside an enclosed room the felt already carries
+      // the room's smoothed fire heat, which counts: a sealed room with a roaring fire can overheat.
+      if ((enclosed ? felt : felt - heat) >= HEAT_DAMAGE_ABOVE_C) hurtTemp(vt.exposureDps * dt, DamageCause.Hyperthermia);
+      // Cold: 0–10F outdoors hurts directly unless the player wears enough insulation (COLD_DAMAGE_INSULATION_C,
+      // the same total the character sheet shows). Below 0F the slower body-temp hypothermia (vitals) and the
+      // cold disease still apply; this is the fast outdoor threat inside the band. It stacks with hypothermia
+      // once body temperature falls below 35C, exactly like heat damage stacks with hyperthermia.
+      if (!enclosed && ins < COLD_DAMAGE_INSULATION_C && ambient >= COLD_DAMAGE_LO_C && ambient <= COLD_DAMAGE_HI_C) {
+        hurtTemp(vt.exposureDps * dt, DamageCause.Hypothermia);
+      }
+    }
 
     // render-facing wetness (only write on change)
     const lvl = Math.round(wet * 255);

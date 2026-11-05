@@ -181,28 +181,73 @@ export type CreatorPreviewMode = "auto" | "webgl2" | "canvas2d";
 /** ?creator=2d (or ?creator=canvas2d) forces the Canvas2D preview. */
 export const previewModeFromQuery = (q: URLSearchParams): CreatorPreviewMode => (/^(2d|canvas2d)$/.test(q.get("creator") ?? "") ? "canvas2d" : "auto");
 /** One preview backend: the creator only talks to this. */
-export interface PreviewDriver { kind: "webgl2" | "canvas2d" | "sketch"; /** resolves when the initial look's art has loaded */ loaded?: Promise<void>; set(a: AppearanceValue): void; facing(k: number): void; frame(tSec: number): void; dispose(): void }
+export interface PreviewDriver { kind: "webgl2" | "canvas2d" | "sketch"; /** resolves when the initial look's art has loaded */ loaded?: Promise<void>; /** auto mode only: resolves when the backend upgrades from Canvas2D to WebGL2 (never resolves if WebGL2 is unavailable) */ upgraded?: Promise<void>; set(a: AppearanceValue): void; facing(k: number): void; frame(tSec: number): void; dispose(): void }
 export const PREVIEW_CSS = { w: 168, h: 216 } as const;
-/** WebGL2 (render package) -> Canvas2D sheets -> undefined (caller keeps the sketch). Mounts into `host`. */
+/**
+ * Task 24: the creator used to await the full WebGL2 preview before showing any doll — createCharacterPreview
+ * creates a second WebGL context + IsoRenderer, rebuilds EVERY atlas in the registry (eager PNG decodes,
+ * fitToPage mask/emissive resizes, fitBudget/halveSide rescales) and prefetches the look's streamed pages, so
+ * the creator showed only the crude sketch for seconds. Auto mode is now 2D-first: the Canvas2D preview needs
+ * only the character PNG sheets + tintmasks, so it mounts immediately, and the WebGL2 build runs in the
+ * background and swaps in when ready (same final quality — the 2D doll is a stopgap, not a downgrade). Shot
+ * mode (?creator=shot, freeze) and explicit webgl2 keep the old await-GL behaviour: screenshots need
+ * deterministic GL frames. WebGL2 (render package) -> Canvas2D sheets -> undefined (caller keeps the sketch).
+ * Mounts into `host`.
+ */
 export async function createPreviewDriver(host: HTMLElement, src: CreatorPreviewSource, look: AppearanceValue, facing: number, backdrop = "#EAD9B8", freeze = false): Promise<PreviewDriver | undefined> {
   const doc = host.ownerDocument; const dpr = freeze ? 1 : Math.min(3, doc.defaultView?.devicePixelRatio || 1); const cat = src.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
-  if (src.mode !== "canvas2d") {
+  // The WebGL2 driver. The canvas is created detached and only appended once the preview is ready, so a slow
+  // (background) build never covers the 2D preview — or the sketch — with a blank canvas.
+  const buildGl = async (): Promise<PreviewDriver | undefined> => {
     const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "webgl2"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px;display:block`;
-    host.append(cv);
     try {
       const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, ...(cat && charArt() !== "v1" ? { binding: withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites) } : {}), sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false, ...(freeze ? { freeze: true } : {}) });
       pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr);
+      host.append(cv);
       return { kind: "webgl2", set: (a) => { void pv.setAppearance(a); }, facing: (k) => pv.setFacing(k), frame: () => undefined, dispose: () => { pv.dispose(); cv.remove(); } };
-    } catch (e) { cv.remove(); if (src.mode === "webgl2") return undefined; console.info("[creator] WebGL2 preview unavailable, Canvas2D:", e); }
+    } catch (e) { cv.remove(); if (src.mode === "webgl2") return undefined; console.info("[creator] WebGL2 preview unavailable, Canvas2D:", e); return undefined; }
+  };
+  // The Canvas2D driver: construction is synchronous (sheet loading runs in the background via `loaded`).
+  const build2d = (): PreviewDriver | undefined => {
+    if (!cat) return undefined;
+    const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "canvas2d"; cv.style.cssText = "border-radius:12px;display:block;image-rendering:pixelated;touch-action:none";
+    try {
+      const o = { registry: src.registry, binding: charArt() === "v1" ? coreAppearanceBinding(cat) : withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites), appearance: look, sources: src.sources, facing, backdrop };
+      const pv = src.create2d ? src.create2d(cv, o) : new CharacterPreview2D(cv, o); pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr); host.append(cv);
+      let cur = look; const loaded = pv.setAppearance(look);
+      return { kind: "canvas2d", loaded, set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };
+    } catch (e) { console.warn("[creator] Canvas2D preview failed:", e); cv.remove(); return undefined; }
+  };
+  if (src.mode === "canvas2d") return build2d();
+  // Shot mode (frozen frames) and explicit webgl2: await GL as before — no 2D-first upgrade.
+  if (freeze || src.mode === "webgl2") {
+    const gl = await buildGl();
+    if (gl) return gl;
+    if (src.mode === "webgl2") return undefined;
+    return build2d();
   }
-  if (!cat) return undefined;
-  const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "canvas2d"; cv.style.cssText = "border-radius:12px;display:block;image-rendering:pixelated;touch-action:none";
-  try {
-    const o = { registry: src.registry, binding: charArt() === "v1" ? coreAppearanceBinding(cat) : withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites), appearance: look, sources: src.sources, facing, backdrop };
-    const pv = src.create2d ? src.create2d(cv, o) : new CharacterPreview2D(cv, o); pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr); host.append(cv);
-    let cur = look; const loaded = pv.setAppearance(look);
-    return { kind: "canvas2d", loaded, set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };
-  } catch (e) { console.warn("[creator] Canvas2D preview failed:", e); cv.remove(); return undefined; }
+  // Auto mode: mount Canvas2D now, upgrade to WebGL2 in the background when it is ready.
+  const twoD = build2d();
+  if (!twoD) return buildGl(); // no 2D (no catalog / construction failed): await GL as before
+  let cur: PreviewDriver = twoD; let latestLook = look; let latestFacing = facing; let disposed = false;
+  let resolveUpgraded: () => void = () => undefined; const upgraded = new Promise<void>((r) => { resolveUpgraded = r; });
+  void buildGl().then((gl) => {
+    if (!gl) return; // WebGL2 unavailable: stay on Canvas2D (same doll, just the 2D compositor)
+    if (disposed) { gl.dispose(); return; } // the creator closed while GL was building
+    const prev = cur; cur = gl;
+    gl.set(latestLook); gl.facing(latestFacing);
+    prev.dispose(); // removes the 2D canvas (the GL canvas was appended by buildGl)
+    resolveUpgraded();
+  });
+  return {
+    get kind() { return cur.kind; },
+    loaded: twoD.loaded!, // build2d always sets loaded (the 2D doll's sheet promise)
+    upgraded,
+    set: (a) => { latestLook = a; cur.set(a); },
+    facing: (k) => { latestFacing = k; cur.facing(k); },
+    frame: (t) => cur.frame(t),
+    dispose: () => { disposed = true; cur.dispose(); },
+  };
 }
 /** ADR-240: the creator previews the same doll art as in-game (`charArt` setting; v2s/v2s-all = the v2 sample). */
 const charArt = () => parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
@@ -234,7 +279,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     let done = false; const go = (): void => { if (!done) { done = true; f(); } }; win0.requestAnimationFrame(go); win0.setTimeout?.(go, 100); }; f(); });
   const stage = (s: string): void => { o.shot?.onStage?.(s); };
   const ready = (kind: PreviewDriver["kind"]): void => { if (!o.shot || disposed) return; stage(`frames:${kind}`); draw(); void frames(2).then(() => { if (!disposed) { draw(); wrap.dataset["ready"] = "1"; o.shot?.onReady({ renderer: kind }); } }); };
-  stage("preview"); if (o.preview) void createPreviewDriver(host, o.preview, look, dir, o.artBase && o.preview.mode === "canvas2d" ? "" : undefined, !!o.shot?.freeze).then(async (d) => { if (!d) { ready("sketch"); return; } if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; if (!o.shot) d.set(look); draw(); stage(`loading:${d.kind}`); await d.loaded?.catch(() => undefined); ready(d.kind); });
+  stage("preview"); if (o.preview) void createPreviewDriver(host, o.preview, look, dir, o.artBase && o.preview.mode === "canvas2d" ? "" : undefined, !!o.shot?.freeze).then(async (d) => { if (!d) { ready("sketch"); return; } if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; if (d.upgraded) void d.upgraded.then(() => { if (!disposed) wrap.dataset["preview"] = d.kind; }); if (!o.shot) d.set(look); draw(); stage(`loading:${d.kind}`); await d.loaded?.catch(() => undefined); ready(d.kind); });
   else queueMicrotask(() => ready("sketch"));
   const right = doc.createElement("div"); right.style.cssText = "flex:2 1 240px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center";
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };

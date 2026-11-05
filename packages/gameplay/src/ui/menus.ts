@@ -10,7 +10,7 @@ import { ReadyCmd } from "../ready.js";
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, StallHeader, Survival, Wardrobe } from "../components.js";
+import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, RoomHeat, StallHeader, Survival, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { carriedBags } from "../stance.js";
 import type { ItemCount } from "../defs.js";
@@ -267,7 +267,8 @@ export function characterSheetView(c: MenuCtx): CharacterSheetView | undefined {
   const sv = w.get(p, Survival); const hp = w.get(p, Health); if (!sv || !hp) return undefined;
   const prog = w.get(p, Progression);
   const t = w.get(p, Transform);
-  const air = t ? shelteredAirTemp(w, t.x, t.y, t.z) : undefined;
+  // Task 24: the indoor temperature includes the room's smoothed fire heat (RoomHeat).
+  const air = t ? shelteredAirTemp(w, t.x, t.y, t.z, undefined, w.getField(p, RoomHeat, "heat") ?? 0) : undefined;
   const ambient = t ? ambientTemperature(w, t.x, t.y) : ambientTemperature(w);
   const si = worldSeason(w);
   return {

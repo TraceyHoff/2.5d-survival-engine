@@ -41,11 +41,12 @@ export function hudAirTemp(w: World, days: number, weatherKind?: number): number
  * hudAirTemp): outdoor air pulled by shelter (roof + walls), clamped to the comfort band in a fully enclosed
  * room. Without shelter data the world reports open sky and this is just the air temperature.
  */
-export function hudShelteredTemp(w: World, days: number, x: number, y: number, z = 0, weatherKind?: number): { temp: number; sheltered: boolean; enclosed: boolean } {
+export function hudShelteredTemp(w: World, days: number, x: number, y: number, z = 0, weatherKind?: number, fireHeat = 0): { temp: number; sheltered: boolean; enclosed: boolean } {
   const air = hudAirTemp(w, days, weatherKind);
   const env = gameplayDefs(w).environment; const vt = gameplayDefs(w).vitals;
   const sh = shelterAt(w, x, y, z, w.env(Weather).windDir);
   const t = air + shelterTempShift(sh, air, vt, env.shelterTempBonus);
   const enclosed = sh.exposure === 0;
-  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) : t, sheltered: sh.exposure < 1, enclosed };
+  // Task 24: inside an enclosed room the gauge shows the room's smoothed fire heat on top of the clamped base.
+  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) + fireHeat : t, sheltered: sh.exposure < 1, enclosed };
 }
