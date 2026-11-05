@@ -13,6 +13,7 @@
  */
 import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
 import { installKeyboardViewport } from "./keyboard-viewport.js";
+import { bindTypingFullscreenExit, exitFullscreenForTyping } from "./fullscreen.js";
 import { markNavFocus } from "./back-history.js";
 import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
@@ -242,10 +243,22 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   rot.append(rl, rnd, rr); left.append(host, rot);
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname"); nameIn.setAttribute("enterkeyhint", "done"); nameIn.id = "creator-name-input";
   nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
+  // Task 20: tapping the input leaves fullscreen so the phone IME can draw (see fullscreen.ts);
+  // the focus handler below re-exits after any tap in this dialog (e.g. the empty-name refocus,
+  // where the Enter button's pointerup may have restored fullscreen first).
+  bindTypingFullscreenExit(nameIn);
   // Task 18: when the phone keyboard opens, keep the name field in view inside
   // the (now keyboard-shrunk) panel instead of letting it sit behind the IME.
-  nameIn.addEventListener("focus", () => { try { nameIn.scrollIntoView?.({ block: "nearest" }); } catch { /* headless harnesses */ } });
+  // Task 20: the wrapTouched gate keeps the programmatic focus() on open from exiting fullscreen
+  // (no keyboard is open yet at open time); any later focus follows a real tap in this dialog.
+  let wrapTouched = false;
+  wrap.addEventListener("pointerdown", () => { wrapTouched = true; }, true);
+  nameIn.addEventListener("focus", () => { if (wrapTouched) exitFullscreenForTyping(); try { nameIn.scrollIntoView?.({ block: "nearest" }); } catch { /* headless harnesses */ } });
   const nl = doc.createElement("label"); nl.textContent = "Name"; nl.htmlFor = nameIn.id;
+  // Task 20: the label cell is the full 44px row height (not just the "Name" glyphs), so the whole
+  // label column is a tap target; its pointerdown also leaves fullscreen for typing.
+  nl.style.cssText = "min-height:44px;display:flex;align-items:center;cursor:pointer";
+  nl.addEventListener("pointerdown", () => exitFullscreenForTyping());
   // Task 17: the creator opens asynchronously (after art/catalog loads), so the
   // focus() on open runs outside any tap gesture and mobile browsers will not
   // open the virtual keyboard for it. Tapping the label focuses the input inside
@@ -254,6 +267,14 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   // handler covers the rest. The input itself is unchanged for desktop/gamepad.
   nl.addEventListener("click", () => { nameIn.focus(); });
   right.append(nl, nameIn);
+  // Task 20: taps landing in the Name row's dead zones (the grid gap, or the row's empty grid area)
+  // must still reach the input — previously only a tap squarely on the input or the label text
+  // focused it, which is what made the row feel oddly picky on phones. Clicks on any child
+  // (buttons, inputs) keep their own behaviour; only clicks whose target IS the row container
+  // itself, inside the name row's vertical band, are retargeted.
+  const nameBand = (y: number): boolean => { const r = nameIn.getBoundingClientRect(); return y >= r.top && y <= r.bottom; };
+  right.addEventListener("pointerdown", (e) => { if (e.target === right && nameBand(e.clientY)) exitFullscreenForTyping(); });
+  right.addEventListener("click", (e) => { if (e.target === right && nameBand(e.clientY)) nameIn.focus(); });
   const vals = new Map<string, HTMLElement>();
   const row = (label: string, field: Parameters<typeof stepLook>[2]): void => {
     const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center;min-width:0";

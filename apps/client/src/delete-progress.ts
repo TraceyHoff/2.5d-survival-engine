@@ -6,6 +6,7 @@
  * held, or gamepad A held while it is focused). Nothing is deleted on a single tap/click/A press.
  */
 import { gamepadKeyControl, navPad, padHeld } from "./pad-input.js";
+import { bindTypingFullscreenExit } from "./fullscreen.js";
 export const DELETE_WORD = "DELETE";
 export const HOLD_MS = 1500;
 /** localStorage keys reset only when the player opts in ("Also reset settings"). */
@@ -38,7 +39,7 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
   const status = document.createElement("p"); status.dataset["role"] = "delete-status"; status.setAttribute("aria-live", "polite");
   const reset = document.createElement("input"); reset.type = "checkbox"; reset.dataset["role"] = "reset-settings";
   const rl = document.createElement("label"); rl.append(reset, " Also reset settings (HUD, bots, key bindings)");
-  const word = document.createElement("input"); word.dataset["role"] = "confirm-word"; word.placeholder = `Type ${DELETE_WORD}`; word.autocomplete = "off"; word.spellcheck = false; word.setAttribute("aria-label", `Type ${DELETE_WORD} to confirm`);
+  const word = document.createElement("input"); word.dataset["role"] = "confirm-word"; word.placeholder = `Type ${DELETE_WORD}`; word.autocomplete = "off"; word.spellcheck = false; word.setAttribute("aria-label", `Type ${DELETE_WORD} to confirm`); bindTypingFullscreenExit(word); // Task 20: same fullscreen IME rule as the creator/menu fields
   const del = document.createElement("button"); del.type = "button"; del.dataset["action"] = "confirm-delete"; del.dataset["role"] = "submit"; /* UINav: Enter in the text field */ del.textContent = "Delete"; del.className = "alt"; del.setAttribute("aria-disabled", "true");
   const hold = document.createElement("button"); hold.type = "button"; hold.dataset["action"] = "hold-delete"; hold.dataset["hold"] = "1"; hold.textContent = "Hold to delete";
   const cancel = document.createElement("button"); cancel.type = "button"; cancel.dataset["action"] = "cancel-delete"; cancel.textContent = "Cancel"; cancel.className = "alt";

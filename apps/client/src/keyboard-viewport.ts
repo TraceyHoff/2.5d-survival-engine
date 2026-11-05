@@ -28,9 +28,11 @@
  * is the IME surface failing to draw under fullscreen/edge-to-edge
  * compositing on that device — this helper cannot force the IME to draw.
  * What it guarantees is that, once the keyboard IS drawn, the dialog fits
- * above it and its buttons stay reachable; if a device still shows a
- * black IME surface, the remaining lever is exiting fullscreen during
- * text entry (flagged as a follow-up, not done here).
+ * above it and its buttons stay reachable. Task 20 adds the other half:
+ * text fields now leave fullscreen on tap (fullscreen.ts
+ * exitFullscreenForTyping / bindTypingFullscreenExit), so the keyboard
+ * opens on the normal windowed path and draws keys instead of a black bar;
+ * the next non-typing tap restores fullscreen.
  */
 export interface KeyboardViewportSource {
   innerHeight: number;

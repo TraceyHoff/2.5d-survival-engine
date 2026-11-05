@@ -6,7 +6,7 @@
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { BUILD_HASH } from "./error-log.js";
 import { mountUi } from "./ui-root.js";
-import { enterFullscreen } from "./fullscreen.js";
+import { bindTypingFullscreenExit, enterFullscreen } from "./fullscreen.js";
 import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
 import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
 const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLInputElement && t.type !== "checkbox" && t.type !== "range";
@@ -132,7 +132,10 @@ export function probeServer(url: string, timeoutMs = 4000, Ws: typeof WebSocket 
 }
 function mpButton(text: string, action: string, fn: () => void): HTMLButtonElement { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "menuitem"); b.dataset["action"] = action; b.textContent = text; b.addEventListener("click", fn); return b; }
 function mpInput(role: string, label: string, placeholder: string): HTMLInputElement {
-  const i = document.createElement("input"); i.dataset["role"] = role; i.setAttribute("aria-label", label); i.placeholder = placeholder; i.autocomplete = "off"; i.spellcheck = false; return i;
+  const i = document.createElement("input"); i.dataset["role"] = role; i.setAttribute("aria-label", label); i.placeholder = placeholder; i.autocomplete = "off"; i.spellcheck = false;
+  // Task 20: tapping a menu text field leaves fullscreen so the phone IME can draw (room-code /
+  // server-url are the enter-game box the user hit after Enter world).
+  bindTypingFullscreenExit(i); return i;
 }
 function mpRow(...els: HTMLElement[]): HTMLElement { const r = document.createElement("div"); r.className = "mp-row"; r.append(...els); return r; }
 function mpSection(title: string, help: string, ...body: HTMLElement[]): HTMLElement {
@@ -307,17 +310,17 @@ export class BootUI {
       };
       const settings = (): void => {
         const s = loadSettings();
-        const bots = document.createElement("input"); bots.type = "number"; bots.min = "0"; bots.max = "12"; bots.value = String(s.bots); bots.style.width = "70px";
+        const bots = document.createElement("input"); bots.type = "number"; bots.min = "0"; bots.max = "12"; bots.value = String(s.bots); bots.style.width = "70px"; bindTypingFullscreenExit(bots);
         const hud = document.createElement("input"); hud.type = "checkbox"; hud.checked = s.showHud;
         const l1 = document.createElement("label"); l1.append("Singleplayer human bots", bots);
         const l2 = document.createElement("label"); l2.append("Show HUD", hud);
         const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
         const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
-        const cap = document.createElement("input"); cap.type = "number"; cap.min = "2"; cap.max = "32"; cap.value = String(s.hostCap); cap.style.width = "70px";
+        const cap = document.createElement("input"); cap.type = "number"; cap.min = "2"; cap.max = "32"; cap.value = String(s.hostCap); cap.style.width = "70px"; bindTypingFullscreenExit(cap);
         const l4 = document.createElement("label"); l4.append("Max players when hosting (desktop)", cap);
         const hz = document.createElement("input"); hz.type = "checkbox"; hz.checked = s.hordes !== false; hz.dataset["setting"] = "hordes";
         const l5 = document.createElement("label"); l5.append("Roaming zombie hordes (new worlds)", hz);
-        const gd = document.createElement("input"); gd.type = "number"; gd.min = "0"; gd.max = "30"; gd.step = "0.5"; gd.value = String(s.hordeGraceDays ?? 3); gd.style.width = "70px"; gd.dataset["setting"] = "hordeGraceDays";
+        const gd = document.createElement("input"); gd.type = "number"; gd.min = "0"; gd.max = "30"; gd.step = "0.5"; gd.value = String(s.hordeGraceDays ?? 3); gd.style.width = "70px"; gd.dataset["setting"] = "hordeGraceDays"; bindTypingFullscreenExit(gd);
         const l6 = document.createElement("label"); l6.append("Horde grace period (in-game days)", gd);
         const tu = tempUnitControl(s); const l7 = tu.el; // ADR-243: near the top, gamepad/touch toggle
         const manage = document.createElement("button"); manage.className = "alt"; manage.textContent = "Delete progress…"; manage.dataset["action"] = "manage-saves"; manage.addEventListener("click", saves);

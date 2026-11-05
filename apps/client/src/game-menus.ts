@@ -7,6 +7,7 @@
  * L clan, J skills, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
  */
 import { deleteConfirm } from "./delete-progress.js";
+import { bindTypingFullscreenExit } from "./fullscreen.js";
 import { errorLog } from "./error-log.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings, tempUnitControl } from "./menu.js";
@@ -275,7 +276,7 @@ export class GameMenus {
   private chatPanel(): HTMLElement {
     const log = document.createElement("div"); log.dataset["role"] = "chat-log"; log.style.cssText = "max-height:30vh;overflow:auto;font-size:14px";
     for (const l of this.chatLog.slice(-50)) { const p = this.para(l.text); p.dataset["chan"] = l.chan; log.append(p); }
-    const input = document.createElement("input"); input.dataset["role"] = "chat-input"; input.placeholder = "Say something…"; input.maxLength = 200; input.setAttribute("aria-label", "Chat message"); input.autofocus = true;
+    const input = document.createElement("input"); input.dataset["role"] = "chat-input"; input.placeholder = "Say something…"; input.maxLength = 200; input.setAttribute("aria-label", "Chat message"); input.autofocus = true; bindTypingFullscreenExit(input); // Task 20: in-game chat is a fullscreen text field too
     const send = (): void => { const t = input.value.trim(); if (!t) return; if (this.chatChannel === 5 && !this.whisperTo) { this.pushChat("(pick who to whisper)"); return; }
       if (this.o.onChat) this.o.onChat(t, this.chatChannel, this.chatChannel === 5 ? this.whisperTo : undefined); else this.pushChat(t, this.chatChannel); input.value = ""; };
     /** Whisper picker: online directory (gameplay.onlinePlayer) + nearby players. */
