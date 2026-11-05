@@ -1,6 +1,6 @@
 /**
  * ADR-114 character creator: shown after the main-menu mode choice and before entering the world.
- * Fields: name, body, skin, hair (+colour), face / beard, eyes (+colour); a rotating
+ * Fields: name (with a Roll button for a random name matching the body type — Task 27), body, skin, hair (+colour), face / beard, eyes (+colour); a rotating
  * preview (auto-turn + ⟲/⟳) and Randomize. Task 23: clothing is NOT offered here — a new survivor starts
  * with no clothes and must craft clothing in game. The result is stored per save (mode + slot) and sent on join as the
  * normal SetAppearance command, so the server's checkAppearance (catalog + unlock + first-join gate) validates it.
@@ -18,6 +18,8 @@ import { bindTypingFullscreenExit, exitFullscreenForTyping } from "./fullscreen.
 import { markNavFocus } from "./back-history.js";
 import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
+import { iconUrl } from "./game-icons.js";
+import { randomName } from "./random-names.js";
 import { UINav } from "./ui-nav.js";
 import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, parseCharArt, withCharArt, type AtlasSource, type CharacterPreview } from "@engine/render";
 import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, mapLegacySkinTone, slotIndex, SKIN_TONE_SCHEME, swatchColor, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
@@ -302,7 +304,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   iconInto(rl, o.artBase, "ic_rotate_left", "Rotate left"); iconInto(rr, o.artBase, "ic_rotate_right", "Rotate right"); iconInto(rnd, o.artBase, "ic_randomize", "Randomize");
   rot.append(rl, rnd, rr); left.append(host, rot);
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname"); nameIn.setAttribute("enterkeyhint", "done"); nameIn.id = "creator-name-input";
-  nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
+  nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;flex:1;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
   // Task 20: tapping the input leaves fullscreen so the phone IME can draw (see fullscreen.ts);
   // the focus handler below re-exits after any tap in this dialog (e.g. the empty-name refocus,
   // where the Enter button's pointerup may have restored fullscreen first).
@@ -326,15 +328,29 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   // htmlFor association covers browsers with native label behaviour, and this
   // handler covers the rest. The input itself is unchanged for desktop/gamepad.
   nl.addEventListener("click", () => { nameIn.focus(); });
-  right.append(nl, nameIn);
+  // Task 27: Roll button next to the Name field — a random "First Last" from the list matching the
+  // currently selected body type (Male -> male list, Female -> female list; switching Body then
+  // rolling uses the new list). Synchronous inside the click gesture (same constraint as the
+  // Task 17/20 keyboard-focus work: no async indirection that would break focus on mobile), and
+  // it writes the same `name` the Enter-world check reads, so the name-required rule is unchanged.
+  // The button is a normal focusable control, so gamepad D-pad navigation reaches it like the
+  // other creator buttons; the dice art is the Task 25 custom icon, with the "Roll" text as fallback.
+  const nameBox = doc.createElement("div"); nameBox.style.cssText = "display:flex;gap:6px;align-items:center;min-width:0";
+  const roll = mk("Roll", "roll-name", () => { const n = randomName(look.bodyType, Math.random, name); name = n; nameIn.value = n; msg.textContent = ""; });
+  roll.setAttribute("aria-label", "Roll a random name"); roll.title = "Roll a random name"; roll.style.cssText = "min-height:44px;display:inline-flex;align-items:center;gap:6px;flex:none";
+  const rollImg = doc.createElement("img"); rollImg.alt = ""; rollImg.width = 24; rollImg.height = 24; rollImg.src = iconUrl("ic_dice.png");
+  rollImg.style.cssText = "width:24px;height:24px;image-rendering:pixelated;flex:none"; rollImg.addEventListener("error", () => rollImg.remove()); roll.prepend(rollImg);
+  nameBox.append(nameIn, roll);
+  right.append(nl, nameBox);
   // Task 20: taps landing in the Name row's dead zones (the grid gap, or the row's empty grid area)
   // must still reach the input — previously only a tap squarely on the input or the label text
   // focused it, which is what made the row feel oddly picky on phones. Clicks on any child
   // (buttons, inputs) keep their own behaviour; only clicks whose target IS the row container
-  // itself, inside the name row's vertical band, are retargeted.
+  // itself — or the Name box wrapping the input + Roll button (Task 27: its 6px gap is a new
+  // dead zone) — inside the name row's vertical band, are retargeted.
   const nameBand = (y: number): boolean => { const r = nameIn.getBoundingClientRect(); return y >= r.top && y <= r.bottom; };
-  right.addEventListener("pointerdown", (e) => { if (e.target === right && nameBand(e.clientY)) exitFullscreenForTyping(); });
-  right.addEventListener("click", (e) => { if (e.target === right && nameBand(e.clientY)) nameIn.focus(); });
+  right.addEventListener("pointerdown", (e) => { if ((e.target === right || e.target === nameBox) && nameBand(e.clientY)) exitFullscreenForTyping(); });
+  right.addEventListener("click", (e) => { if ((e.target === right || e.target === nameBox) && nameBand(e.clientY)) nameIn.focus(); });
   const vals = new Map<string, HTMLElement>();
   const row = (label: string, field: Parameters<typeof stepLook>[2]): void => {
     const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center;min-width:0";
