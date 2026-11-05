@@ -22,6 +22,7 @@ import { spoilageSystem, SPOILAGE_EVERY } from "./systems/spoilage.js";
 import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
 import { diseaseSystem } from "./systems/diseases.js";
 import { installDiseases } from "./diseases.js";
+import { recruitmentSystem } from "./recruitment.js";
 import { animSettleSystem } from "./systems/movement.js";
 import { stanceSystem } from "./stance.js";
 import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
@@ -76,6 +77,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.stance"], // ADR-244 carry follow / block break / sleep heal / night skip (authority)
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.diseases"], // Task 13: symptom drains + exposure + transmission (after vitals, before death)
+  ["simulation", "gameplay.recruitment", 20], // Task 22: backfill Worker records onto AI humans (authority-only)
   ["simulation", "gameplay.death"],
   ["simulation", "gameplay.deathBags"],
   ["simulation", "gameplay.spoilage", SPOILAGE_EVERY],
@@ -125,6 +127,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.wear": wearSystem, "gameplay.exposure": exposureSystem, "gameplay.fuel": fuelSystem, "gameplay.respawn": respawnSystem, "gameplay.gather": gatherSystem,
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem, "gameplay.diseases": diseaseSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
+    "gameplay.recruitment": recruitmentSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
     "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.progressionMigrate": progressionMigrateSystem, "gameplay.equip": equipSystem, "gameplay.stance": stanceSystem, "gameplay.pets": petSystem,

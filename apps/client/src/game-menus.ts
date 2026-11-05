@@ -35,6 +35,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
   { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "pet", title: "Pets", icon: "🐾", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
+  { id: "worker", title: "AI Humans", icon: "🧑‍🌾", hotkeys: [], text: "Hire AI humans to work for you (Task 22)." },
   { id: "map", title: "World Map", icon: "🗺", hotkeys: ["KeyM"], bar: true, text: "Your location, facing and markers. Tap a spot to place a marker." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
@@ -91,7 +92,7 @@ export interface GameMenusOptions {
   setQuality?: (p: QualityPreset) => void;
   /** ADR-116: the live renderer's quality controller (Auto label + detected tier). */
   /** ADR-121: the current world's rules (read-only in game; set for new worlds in the main menu Settings). */
-  worldRules?: () => { hordes: boolean; hordeGraceDays: number } | undefined;
+  worldRules?: () => { hordes: boolean; hordeGraceDays: number; aiHumans: boolean } | undefined;
   qualityInfo?: () => { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } | undefined;
   deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
@@ -174,7 +175,7 @@ export class GameMenus {
   }
   private gameplayNodes(id: GameplayPanel): Node[] {
     const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
-    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget, station: () => this.stationTarget, pet: () => this.petTarget, selectPet: (e) => this.selectPet(e) }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
+    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget, station: () => this.stationTarget, pet: () => this.petTarget, selectPet: (e) => this.selectPet(e), worker: () => this.workerTarget, selectWorker: (e) => this.selectWorker(e) }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
   }
   /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
    *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
@@ -218,6 +219,13 @@ export class GameMenus {
     this.petOpenAt = { pet, t: now }; this.o.gameplay?.send(openContainerIntent(pet as never));
   }
   private petOpenAt = { pet: -1, t: 0 };
+  /** Task 22: open the worker panel on an AI human (Interact next to it); no bag to open, unlike pets. */
+  openWorker(worker: number | undefined): void {
+    this.selectWorker(worker);
+    if (this.nav.top === "worker") this.refresh(); else this.nav.open("worker", this.build("worker"));
+  }
+  selectWorker(worker: number | undefined): void { this.workerTarget = worker; }
+  workerTarget: number | undefined;
   /** Closing the pet panel closes the pet's bag on the server (so it stops replicating and the pack panel is normal again). */
   private closePetBag(): void { const c = this.o.gameplay?.ctx(); const v = c?.world.isRegistered(Viewing) ? c.world.getField(c.player, Viewing, "container") : undefined;
     if (v !== undefined && c!.world.isRegistered(Pet) && c!.world.has(v as never, Pet)) this.o.gameplay?.send(closeContainerIntent()); this.petOpenAt = { pet: -1, t: 0 }; }
@@ -264,7 +272,7 @@ export class GameMenus {
       d.textContent = `Detected: ${qi.detected.name[0]!.toUpperCase()}${qi.detected.name.slice(1)} (${qi.detected.klass}${qi.detected.remembered ? ", remembered" : ""})`; l3.append(d); }
     const del = this.o.deleteProgress?.();
     const wr = this.o.worldRules?.(); const l4 = document.createElement("small"); l4.dataset["role"] = "world-rules"; l4.style.cssText = "display:block;opacity:.8";
-    l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"}` : "";
+    l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"} · AI humans ${wr.aiHumans ? "ON" : "OFF"}` : "";
     return this.panel("settings", "Settings", [l7, l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.fx ? [fxSettingsRows(this.o.fx)] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked, ...tu.patch() }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {

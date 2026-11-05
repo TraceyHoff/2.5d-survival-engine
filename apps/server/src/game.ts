@@ -1,7 +1,7 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
 import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
-import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts, installAnimalSkillCommands } from "@engine/gameplay";
+import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts, installAnimalSkillCommands, installWorkerCommands, WorkerEvent } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -13,7 +13,7 @@ import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, t
 import { giveRandomAppearance } from "./appearance.js";
 export { botAppearance, giveBotAppearance } from "./appearance.js"; // ADR-252: AI humans' looks
 import { SocialSync } from "./social_sync.js";
-import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DevPetKit, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DevPetKit, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, WorkerEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers, setAiHumanPredicate } from "@engine/gameplay";
 
 /** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
@@ -80,9 +80,9 @@ export interface GameServerOptions {
 /** True when the dev bot flag is set in the environment (NET_DEV_BOTS=1). */
 export const devBotsFromEnv = (env: Record<string, string | undefined>): boolean => env["NET_DEV_BOTS"] === "1";
 export type GameMode = "singleplayer" | "multiplayer";
-/** Resolved mode config: humanBots is true only in singleplayer. */
+/** Resolved mode config: humanBots is true in singleplayer, and in multiplayer when AI humans are on (Task 22). */
 export interface GameModeConfig { mode: GameMode; humanBots: boolean }
-export function gameModeConfig(mode: GameMode = "multiplayer", wantBots = true): GameModeConfig { return { mode, humanBots: mode === "singleplayer" && wantBots }; }
+export function gameModeConfig(mode: GameMode = "multiplayer", wantBots = true, aiHumans = true): GameModeConfig { return { mode, humanBots: wantBots && (mode === "singleplayer" || aiHumans) }; }
 /** Connects a virtual player whose server entity should appear at (x, y); returns false if it cannot. */
 /** `kind` = the population entry's human_bot kind (e.g. a bots.json archetype); optional so older hosts still type-check. */
 export interface VirtualPlayerHost { connect(x: number, y: number, kind?: string): boolean; disconnect(clientId: number): void }
@@ -103,7 +103,7 @@ export interface GameServer {
   /** Core permissions resource: GroupRegistry (parties/clans), ClaimRegistry, policy. Saved with the world. */
   permissions: PermissionsRes;
   players: ReadonlyMap<number, Player>;
-  /** Resolved mode flags: humanBots only in singleplayer. */
+  /** Resolved mode flags: humanBots in singleplayer, and in multiplayer when AI humans are on (Task 22). */
   modeConfig: GameModeConfig;
   /** The world's four spawn points (deterministic per seed, ADR-106). */
   spawnPoints: { x: number; y: number }[];
@@ -134,7 +134,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   // ADR-107: restore the saved day clock (meta.dayEpochTick); pre-ADR-107 saves fall back to their 0.25 start.
   if (meta) { restoreDayClock(world, meta); restoreSeason(world, meta); }
   // ADR-121: world rules - a save keeps its own (meta), a new world takes the creation options.
-  setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}) });
+  setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}), ...(meta?.aiHumans !== undefined ? { aiHumans: meta.aiHumans === 1 } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
@@ -150,7 +150,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     // ADR-134: stored chunks keep their own (possibly depleted/relocated) nodes; only pre-persistence rows regenerate.
     regenerateNodes: (w, ents) => !ents.some((e) => w.has(e, ResourceNode) || w.has(e, NodeRegrow)),
     social: permissions,
-    extraMeta: () => { const r = worldRules(world); return { hordes: r.hordes ? 1 : 0, hordeGraceDays: r.hordeGraceDays }; },
+    extraMeta: () => { const r = worldRules(world); return { hordes: r.hordes ? 1 : 0, hordeGraceDays: r.hordeGraceDays, aiHumans: r.aiHumans ? 1 : 0 }; },
     ...(o.catalog ? { appearance: { catalog: o.catalog } } : {}),
   }) : undefined;
   let localPlayerIds = 1; // no store: ids only need to be unique for this run
@@ -161,7 +161,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   for (const [kind, key] of Object.entries(NODE_RESOURCES)) { try { resIds.set(Number(kind), defs.resourceId(key)); } catch { /* resource renamed: skip */ } }
   chunks.onLoad((_c, nodes) => { for (const n of nodes) { const id = resIds.get(n.kind); if (id !== undefined) spawnResourceNode(world, id, n.tx + 0.5, n.ty + 0.5); } });
 
-  const mode = gameModeConfig(o.mode ?? "multiplayer", !!o.virtualPlayers);
+  const mode = gameModeConfig(o.mode ?? "multiplayer", !!o.virtualPlayers, worldRules(world).aiHumans);
   const players = new Map<number, Player>();
   let petCorner = false; // ADR-145 sandbox pet corner placed
   // Spawn points chosen by the population spawner for virtual players still connecting. Always empty in multiplayer.
@@ -241,6 +241,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installInventoryOpCommands(world, handlers); // gameplay.splitStack / moveSlot (ADR-204)
   installPetCommands(world, handlers); // gameplay.petOffer / petCommand / petRename / dropItem (ADR-145)
   installAnimalSkillCommands(world, handlers); // gameplay.animalSkill (Task 15)
+  installWorkerCommands(world, handlers); // gameplay.hireWorker / setWorkerJob / dismissWorker (Task 22)
   installReadyCommands(world, handlers); // Task 14: gameplay.ready — client finished loading
   installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
@@ -294,6 +295,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   world.events.on(PetEvent, (ev: { entity: Entity; pet: Entity; result: number; value: number }) => { // ADR-145
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(PetEventEvt, { pet: ev.pet, result: ev.result, value: ev.value }, { reliable: true, scope: { owner: cid } }); break; }
+  });
+  world.events.on(WorkerEvent, (ev: { entity: Entity; worker: Entity; result: number; value: number }) => { // Task 22
+    for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(WorkerEventEvt, { worker: ev.worker, result: ev.result, value: ev.value }, { reliable: true, scope: { owner: cid } }); break; }
   });
   world.events.on(VehicleStationOpened, (ev: { entity: Entity; vehicle: Entity; station: number; kind: number }) => {
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(VehicleStationOpenedEvt, { vehicle: ev.vehicle, station: ev.station, kind: ev.kind }, { reliable: true, scope: { owner: cid } }); break; }
@@ -451,7 +455,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   world.setResource(TerrainRes, terrainFromTileMap(chunks));
   // ADR-135: AI humans are virtual players; kill XP pays the aiHuman rate for them (not the PvP rate + anti-farming)
   setAiHumanPredicate(world, (e) => { for (const p of players.values()) if (p.entity === e) return !!p.bot; return false; });
-  // Ambient population: zombies + animals everywhere; human bots only in singleplayer (mode.humanBots).
+  // Ambient population: zombies + animals everywhere; human bots in singleplayer, and in multiplayer when AI humans are on (Task 22).
   const population = o.population === false ? undefined : installPopulation(world, {
     tickHz, ...(o.animalCapMul !== undefined ? { animalCapMul: o.animalCapMul } : {}),
     chunks: () => chunks.activeKeys,
@@ -468,7 +472,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   /**
    * Singleplayer host marks a joined session as a virtual player: it is placed at the spawner's chosen point and
-   * tracked as population. Refused (false) in multiplayer, so no session can ever become a server-side bot there.
+   * tracked as population. Refused (false) when human bots are off for this mode (multiplayer with AI humans off).
    */
   const markVirtual = (clientId: number): boolean => {
     const p = players.get(clientId); if (!mode.humanBots || !p || p.bot) return false;

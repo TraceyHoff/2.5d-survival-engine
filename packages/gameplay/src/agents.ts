@@ -20,6 +20,7 @@ import { emitAgentCommands } from "./ai/agent_output.js";
 import { fillStanceSensors, stancePolicy, type StanceSensors } from "./ai/stance_policy.js";
 import { baseBehaviors, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
 import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
+import { fillHireSensors, hireBehaviors } from "./ai/hire_behaviors.js";
 
 export interface AgentsData {
   archetypes: Record<string, { perception: PerceptionConfig; imperfections: Imperfections; schedule: ScheduleSlot[]; goals: string[]; chatMinSeconds: number }>;
@@ -34,6 +35,14 @@ export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
   /** ADR-113: best affordable skill node for this personality (undefined = no points / nothing affordable). */
   skillPick?: number;
+  /** Task 22: hired-worker sensors (fillHireSensors; absent for unhired bots and humans). */
+  hire?: { job: number; owner: number; ax: number; ay: number };
+  /** Task 22: nearest farm target near the owner's base (mature crop node to harvest, or a crop to tend). */
+  farm?: { harvest?: { id: number; x: number; y: number }; tend?: { id: number; x: number; y: number; kind: "water" | "plant"; slot: number } };
+  /** Task 22: nearest zombie threatening the owner's base (Defend job). */
+  defend?: { id: number; x: number; y: number };
+  /** Task 22: damaged piece near the owner's base the worker can repair (lack = material to withdraw first). */
+  repair?: { id: number; x: number; y: number; lack?: { item: number; count: number } };
 }
 export type GameBehavior = BehaviorDef<AgentWorldView>;
 
@@ -66,7 +75,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
   }
   const tod = timeOfDay(world);
   const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((treesOf(world, self) ?? []).some((t) => t.points > 0)) { // ADR-221: per-tree points since ADR-209 (global points is always 0)
-    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillStanceSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
+    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillStanceSensors(world, self, view); fillGoalSensors(world, self, view, a); fillHireSensors(world, self, view); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -152,7 +161,7 @@ export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0,
   run: (c, o) => { o.actions.push(`skill:${c.world.skillPick}`); c.bb.set("skillPickAt", c.self.tick); return false; } };
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), skillPickBehavior, ...extra]) {
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), ...hireBehaviors(), skillPickBehavior, ...extra]) {
     const run = b.name === "sleep" ? (c: AgentContext<AgentWorldView>, o: Parameters<GameBehavior["run"]>[1]) => (c.world.base ? baseSleepRun(c, o) : b.run(c, o)) : b.run;
     r.register(withBotUtility({ ...b, run: (c, o) => { const res = run(c, o); stancePolicy(c, o, b.name); return res; } })); // ADR-252: sleep stillness + sneak crouch
   }

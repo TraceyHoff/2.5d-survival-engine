@@ -4,7 +4,7 @@
  * (IndexedDB when available, else memory). Singleplayer by default: the population spawner fills the world with
  * zombies, animals and human bots. Human bots are VIRTUAL PLAYERS: real loopback NetClients (own replica, own
  * PlayerId/account/inventory) driven by an AgentController that only emits the input stream a human sends.
- * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
+ * mode: "multiplayer" allows human bots only when AI humans are on (Task 22 world rule; a save keeps its own value).
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
 import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd, agentStanceInput, fillStanceSensors, stanceMode, StanceMode, GameplayEdgeBits } from "@engine/gameplay";
@@ -26,8 +26,8 @@ export function defaultMaxBots(d: DeviceHints = detectDevice()): number { return
 export interface LocalServerOptions {
   store?: WorldStore; seed?: number;
   /** ADR-121: world rules for a new world (hordes on/off, grace days). */
-  worldRules?: { hordes?: boolean; hordeGraceDays?: number };
-  /** Default "singleplayer". "multiplayer" = no human bots at all (bots ignored). */
+  worldRules?: { hordes?: boolean; hordeGraceDays?: number; /** Task 22: AI humans spawn / are recruitable (default on). */ aiHumans?: boolean };
+  /** Default "singleplayer". "multiplayer" allows human bots only when AI humans are on (Task 22). */
   mode?: GameMode;
   /** Dev: connect this many virtual players immediately at spawn (in addition to natural spawns; singleplayer only). */
   bots?: number;
@@ -111,6 +111,13 @@ export function agentLodEvery(d: DeviceHints = detectDevice(), cores = globalThi
 /** Snapshot throttle for virtual players: beyond sight (12) / hearing (18) range, deltas every 4 ticks. */
 export const BOT_DISTANT_THROTTLE = { nearTiles: 24, interval: 4 } as const;
 const ACT_MASK = Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather;
+/** Task 22: may this host run virtual players? Singleplayer always; multiplayer only when AI humans are on.
+ * A save keeps its own rule (read from the store meta); a new world takes the creation options (default on). */
+export function aiHumansOn(o: Pick<LocalServerOptions, "mode" | "worldRules" | "store">): boolean {
+  if ((o.mode ?? "singleplayer") === "singleplayer") return true;
+  const saved = o.store?.readMeta()?.aiHumans;
+  return saved !== undefined ? saved === 1 : (o.worldRules?.aiHumans ?? true);
+}
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
   const seed = o.seed ?? 1234; const mode: GameMode = o.mode ?? "singleplayer";
   const network = new LoopbackNetwork(seed);
@@ -130,7 +137,9 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     transport: serverTransport, ...(store ? { store } : {}), seed, mode, ...(o.devSandbox ? { devSandbox: true } : {}), ...(o.worldRules ? { worldRules: o.worldRules } : {}),
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
-    ...(mode === "singleplayer" ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),
+    // Task 22: the in-process bot host runs whenever AI humans are on — singleplayer always, multiplayer only
+    // when the world rule allows it. A save keeps its own rule (like hordes); a new world takes the options.
+    ...(aiHumansOn(o) ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),
   });
 
   async function addBot(x: number, y: number, drive = true): Promise<void> {

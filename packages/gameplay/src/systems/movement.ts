@@ -11,12 +11,11 @@ import { diseaseMoveMul } from "../diseases.js";
 import { Anim, AnimState, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { skillMul } from "../skills/tree.js";
-import { GameplayActions as A } from "../input.js";
+import { GameplayHoldBits as A, INPUT } from "../input_hooks.js";
 import { isLCorner, rotParts, StructureIndexRes, type StructureIndex } from "../building/structure.js";
 import type { PieceDef } from "../defs.js";
 import { TerrainRes } from "../world.js";
 import { WaterDepth, waterDepthAt, installSpatialIndex } from "@engine/world";
-import { INPUT } from "../input_hooks.js";
 import { STANCE_ANIM, stanceAllowsSprint, stanceMode, stanceMoveMul } from "../stance.js";
 
 /**

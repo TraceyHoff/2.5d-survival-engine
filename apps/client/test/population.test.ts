@@ -6,8 +6,8 @@ import { ClientSession, type KeyValue } from "../src/session.js";
 
 class MapStorage implements KeyValue { m = new Map<string, string>(); getItem(k: string): string | null { return this.m.get(k) ?? null; } setItem(k: string, v: string): void { this.m.set(k, v); } }
 
-async function boot(mode: "singleplayer" | "multiplayer", bots = 0) {
-  const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 9, mode, bots });
+async function boot(mode: "singleplayer" | "multiplayer", bots = 0, worldRules?: { aiHumans?: boolean }) {
+  const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 9, mode, bots, ...(worldRules ? { worldRules } : {}) });
   const session = new ClientSession({ storage: new MapStorage(), slot: "1", sampleButtons: () => 0 });
   const connecting = session.connect("local", "Tess", local.createTransport());
   let world; for (let i = 0; i < 40 && !world; i++) { local.pump(5); world = await Promise.race([connecting, Promise.resolve(undefined)]); }
@@ -27,13 +27,17 @@ describe("ambient population", () => {
     expect([...local.game.players.values()].filter((p) => p.bot).length).toBe(local.bots.length);
     session.disconnect(); await local.stop();
   }, 60000);
-  it("multiplayer: zero human bots even when bots are requested; markVirtual refused", async () => {
-    const { local, session } = await boot("multiplayer", 3);
+  it("multiplayer: human bots spawn when AI humans are on (default), zero when the toggle is off; markVirtual refused while off", async () => {
+    const on = await boot("multiplayer", 3);
+    expect(on.local.bots.length).toBeGreaterThan(0);
+    expect([...on.local.game.players.values()].filter((p) => p.bot).length).toBe(on.local.bots.length);
+    on.session.disconnect(); await on.local.stop();
+    const { local, session } = await boot("multiplayer", 3, { aiHumans: false });
     expect(local.bots.length).toBe(0);
     expect([...local.game.players.values()].filter((p) => p.bot).length).toBe(0);
     expect(local.game.players.size).toBe(1);
     expect(local.game.markVirtual([...local.game.players.keys()][0]!)).toBe(false);
     expect(count(local, Animal)).toBeGreaterThan(0);
     session.disconnect(); await local.stop();
-  }, 60000);
+  }, 120000);
 });

@@ -22,12 +22,13 @@ import { iconForItem, ROADS, clanTintIndex,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
+  workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, Membership, PlayerId, SLOT_PALETTE, swatchColor, Transform, type Entity, type WearableSlot } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet", /* Task 22 */ "worker"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -54,6 +55,10 @@ export interface GameplaySource {
   pet?(): Entity | undefined;
   /** ADR-145: choose another pet from the panel's list. */
   selectPet?(e: Entity | undefined): void;
+  /** Task 22: AI human the worker panel shows (Interact next to them). */
+  worker?(): Entity | undefined;
+  /** Task 22: choose another AI human from the worker panel. */
+  selectWorker?(e: Entity | undefined): void;
   /** ADR-145: open the rename editor (modal; on-screen keyboard on gamepad). */
   renamePet?(pet: Entity, current: string): void;
 }
@@ -752,6 +757,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       return out;
     }
     case "pet": return petBody(c, src, kit, btn, send);
+    case "worker": return workerBody(c, src, kit, btn, send);
     case "camper": {
       const ve = src.camper?.(); const v = ve === undefined ? undefined : camperStationView(c, ve);
       if (!v) return [kit.para("Open a camper's station (interact inside a parked camper).")];
@@ -896,5 +902,45 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
       out.push(pg.childElementCount ? pg : kit.para("Your pack is empty."));
     } else { src.selectPet?.(v.entity); out.push(kit.para("Opening the bag…")); } // (re)sends the open; throttled in selectPet
   }
+  return out;
+}
+
+/** Task 22 worker panel: hire an AI human for their wanted item, or manage a hired worker's job. */
+function workerBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send: (i: MenuIntent, ok: string) => void): Node[] {
+  const w = c.world; const out: Node[] = [];
+  const target = src.worker?.(); const v = target !== undefined ? workerView(w, c.player, target, c.names) : undefined;
+  if (!v) {
+    out.push(kit.para("Walk up to an AI human and press Interact to talk about work."));
+    out.push(heading("How hiring works"), ...WORKER_HELP.map((t) => kit.para(t)));
+    return out;
+  }
+  const head = el("section", { "data-role": "worker-status" });
+  head.append(el("p", { "data-role": "worker-name" }, v.name));
+  if (!v.aiHumans) out.push(kit.para("AI humans are off in this world: no new hires."));
+  if (!v.hired) {
+    head.append(el("p", { "data-role": "worker-want" }, `Wants: ${v.wantedName || "—"}${v.hasCount ? ` · you have ${v.hasCount}` : ""}`));
+    out.push(head);
+    const g = grid(); g.dataset["role"] = "worker-hire";
+    const hireBtn = btn(`Hire for ${v.wantedName || "?"}`, "worker-hire", () => send(hireWorkerIntent(v.entity), `${v.name} hired!`), { disabled: !v.aiHumans || !v.hasWanted, title: v.hasWanted ? "The item is taken from your pack as the hire completes" : `You need ${v.wantedName || "the wanted item"} in your pack to hire them`, data: { item: String(v.wantedItem), icon: v.wantedKey } });
+    g.append(hireBtn);
+    out.push(g);
+    out.push(kit.para(v.hasWanted ? "The item is taken from your pack as the hire completes." : `You need ${v.wantedName || "the wanted item"} in your pack to hire them.`));
+    out.push(heading("How hiring works"), ...WORKER_HELP.map((t) => kit.para(t)));
+    return out;
+  }
+  if (v.owned) {
+    head.append(el("p", { "data-role": "worker-job" }, `Job: ${WORKER_JOB_LABELS[v.job] ?? "—"}`));
+    out.push(head);
+    const g = grid(); g.dataset["role"] = "worker-jobs";
+    for (const job of WORKER_JOBS) g.append(btn(WORKER_JOB_LABELS[job]!, `worker-job-${job}`, () => send(setWorkerJobIntent(v.entity, job), `${v.name} is now ${(WORKER_JOB_LABELS[job] ?? "working").toLowerCase()}.`), { pressed: v.job === job, role: "toggle", title: WORKER_JOB_HELP[job] ?? "" }));
+    out.push(heading("Job"), g);
+    const rg = grid(); rg.dataset["role"] = "worker-release";
+    rg.append(btn("Release", "worker-dismiss", () => send(dismissWorkerIntent(v.entity), `${v.name} released.`), { alt: true, title: "Stop working for you" }));
+    out.push(rg);
+    out.push(kit.para("They work around your base. Workers still eat, drink and sleep like any survivor."));
+    return out;
+  }
+  head.append(el("p", { "data-role": "worker-owner" }, `Works for Player ${v.owner}.`));
+  out.push(head);
   return out;
 }

@@ -52,7 +52,9 @@ export const APPEARANCE_SKIN_SCHEME_MIGRATION: AddedFields = { component: "Appea
 export const PROGRESSION_TREES_MIGRATION: AddedFields = { component: "Progression", fields: ["tver", "txp", "tlevel", "tpoints"] };
 /** ADR-238: LootBag gained spawnTick / kind / emptiedTick (0 = legacy: spawn derived from despawnAtTick, label inferred). */
 export const LOOTBAG_DESPAWN_MIGRATION: AddedFields = { component: "LootBag", fields: ["spawnTick", "kind", "emptiedTick"] };
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...INVENTORY_24_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, APPEARANCE_SKIN_SCHEME_MIGRATION, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION];
+/** Task 22: WorldRules gained aiHumans (0 = legacy: AI humans on, the default). */
+export const WORLD_RULES_AI_HUMANS_MIGRATION: AddedFields = { component: "WorldRules", fields: ["aiHumans"] };
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...INVENTORY_24_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, APPEARANCE_SKIN_SCHEME_MIGRATION, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION, WORLD_RULES_AI_HUMANS_MIGRATION];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
 export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}, oldDefaults: Readonly<Record<string, number>> = {}): Schema =>

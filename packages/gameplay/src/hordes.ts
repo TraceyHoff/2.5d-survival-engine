@@ -39,18 +39,19 @@ export function hordeSize(o: { clan: boolean; members?: number; level?: number; 
   return Math.min(t.clan.cap, Math.round((t.clan.base + t.clan.perMember * Math.max(1, o.members ?? 1)) * scale));
 }
 
-export interface WorldRulesOpts { hordes?: boolean; hordeGraceDays?: number }
+export interface WorldRulesOpts { hordes?: boolean; hordeGraceDays?: number; /** Task 22: AI humans spawn / are recruitable (default on). */ aiHumans?: boolean }
 /** Sets the replicated world rules on the environment singleton (server/standalone at install; loaders after meta). */
 export function setWorldRules(world: World, r: WorldRulesOpts): void {
   const cur = world.get(world.environment, WorldRules);
   const hordes = r.hordes ?? (cur ? cur.hordes === 1 : HORDES.enabledDefault);
   const grace = Math.max(0, Math.min(365, r.hordeGraceDays ?? cur?.hordeGraceDays ?? HORDES.graceDaysDefault));
-  const v = { hordes: hordes ? 1 : 0, hordeGraceDays: grace };
+  const aiHumans = r.aiHumans ?? (cur ? cur.aiHumans === 1 : true);
+  const v = { hordes: hordes ? 1 : 0, hordeGraceDays: grace, aiHumans: aiHumans ? 1 : 0 };
   if (cur) world.set(world.environment, WorldRules, v); else world.add(world.environment, WorldRules, v);
 }
-export function worldRules(world: World): { hordes: boolean; hordeGraceDays: number } {
+export function worldRules(world: World): { hordes: boolean; hordeGraceDays: number; aiHumans: boolean } {
   const r = world.get(world.environment, WorldRules);
-  return { hordes: r ? r.hordes === 1 : HORDES.enabledDefault, hordeGraceDays: r?.hordeGraceDays ?? HORDES.graceDaysDefault };
+  return { hordes: r ? r.hordes === 1 : HORDES.enabledDefault, hordeGraceDays: r?.hordeGraceDays ?? HORDES.graceDaysDefault, aiHumans: r ? r.aiHumans === 1 : true };
 }
 /** In-game days since the world clock epoch (fractional). */
 export function worldDays(world: World): number {

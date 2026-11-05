@@ -205,6 +205,19 @@ export const AnimalSkills = defineComponent("AnimalSkills", {
   points: "u16",
   nodes: "u32",
 }, { networked: true, persistent: true });
+/** Task 22 AI-human recruitment: one record per AI human (bot player entity). `wantedItem` is the single item the
+ * bot asks for before it will work for a player (0 = not yet assigned; assigned once, server-side, and never
+ * re-rolled). `owner` is the hiring player's PlayerId (0 = for hire). `job` is the assigned WorkerJob. `homeX/homeY`
+ * is where the bot was hired — the work anchor when the owner has no claim. Networked (every peer sees the same
+ * want / owner / job) and persistent (a hired worker survives restarts via the player save path). */
+export const enum WorkerJob { None = 0, Gather = 1, Farm = 2, Defend = 3, Craft = 4, Maintain = 5 }
+export const Worker = defineComponent("Worker", {
+  wantedItem: "u16",
+  owner: "u32",
+  job: "u8",
+  homeX: "f32",
+  homeY: "f32",
+}, { networked: true, persistent: true });
 export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
 export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
 export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
@@ -312,7 +325,7 @@ export const Sign = defineComponent("Sign", { kind: "u8", rot: "u8", owner: "u32
 /** ADR-121 roaming horde member (hordes.ts): horde id, target piece entity + target centroid (retarget if destroyed). Server-only. */
 export const HordeMember = defineComponent("HordeMember", { horde: "u16", target: "u32", tx: "f32", ty: "f32" });
 /** ADR-121 world rules on the environment singleton (replicated so clients show them): hordes 0/1, grace in in-game days. */
-export const WorldRules = defineComponent("WorldRules", { hordes: "u8", hordeGraceDays: "f32" }, { networked: true });
+export const WorldRules = defineComponent("WorldRules", { hordes: "u8", hordeGraceDays: "f32", aiHumans: "u8" }, { networked: true });
 export const enum HordePhase { Idle = 0, Warning = 1, Active = 2 }
 /** ADR-121 horde director status on the environment singleton: drives client toasts + audio (snapshot diffs).
  *  seq bumps per horde; kind 1 solo / 2 clan; alive/size members; x,y = target centroid; owner = clan id or PlayerId. */
@@ -410,4 +423,5 @@ export const GAMEPLAY_COMPONENTS = [
   PetGuard, PetStatusComp, // append-only (Task 14: pet guarding + status)
   PlayerReady, // append-only (Task 14: second loading screen — joined players wait for their client to load in)
   AnimalSkills, // append-only (Task 15: per-animal skill points + spent-node bitmask)
+  Worker, // append-only (Task 22: AI-human recruitment — wanted item / owner / job / hire anchor)
 ] as const;

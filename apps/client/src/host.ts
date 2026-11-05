@@ -12,7 +12,7 @@ import { hostRoom, type Signaling, type SignalingRoom } from "./p2p.js";
 
 export interface P2PHostOptions {
   signaling: Signaling; store?: WorldStore; seed?: number;
-  worldRules?: { hordes: boolean; hordeGraceDays: number };
+  worldRules?: { hordes: boolean; hordeGraceDays: number; aiHumans?: boolean };
   /** Player cap including the host (see p2p.hostPlayerCap). */
   cap: number; capDetail?: string;
   population?: boolean; catalog?: CosmeticCatalogLike; log?: (s: string) => void; random?: () => number;

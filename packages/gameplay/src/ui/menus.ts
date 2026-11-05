@@ -1,6 +1,7 @@
 import { ContainerToSlotCmd, MoveSlotCmd, SplitStackCmd } from "../inventory_ops.js";
 import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetGuardCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
 import { AnimalSkillCmd } from "../animal_skills.js";
+import { DismissWorkerCmd, HireWorkerCmd, nearestWorker, SetWorkerJobCmd } from "../recruitment.js";
 import { ReadyCmd } from "../ready.js";
 /**
  * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
@@ -369,24 +370,26 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
 /** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "loot"; bag: Entity } | { panel: "lootLocked"; bag: Entity } | { panel: "storage"; piece: Entity } | undefined {
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "worker"; worker: Entity } | { panel: "loot"; bag: Entity } | { panel: "lootLocked"; bag: Entity } | { panel: "storage"; piece: Entity } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
-  const st = nearestStation(c); const pet = nearestPet(c.world, c.player);
+  const st = nearestStation(c); const pet = nearestPet(c.world, c.player); const worker = nearestWorker(c.world, c.player);
   // ADR-160: a loot bag (zombie / animal / death / dropped / crate) in reach opens by hand when it is the closest target
   const bag = nearestLootBag(c);
   // Plain base storage (chests, boxes, shelves) had no Interact case at all, so a chest could never be opened
   // from the world — the inventory panel only ever showed a container once it was already being viewed.
   const storage = nearestStoragePiece(c);
-  if (bag && (!st || bag.d <= stationDistance(c, st.station)) && (!pet || bag.d <= pet.d) && (!storage || bag.d <= storage.d)) {
+  if (bag && (!st || bag.d <= stationDistance(c, st.station)) && (!pet || bag.d <= pet.d) && (!worker || bag.d <= worker.d) && (!storage || bag.d <= storage.d)) {
     // A death bag inside its owner-only window must not open the bare player inventory: that is what made
     // other players' / AI humans' bags look like "just the inventory, nothing to loot". Report it locked instead.
     if (!canLootBagAt(c.world, c.player, bag.entity, ctxTick(c))) return { panel: "lootLocked", bag: bag.entity };
     return { panel: "loot", bag: bag.entity }; // ADR-145: the pet / tameable animal wins when it is closer than the station
   }
-  if (storage && (!st || storage.d <= stationDistance(c, st.station)) && (!pet || storage.d <= pet.d)) return { panel: "storage", piece: storage.entity };
+  if (storage && (!st || storage.d <= stationDistance(c, st.station)) && (!pet || storage.d <= pet.d) && (!worker || storage.d <= worker.d)) return { panel: "storage", piece: storage.entity };
   // a loot bag / container (e.g. the sandbox pet-corner crate) closer than the pet keeps Interact: the server opens it
-  if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d) && !(storage && storage.d < pet.d)) return { panel: "pet", pet: pet.entity };
+  if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d) && !(storage && storage.d < pet.d) && (!worker || pet.d <= worker.d)) return { panel: "pet", pet: pet.entity };
+  // Task 22: a recruitable / hired AI human wins Interact when it is the closest target (same rule as the pet)
+  if (worker && (!st || worker.d < stationDistance(c, st.station)) && !(nearestOpenable(c, worker.d) < worker.d) && !(storage && storage.d < worker.d)) return { panel: "worker", worker: worker.entity };
   if (st) return { panel: "station", ...st };
   return undefined;
 }
@@ -418,6 +421,12 @@ function nearestOpenable(c: MenuCtx, r: number): number {
 const stationDistance = (c: MenuCtx, e: Entity): number => { const a = c.world.get(c.player, Transform), b = c.world.get(e, Transform); return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity; };
 export const petOfferIntent = (target: Entity, item: number): MenuIntent => intent(PetOfferCmd, { target, item }, ["target"]);
 export const petCommandIntent = (pet: Entity, cmd: number): MenuIntent => intent(PetCommandCmd, { pet, cmd }, ["pet"]);
+/** Task 22: hire an AI human (the wanted item is taken by the server as the hire completes). */
+export const hireWorkerIntent = (target: Entity): MenuIntent => intent(HireWorkerCmd, { target }, ["target"]);
+/** Task 22: assign / change a hired worker's job. */
+export const setWorkerJobIntent = (worker: Entity, job: number): MenuIntent => intent(SetWorkerJobCmd, { worker, job }, ["worker"]);
+/** Task 22: release a hired worker (owner and job cleared; the wanted item is kept for a future hire). */
+export const dismissWorkerIntent = (worker: Entity): MenuIntent => intent(DismissWorkerCmd, { worker }, ["worker"]);
 /** Task 14: guard a location (kind 1; target is ignored server-side, send the pet as the wire placeholder) or an entity (kind 2). */
 export const petGuardIntent = (pet: Entity, kind: number, target: Entity, x: number, y: number): MenuIntent => intent(PetGuardCmd, { pet, kind, target, x, y }, ["pet", "target"]);
 /** Task 15: buy an animal skill-tree node (node = index into the animal's tree). */

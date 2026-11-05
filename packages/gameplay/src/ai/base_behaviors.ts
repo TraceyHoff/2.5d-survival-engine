@@ -153,7 +153,7 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
  *  sequence (open -> one op -> close) is played one action per think tick (CONTAINER_STEP ticks apart), like a player
  *  clicking through the panel; the server validates every step. Returns true when the last action went out. */
 export const CONTAINER_STEP = 10;
-function containerSeq(c: Ctx, o: { actions: string[] }, id: number, seq: readonly string[]): boolean {
+export function containerSeq(c: Ctx, o: { actions: string[] }, id: number, seq: readonly string[]): boolean {
   const at = c.bb.num("cseqAt", -1e9); if (c.self.tick - at < CONTAINER_STEP) return false;
   const key = `${id}|${seq[1] ?? ""}`; const i = c.self.tick - at > 6 * CONTAINER_STEP || c.bb.get<string>("cseqKey") !== key ? 0 : c.bb.num("cseqStep");
   c.bb.set("cseqAt", c.self.tick); c.bb.set("cseqKey", key);

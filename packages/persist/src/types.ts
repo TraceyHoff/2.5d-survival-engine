@@ -68,7 +68,9 @@ export interface WorldMeta { seed: number; tick: number; schemaHash: number; cre
   /** ADR-239: core Season.offsetDays (season cycle phase relative to the day clock). */
   seasonOffsetDays?: number;
   /** World rules (ADR-121): roaming hordes on (1) / off (0), and their grace period in in-game days. Absent = gameplay defaults. */
-  hordes?: number; hordeGraceDays?: number }
+  hordes?: number; hordeGraceDays?: number;
+  /** World rules (Task 22): AI humans on (1) / off (0) in multiplayer. Absent = on. */
+  aiHumans?: number }
 
 /** Everything written in one transaction. Either all of it becomes durable or none of it does. */
 export interface SaveBatch {

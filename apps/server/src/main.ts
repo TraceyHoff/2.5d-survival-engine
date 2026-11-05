@@ -1,7 +1,11 @@
 /**
  * Headless authoritative server (Node). Usage:
  *   tsx src/main.ts [--port 7777] [--host 0.0.0.0] [--save saves/demo.db | --no-save] [--fresh] [--seed N] [--stats 5]
- * Env: PORT, HOST, SAVE_PATH. SIGINT/SIGTERM => full save, then exit.
+ *     [--mode singleplayer|multiplayer] [--ai-humans | --no-ai-humans]
+ * Env: PORT, HOST, SAVE_PATH, GAME_MODE, AI_HUMANS. SIGINT/SIGTERM => full save, then exit.
+ * AI humans (Task 22): the setting gates bot spawning + recruitment in multiplayer; a save keeps its own value.
+ * Note the headless server has no in-process bot host: with AI humans on, bots join only as external bot clients
+ * (DevBotHello / NET_DEV_BOTS=1), exactly as before — the flag controls whether those bots may spawn / be hired.
  */
 import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
@@ -12,16 +16,17 @@ import { createGameServer, devBotsFromEnv, type GameMode, type GameServer } from
 export { createGameServer } from "./game.js";
 export * from "./protocol.js";
 
-export interface ServerArgs { port: number; host: string; save: string | undefined; fresh: boolean; seed: number; statsSec: number; mode: GameMode }
+export interface ServerArgs { port: number; host: string; save: string | undefined; fresh: boolean; seed: number; statsSec: number; mode: GameMode; aiHumans: boolean }
 function parseMode(m: string): GameMode { if (m !== "singleplayer" && m !== "multiplayer") throw new Error(`--mode must be singleplayer or multiplayer, got ${m}`); return m; }
 export function parseServerArgs(argv: readonly string[], env: Record<string, string | undefined> = {}): ServerArgs {
-  const a: ServerArgs = { port: Number(env["PORT"] ?? 7777), host: env["HOST"] ?? "0.0.0.0", save: env["SAVE_PATH"] ?? "saves/demo.db", fresh: false, seed: 1234, statsSec: 5, mode: parseMode(env["GAME_MODE"] ?? "multiplayer") };
+  const a: ServerArgs = { port: Number(env["PORT"] ?? 7777), host: env["HOST"] ?? "0.0.0.0", save: env["SAVE_PATH"] ?? "saves/demo.db", fresh: false, seed: 1234, statsSec: 5, mode: parseMode(env["GAME_MODE"] ?? "multiplayer"), aiHumans: env["AI_HUMANS"] !== "0" && env["AI_HUMANS"]?.toLowerCase() !== "false" };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i]!, v = (): string => { const x = argv[++i]; if (x === undefined) throw new Error(`${k} needs a value`); return x; };
     if (k === "--") continue;
     if (k === "--port") a.port = Number(v()); else if (k === "--host") a.host = v(); else if (k === "--save") a.save = v();
     else if (k === "--no-save") a.save = undefined; else if (k === "--fresh") a.fresh = true; else if (k === "--seed") a.seed = Number(v());
-    else if (k === "--stats") a.statsSec = Number(v()); else if (k === "--mode") a.mode = parseMode(v()); else throw new Error(`unknown argument ${k}`);
+    else if (k === "--stats") a.statsSec = Number(v()); else if (k === "--mode") a.mode = parseMode(v());
+    else if (k === "--ai-humans") a.aiHumans = true; else if (k === "--no-ai-humans") a.aiHumans = false; else throw new Error(`unknown argument ${k}`);
   }
   return a;
 }
@@ -79,7 +84,7 @@ async function main(): Promise<void> {
   const transport = new WsServerTransport();
   const port = await transport.listen(args.port, args.host);
   const catalog = await loadServerCatalog((m) => console.log(m));
-  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, ...(process.env["DEV_SANDBOX"] === "1" ? { devSandbox: true } : {}), devBots: devBotsFromEnv(process.env), log: (m) => console.log(m) });
+  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, worldRules: { aiHumans: args.aiHumans }, ...(process.env["DEV_SANDBOX"] === "1" ? { devSandbox: true } : {}), devBots: devBotsFromEnv(process.env), log: (m) => console.log(m) });
   console.log(`server: mode ${gs.mode} (human bots ${gs.modeConfig.humanBots ? "on" : "off"})`);
   console.log(`server: listening ws://${args.host}:${port} protocol v${PROTOCOL_VERSION}, ${1000 / gs.loop.dtMs}Hz, seed ${gs.world.seed}, schema ${gs.world.getSchemaHash().toString(16)}`);
   let last = performance.now(); // wall clock lives OUTSIDE the sim

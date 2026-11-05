@@ -44,11 +44,11 @@ async function until<T>(r: Rig, p: Promise<T>, maxMs = 3000): Promise<T> {
   for (let t = 0; t < maxMs && !done; t += 50) await tick(r);
   if (err) throw err; if (!done) throw new Error("timeout"); return val as T;
 }
-async function rig(opts: { cap?: number; link?: FakeLinkOptions } = {}): Promise<Rig> {
+async function rig(opts: { cap?: number; link?: FakeLinkOptions; aiHumans?: boolean } = {}): Promise<Rig> {
   const net = new FakeRtcNetwork(3); const sig = new FakeSignaling(net, opts.link);
   let x = 7; const random = (): number => ((x = (x * 1103515245 + 12345) >>> 0) / 2 ** 32);
   const store = new MemoryWorldStore();
-  const host = await startP2PHost({ signaling: sig, store, seed: 9, cap: opts.cap ?? 6, population: false, random });
+  const host = await startP2PHost({ signaling: sig, store, seed: 9, cap: opts.cap ?? 6, population: false, random, ...(opts.aiHumans === false ? { worldRules: { hordes: true, hordeGraceDays: 3, aiHumans: false } } : {}) });
   const hostSession = new ClientSession({ storage: new MapStorage(), slot: "h", sampleButtons: () => 0 });
   const r: Rig = { store, net, sig, host, hostSession, guests: [] };
   await until(r, hostSession.connect("p2p-host", "Hosty", host.hostTransport));
@@ -109,8 +109,8 @@ describe("RTC transports over the fake paired channel", () => {
 });
 
 describe("P2P host e2e (host-authoritative, loopback data channels)", () => {
-  it("guests join, see replicated snapshots, round-trip a command; host lists players; multiplayer has no human bots", async () => {
-    const r = await rig({ link: { loss: 0.1, reorder: 0.2 } });
+  it("guests join, see replicated snapshots, round-trip a command; host lists players; AI humans off, so no human bots", async () => {
+    const r = await rig({ link: { loss: 0.1, reorder: 0.2 }, aiHumans: false });
     expect(r.host.code).toMatch(/^[2-9A-HJKMNP-Z]{6}$/);
     expect(r.host.local.game.mode).toBe("multiplayer"); expect(r.host.local.game.modeConfig.humanBots).toBe(false); expect(r.host.local.bots).toEqual([]);
     const a = await join(r, "Ana"); const b = await join(r, "Bo");

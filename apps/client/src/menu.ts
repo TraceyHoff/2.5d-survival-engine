@@ -20,9 +20,9 @@ const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { 
 export const APP_TITLE = BR.title;
 export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
-export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean; /** ADR-173: name tags over other players */ nameTags?: boolean; /** ADR-239/243: HUD temperature units (default F; C only with tempUnitChosen) */ tempUnit?: "C" | "F"; /** ADR-243: the player picked tempUnit themselves */ tempUnitChosen?: boolean }
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** Task 22: AI humans in multiplayer (new worlds) */ aiHumans?: boolean; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean; /** ADR-173: name tags over other players */ nameTags?: boolean; /** ADR-239/243: HUD temperature units (default F; C only with tempUnitChosen) */ tempUnit?: "C" | "F"; /** ADR-243: the player picked tempUnit themselves */ tempUnitChosen?: boolean }
 /** ADR-121: the world rules a NEW local / hosted world is created with (an existing save keeps its own). */
-export function newWorldRules(s: Settings = loadSettings()): { hordes: boolean; hordeGraceDays: number } { return { hordes: s.hordes !== false, hordeGraceDays: Math.max(0, Math.min(30, Number(s.hordeGraceDays) || 0)) }; }
+export function newWorldRules(s: Settings = loadSettings()): { hordes: boolean; hordeGraceDays: number; aiHumans: boolean } { return { hordes: s.hordes !== false, hordeGraceDays: Math.max(0, Math.min(30, Number(s.hordeGraceDays) || 0)), aiHumans: s.aiHumans !== false }; }
 const SETTINGS_KEY = "engine-settings";
 /** ADR-243: the HUD temperature unit a Settings object resolves to. °F is the default; °C only when the player picked it
  *  (`tempUnitChosen`). A bare `tempUnit: "C"` is the ADR-239 default that every Settings save wrote, not a choice -> °F. */
@@ -45,7 +45,7 @@ export function tempUnitControl(s: { tempUnit?: string; tempUnitChosen?: boolean
 }
 export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), ...s })); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
-  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, toolHints: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, toolHints: true }; }
+  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, aiHumans: true, toolHints: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, aiHumans: true, toolHints: true }; }
 }
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
@@ -295,7 +295,7 @@ export class BootUI {
         const help = opts.hostedStatic ? "This web build can't run a server: run <code>pnpm --filter @engine/server start</code> somewhere and enter its <code>wss://</code> address." : "";
         extra.push(mpSection("Dedicated server", help, mpRow(url, connect), st));
         for (const [i, b] of [[code, join], [url, connect]] as const) i.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); b.click(); } });
-        const foot = document.createElement("p"); foot.className = "mp-foot"; foot.textContent = "Human bots are off in multiplayer."; extra.push(foot);
+        const foot = document.createElement("p"); foot.className = "mp-foot"; foot.textContent = loadSettings().aiHumans !== false ? "AI humans are on in multiplayer: they can be hired to work for you." : "AI humans are off in multiplayer (Settings)."; extra.push(foot);
         this.screen([["Back", main, "alt"]], main, `<h2>Multiplayer</h2>`, ...extra);
         this.root.dataset["page"] = "multiplayer";
         // reachability + ping of the typed address (re-checked as it changes)
@@ -312,7 +312,9 @@ export class BootUI {
         const s = loadSettings();
         const bots = document.createElement("input"); bots.type = "number"; bots.min = "0"; bots.max = "12"; bots.value = String(s.bots); bots.style.width = "70px"; bindTypingFullscreenExit(bots);
         const hud = document.createElement("input"); hud.type = "checkbox"; hud.checked = s.showHud;
-        const l1 = document.createElement("label"); l1.append("Singleplayer human bots", bots);
+        const l1 = document.createElement("label"); l1.append("Human bots", bots);
+        const ah = document.createElement("input"); ah.type = "checkbox"; ah.checked = s.aiHumans !== false; ah.dataset["setting"] = "aiHumans";
+        const l1b = document.createElement("label"); l1b.append("AI humans in multiplayer (new worlds)", ah);
         const l2 = document.createElement("label"); l2.append("Show HUD", hud);
         const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
         const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
@@ -324,8 +326,8 @@ export class BootUI {
         const l6 = document.createElement("label"); l6.append("Horde grace period (in-game days)", gd);
         const tu = tempUnitControl(s); const l7 = tu.el; // ADR-243: near the top, gamepad/touch toggle
         const manage = document.createElement("button"); manage.className = "alt"; manage.textContent = "Delete progress…"; manage.dataset["action"] = "manage-saves"; manage.addEventListener("click", saves);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hordes: hz.checked, hordeGraceDays: Math.max(0, Math.min(30, Number(gd.value) || 0)), hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)), ...tu.patch() })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l7, l1, l2, l3, l4, l5, l6, manage);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hordes: hz.checked, hordeGraceDays: Math.max(0, Math.min(30, Number(gd.value) || 0)), aiHumans: ah.checked, hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)), ...tu.patch() })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l7, l1, l1b, l2, l3, l4, l5, l6, manage);
       };
       // Delete progress (ADR-099): pick what to delete from this device, then type DELETE or hold to confirm.
       const slot = opts.slot ?? "1";
