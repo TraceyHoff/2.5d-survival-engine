@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { installPermissions, Membership, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
-import { encodePlayer, decodePlayerInto } from "@engine/persist";
 import { collect, makeWorld, steps } from "./helpers.js";
 
 const pid = (w: World, e: Entity, id: number): void => { if (w.has(e, PlayerId)) w.set(e, PlayerId, { id }); else w.add(e, PlayerId, { id }); };
@@ -166,18 +165,20 @@ describe("Task 22: AI-human recruitment", () => {
     expect(w.has(bot, G.Worker)).toBe(true);
     expect(w.has(human, G.Worker)).toBe(false);
   });
-  it("recruited AI state persists across save/load (owner, job, wanted item)", () => {
+  it("Worker is declared networked + persistent, so hired state rides the player save path", () => {
+    // The byte round-trip itself lives in apps/server/test/task22_recruitment.test.ts
+    // (that package declares @engine/persist; gameplay must not depend on persist —
+    // persist itself depends on gameplay, so the dep would be a cycle). What gameplay
+    // owns is the declaration: the player codec saves every component store on the
+    // entity, keyed by name, so a networked + persistent Worker is what makes a hired
+    // worker (owner, job, wanted item) survive save/load.
+    expect(G.Worker.networked).toBe(true);
+    expect(G.Worker.persistent).toBe(true);
     const { w, p, bot } = setup();
     giveWanted(w, p, bot, 1); expect(G.hireWorker(w, p, bot)).toBe(G.WorkerFail.None);
     expect(G.setWorkerJob(w, p, bot, G.WorkerJob.Defend)).toBe(G.WorkerFail.None);
-    const wanted = w.get(bot, G.Worker)!.wantedItem;
-    const bytes = encodePlayer(w, bot);
-    const w2 = makeWorld(); if (!w2.isRegistered(PlayerId)) w2.register(PlayerId); installPermissions(w2);
-    const bot2 = mkPlayer(w2, 0, 0, 9);
-    const r = decodePlayerInto(w2, bot2, bytes);
-    expect(r.restored).toContain("Worker");
-    const wk = w2.get(bot2, G.Worker)!;
-    expect(wk.owner).toBe(7); expect(wk.job).toBe(G.WorkerJob.Defend); expect(wk.wantedItem).toBe(wanted);
+    const wk = w.get(bot, G.Worker)!;
+    expect(wk.owner).toBe(7); expect(wk.job).toBe(G.WorkerJob.Defend); expect(wk.wantedItem).toBeGreaterThan(0);
   });
   it("interactPanel offers the worker panel for the nearest AI human", () => {
     const { w, p, bot } = setup();
