@@ -113,7 +113,11 @@ const glLevel = effectiveLevel(location.search);
 const wantIso = glLevel !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}), ...seasonOv }, onStage);
-  const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
+  const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize);
+  // Task 19: rotating the phone must reflow without a reload. Rotation fires resize on most browsers, but
+  // orientationchange covers ones that fire it first / report stale metrics on resize alone; onResize is cheap
+  // when nothing changed, and the camera zoom + keyboard-viewport helpers also listen to resize.
+  addEventListener("orientationchange", onResize); onResize();
   attachContextRecovery(canvas, { notify: showRenderError });
   camZoom = attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };

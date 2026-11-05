@@ -1,5 +1,8 @@
 /**
- * Fullscreen for play: entered from the Singleplayer / Multiplayer tap (user gesture), landscape lock where supported.
+ * Fullscreen for play: entered from the Singleplayer / Multiplayer tap (user gesture). Orientation is deliberately
+ * NOT locked (Task 19): the game follows how the phone is held, in fullscreen as well as windowed, so the player can
+ * rotate between portrait and landscape at any time. Rotation fires a window resize, which reflows the renderer
+ * (main.ts onResize), the camera zoom (camera-zoom attachZoom), and the keyboard-viewport helper — no reload needed.
  * The target is the UI root (`#game-root`: canvas + HUD + touch controls + modals), never the
  * canvas alone, so touch controls and menus stay rendered and tappable in fullscreen (ADR-095).
  * Left on quit / pagehide. Every call fails silently (unsupported, denied, iframes). iPhone Safari has no element
@@ -27,16 +30,14 @@ export function enterFullscreen(): void {
   try {
     if (!isFullscreen()) {
       const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : (el.webkitRequestFullscreen?.(), undefined);
-      void Promise.resolve(p).then(lockLandscape, () => {});
-    } else lockLandscape();
+      void Promise.resolve(p).catch(() => {});
+    }
   } catch { /* unsupported */ }
   if (!canElementFs()) iosTip();
 }
-function lockLandscape(): void {
-  try { const o = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }; void o?.lock?.("landscape")?.catch(() => {}); } catch { /* ignore */ }
-}
 export function exitFullscreen(): void {
   playing = false;
+  // No orientation lock is requested anymore (Task 19); unlock stays as a harmless safeguard.
   try { (screen.orientation as { unlock?: () => void } | undefined)?.unlock?.(); } catch { /* ignore */ }
   try { if (isFullscreen()) { if (doc.exitFullscreen) void doc.exitFullscreen().catch(() => {}); else doc.webkitExitFullscreen?.(); } } catch { /* ignore */ }
 }
