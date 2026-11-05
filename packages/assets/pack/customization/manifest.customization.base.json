@@ -10,10 +10,7 @@
    "cosmeticDefaults": {
     "hair": "hair_buzz",
     "face": "face_smile",
-    "eyes": "eyes_round",
-    "top": "top_tee",
-    "bottom": "bottom_jeans",
-    "shoes": "shoes_sneakers"
+    "eyes": "eyes_round"
    }
   },
   "female": {
@@ -24,10 +21,7 @@
    "cosmeticDefaults": {
     "hair": "hair_bob",
     "face": "face_smile",
-    "eyes": "eyes_lashes",
-    "top": "top_tee",
-    "bottom": "bottom_skirt",
-    "shoes": "shoes_sandals"
+    "eyes": "eyes_lashes"
    }
   }
  },

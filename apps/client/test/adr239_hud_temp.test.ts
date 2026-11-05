@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { World, Season, setSeason, TimeOfDay } from "@engine/core";
 import * as G from "@engine/gameplay";
 import { mountHud, WEATHER_LABEL } from "../src/hud.js";
-import { formatTemp, gaugeFrac, hudAirTemp, loadTempUnit, tempBand, toF } from "../src/hud-temp.js";
+import { formatTemp, gaugeFrac, hudAirTemp, hudShelteredTemp, loadTempUnit, tempBand, toF } from "../src/hud-temp.js";
 import { tempUnitControl } from "../src/menu.js";
 import { sampleDayClock, serverDays } from "../src/day-clock.js";
 
@@ -47,6 +47,23 @@ describe("ADR-239 HUD temperature gauge", () => {
     expect(css).toMatch(/@media \(max-height:420px\)\{[^\n]*\.row\[data-stat=temp\] \.tv\{min-width:26px;font-size:9px\}/);
     expect(css).toMatch(/\[data-hud=weather\]\{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap/);
     expect(document.querySelector("#hud")!.contains(document.querySelector("[data-stat=temp]"))).toBe(true);
+  });
+  test("Task 23: hudShelteredTemp — indoors in a heat wave it is cooler than the air, outdoors it equals the air", () => {
+    const w = world(); const d = G.gameplayDefs(w);
+    const put = (key: string, x: number, y: number, level = 0): void => { const sn = G.snapPlacement(w, { piece: d.pieceId(key), x, y, level, rot: 0, tier: 1, variant: 0 }); if (typeof sn === "number") throw new Error(`${key}: ${sn}`); G.placePiece(w, 0, sn, { pay: false }); };
+    put("foundation", 10.5, 10.5);
+    put("wall", 10.5, 10); put("wall", 10.5, 11); put("wall", 10, 10.5); put("wall", 11, 10.5);
+    put("roof_flat", 10.5, 10.5, 1);
+    const days = 1.6; // summer (season 0), ~14:24 — afternoon heat
+    const air = hudAirTemp(w, days, G.WeatherKind.Heat);
+    expect(air).toBeGreaterThan(32); // genuinely hot outside, or the test is meaningless
+    const inside = hudShelteredTemp(w, days, 10.5, 10.5, 0, G.WeatherKind.Heat);
+    expect(inside.sheltered).toBe(true); expect(inside.enclosed).toBe(true);
+    expect(inside.temp).toBeLessThan(air - 1);
+    expect(inside.temp).toBeLessThanOrEqual(32); expect(inside.temp).toBeGreaterThanOrEqual(8);
+    const outside = hudShelteredTemp(w, days, 20, 20, 0, G.WeatherKind.Heat);
+    expect(outside.sheltered).toBe(false); expect(outside.enclosed).toBe(false);
+    expect(outside.temp).toBeCloseTo(air, 9);
   });
   test("weather labels cover the seasonal kinds; client day count tracks the server tick", () => {
     expect(WEATHER_LABEL.slice(5)).toEqual(["Overcast", "Heat", "Blizzard", "Windy"]);

@@ -10,13 +10,16 @@ const C = (n: number) => Array.from({ length: n }, (_, i) => ({ index: i, key: `
 const cat: CosmeticCatalogLike = { wearable: (id) => parts.find((p) => p.id === id), bodySprite: () => ({ sprite: 1, anim: "idle" }), skinTones: C(6), hairColors: C(5), clothingColors: C(8), defaults: { top: 4, bottom: 6, shoes: 7, eyes: 8 } };
 
 describe("ADR-114 character creator", () => {
-  it("options exclude unlock-gated and incompatible parts", () => {
-    const m = creatorOptions(cat, 0); expect(m.top.map((w) => w.id)).toEqual([4]); expect(m.hair.map((w) => w.id)).toEqual([1]); expect(m.face.map((w) => w.id)).toEqual([3]);
+  it("options exclude unlock-gated and incompatible parts; clothing is never offered (Task 23)", () => {
+    const m = creatorOptions(cat, 0); expect(m.top).toEqual([]); expect(m.bottom).toEqual([]); expect(m.shoes).toEqual([]); // no starting clothes
+    expect(m.hair.map((w) => w.id)).toEqual([1]); expect(m.face.map((w) => w.id)).toEqual([3]);
     expect(creatorOptions(cat, 1).hair.map((w) => w.id)).toEqual([1, 2]);
   });
-  it("randomize stays within starter options", () => {
+  it("randomize stays within starter options and starts with no clothes (Task 23)", () => {
     let s = 1; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < 50; i++) { const v = randomLook(cat, rnd); expect(v.parts).toHaveLength(SLOT_COUNT); expect(v.parts[slotIndex("top")]).toBe(4); expect(v.skinTone).toBeLessThan(6);
+    for (let i = 0; i < 50; i++) { const v = randomLook(cat, rnd); expect(v.parts).toHaveLength(SLOT_COUNT);
+      expect(v.parts[slotIndex("top")]).toBe(0); expect(v.parts[slotIndex("bottom")]).toBe(0); expect(v.parts[slotIndex("shoes")]).toBe(0);
+      expect(v.skinTone).toBeLessThan(6);
       if (v.bodyType === 0) expect(v.parts[slotIndex("hair")]).not.toBe(2); }
   });
   it("step cycles parts (with None for hair/face), colours and fixes parts on body change", () => {
@@ -37,8 +40,10 @@ describe("ADR-114 character creator", () => {
     const panel = document.querySelector<HTMLElement>("[data-boot=creator] .panel")!; expect(getComputedStyle(panel).flexDirection).toBe("row"); expect(panel.style.flexWrap).toBe("wrap");
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); await p; st.remove();
   });
-  it("dialog: requires a name, Randomize, keyboard step, Enter world, and Back / Esc", async () => {
+  it("dialog: requires a name, Randomize, keyboard step, Enter world, and Back / Esc; says no starting clothes (Task 23)", async () => {
     const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [] });
+    expect(document.querySelector("[data-role=creator-no-clothes]")!.textContent).toMatch(/No starting clothes/);
+    expect(document.querySelector('[data-action="next-top"]')).toBeNull(); // no clothing rows at all
     const q = (a: string) => document.querySelector<HTMLButtonElement>(`[data-action="${a}"]`)!;
     q("creator-done").click(); expect(document.querySelector("[data-role=creator-msg]")!.textContent).toMatch(/name/);
     const before = document.querySelector("[data-role=creator-skin]")!.textContent; q("next-skin").click(); expect(document.querySelector("[data-role=creator-skin]")!.textContent).not.toBe(before);

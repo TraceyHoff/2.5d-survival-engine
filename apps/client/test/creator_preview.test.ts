@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { type CosmeticCatalogLike, type WearableDef } from "@engine/core";
+import { slotIndex, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
 import type { AssetRegistry } from "@engine/assets";
 import { createPreviewDriver, previewModeFromQuery, showCharacterCreator, PREVIEW_CSS, type CreatorPreviewSource } from "../src/character-creator.js";
 
@@ -35,8 +35,8 @@ describe("ADR-114 creator preview (render package sprites)", () => {
     const preview: CreatorPreviewSource = { registry, sources: new Map(), createGl };
     const p = showCharacterCreator({ root, catalog: cat, pads, preview }); await tick(); await tick();
     const wrap = root.querySelector<HTMLElement>("[data-boot=creator]")!; expect(wrap.dataset["preview"]).toBe("webgl2");
-    const topOf = () => (calls.set.at(-1) as { parts: number[] }).parts[3]; const t0 = topOf(); const n0 = calls.set.length;
-    root.querySelector<HTMLButtonElement>("[data-action=next-top]")!.click(); expect(calls.set.length).toBe(n0 + 1); expect(topOf()).not.toBe(t0); expect([4, 9]).toContain(topOf());
+    const hairOf = () => (calls.set.at(-1) as { parts: number[] }).parts[slotIndex("hair")]; const h0 = hairOf(); const n0 = calls.set.length;
+    root.querySelector<HTMLButtonElement>("[data-action=next-hair]")!.click(); expect(calls.set.length).toBe(n0 + 1); expect(hairOf()).not.toBe(h0); expect([0, 1]).toContain(hairOf());
     const f = () => calls.facing.at(-1)!;
     const rr = root.querySelector<HTMLButtonElement>("[data-action=rotate-right]")!; const seen = new Set<number>();
     for (let i = 0; i < 8; i++) { rr.click(); seen.add(f()); } expect(seen.size).toBe(8);

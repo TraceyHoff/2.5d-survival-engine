@@ -38,7 +38,9 @@ export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors
   /** Task 22: hired-worker sensors (fillHireSensors; absent for unhired bots and humans). */
   hire?: { job: number; owner: number; ax: number; ay: number };
   /** Task 22: nearest farm target near the owner's base (mature crop node to harvest, or a crop to tend). */
-  farm?: { harvest?: { id: number; x: number; y: number }; tend?: { id: number; x: number; y: number; kind: "water" | "plant"; slot: number } };
+  farm?: { harvest?: { id: number; x: number; y: number }; tend?: { id: number; x: number; y: number; kind: "water" | "plant"; slot: number };
+    /** Task 23: nearest tillable tile near the owner's base (hoe Use in front of it; lack = hoe to withdraw from base storage first). */
+    till?: { x: number; y: number; slot: number; lack?: { item: number; count: number } } };
   /** Task 22: nearest zombie threatening the owner's base (Defend job). */
   defend?: { id: number; x: number; y: number };
   /** Task 22: damaged piece near the owner's base the worker can repair (lack = material to withdraw first). */

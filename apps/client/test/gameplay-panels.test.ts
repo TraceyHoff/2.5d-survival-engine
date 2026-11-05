@@ -139,6 +139,30 @@ describe("gameplay panels (ADR-095 shell)", () => {
     expect(G.clanView({ world: w, player: me, names: new Map() }).invite).toBeTruthy();
     menus.open("clan"); q("[data-key=clan-dismiss]").click(); expect(sent.at(-1)?.cmd).toBe(G.ClanDeclineCmd); menus.destroy();
   });
+  test("Task 23: Character panel shows the live character sheet (body temp, vitals, XP, insulation, shelter)", () => {
+    const { w, me, menus } = setup();
+    menus.open("character");
+    const txt = (role: string) => q(`[data-role=${role}]`).textContent!;
+    expect(q("[data-menu=character]").textContent).toContain("Character sheet — Ada");
+    expect(txt("sheet-body-temp")).toMatch(/Body temperature: -?−?\d+°[CF]/);
+    expect(txt("sheet-health")).toBe("Health: 100/100");
+    expect(txt("sheet-hunger")).toBe("Food: 100/100");
+    expect(txt("sheet-thirst")).toBe("Water: 100/100");
+    expect(txt("sheet-stamina")).toBe("Energy: 100/100");
+    expect(txt("sheet-xp")).toMatch(/Level 1 · 0\/\d+ XP/);
+    expect(txt("sheet-diseases")).toBe("Diseases: Healthy");
+    expect(txt("sheet-insulation")).toBe("Insulation: Base 0.0°C + clothing 0.0°C");
+    expect(txt("sheet-worn")).toContain("Nothing — craft clothing");
+    expect(txt("sheet-shelter")).toMatch(/Outside: .* · summer/);
+    // wearing a fur coat adds its insulation to the sheet, with a per-item row
+    G.addItem(w, me, id("fur_coat"), 1);
+    const slot = G.listSlots(w, me).find((s) => s.item === id("fur_coat"))!.slot;
+    expect(G.wearSlot(w, me, slot)).toBe(true);
+    menus.refresh();
+    expect(txt("sheet-insulation")).toBe("Insulation: Base 0.0°C + clothing 7.0°C");
+    expect(txt("sheet-worn")).toMatch(/Fur Coat · \+7\.0°C/);
+    menus.destroy();
+  });
   test("styling hooks: data-item/data-icon, job --p, data-unlocked, data-rank, data-chan, data-tip (no title=)", () => {
     const dir = new G.SocialDirectory(); const { w, me, mk, menus } = setup(dir);
     G.addItem(w, me, id("wood"), 5, 7); G.addItem(w, me, id("reeds"), 3); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);

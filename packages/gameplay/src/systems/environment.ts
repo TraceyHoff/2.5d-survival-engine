@@ -13,10 +13,10 @@ import { addModifier, dayNoise, entityIndex, ModOp, Season, seasonFromDays, time
 import { ClimateRes, climateAt, EmitterIndexRes, type BaseClimate, type ClimateContext, type ClimateModel, type ClimateSample } from "@engine/world";
 import { Buffs, ChunkSurface, Exposure, Stat, Wetness } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
-import { secondsToTicks, WeatherKind, type EnvironmentTuning, type WeatherDef } from "../defs.js";
+import { secondsToTicks, WeatherKind, isSnowing, type EnvironmentTuning, type VitalsTuning, type WeatherDef } from "../defs.js";
 import { DayPhase, DayPhaseChanged, emit, WeatherChanged } from "../events.js";
 import { EmitterKind, isRaining } from "../realism.js";
-import { shelterAt } from "../building/shelter.js";
+import { shelterAt, type Shelter } from "../building/shelter.js";
 import { waterproofOf } from "../combat/arms.js";
 
 export const EXPOSURE_EVERY = 4;
@@ -82,15 +82,21 @@ export function weatherSystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const w = world.env(Weather);
   const env = gameplayDefs(world).environment;
-  const si = worldSeason(world, env, timeOfDay(world, world.tick + 1)); // the season this step ends in (like clockSystem)
+  const time = timeOfDay(world, world.tick + 1);
+  const si = worldSeason(world, env, time); // the season this step ends in (like clockSystem)
+  // Task 23: snow already falling re-rolls at once once the seasonal base temperature reaches freezing.
+  const snowOk = !isSnowing(w.kind) || snowAllowed(env, si, time);
   // endsAtTick u32 max = pinned (admin / tests / ?weather=): never re-rolled by the season guard
-  if (world.tick < w.endsAtTick && (w.endsAtTick === PINNED || weatherAllowed(env, si, w.kind))) return;
+  if (world.tick < w.endsAtTick && (w.endsAtTick === PINNED || (weatherAllowed(env, si, w.kind) && snowOk))) return;
   const table = weatherTable(world, env, si);
   // Heat waves never roll on the first day of a season: a new game starts in summer, and a heat wave on day
   // one kills before anyone can build shelter or stock water. Heat is re-enabled once the season is a day old.
-  const rollTable = si.lengthDays > 0 && si.into < 1
-    ? table.map((d) => (d.kind === WeatherKind.Heat ? { ...d, weight: 0 } : d))
-    : table;
+  // Task 23: snow / blizzard never roll while the seasonal base temperature is at or above freezing.
+  const rollTable = table.map((d) => {
+    if (d.kind === WeatherKind.Heat && si.lengthDays > 0 && si.into < 1) return { ...d, weight: 0 };
+    if (isSnowing(d.kind) && !snowAllowed(env, si, time)) return { ...d, weight: 0 };
+    return d;
+  });
   const def = rollTable[weightedIndex(world, rollTable.map((d) => d.weight))]!;
   const from = w.kind as WeatherKind;
   w.kind = def.kind;
@@ -115,13 +121,17 @@ function dailyNoise(days: number): number {
   return dayNoise(d0, 239) * (1 - k) + dayNoise(d0 + 1, 239) * k;
 }
 
+/** Task 23: freezing point (deg C) — snow may only fall below it (32F). */
+export const FREEZING_C = 0;
+
 /**
- * ADR-239 seasonal air temperature (deg C) from the season weights, time of day, a per-day random swing and the weather.
- * Without seasons: the legacy baseTemp + day/night + weather curve. `bandDelta` = biome band temperature - baseTemp.
+ * ADR-239 seasonal base air temperature (deg C): the blended season curve (mean + day/night + per-day noise),
+ * clamped to the blended season tempRange. No weather offset: rain cools below the range and heat waves rise above
+ * it (see seasonalTemperature). `bandDelta` = biome band temperature - baseTemp.
  */
-export function seasonalTemperature(env: EnvironmentTuning, si: SeasonInfo, time: TimeOfDayInfo, weather: { kind: number; intensity: number }, bandDelta = 0): number {
+export function seasonalBaseTemp(env: EnvironmentTuning, si: SeasonInfo, time: TimeOfDayInfo, bandDelta = 0): number {
   const st = env.seasons;
-  if (!st || si.lengthDays <= 0) return env.baseTemp + bandDelta + env.dayNightAmplitude * -Math.cos(2 * Math.PI * time.t) + weatherDef(env, weather.kind as WeatherKind).tempOffset * weather.intensity;
+  if (!st || si.lengthDays <= 0) return env.baseTemp + bandDelta + env.dayNightAmplitude * -Math.cos(2 * Math.PI * time.t);
   const curve = -Math.cos(2 * Math.PI * (time.t - 0.04)); // coldest just before dawn-ish, warmest early afternoon
   const noise = dailyNoise(time.day + time.t);
   let t = 0, lo = 0, hi = 0;
@@ -129,8 +139,34 @@ export function seasonalTemperature(env: EnvironmentTuning, si: SeasonInfo, time
     const wgt = si.weights[i]!; if (wgt <= 0) continue; const s = st.seasons[i]!;
     t += wgt * (s.meanTemp + s.dayNightAmplitude * curve + s.dailyVariation * noise); lo += wgt * s.tempRange[0]; hi += wgt * s.tempRange[1];
   }
-  t += seasonalWeatherDef(env, si, weather.kind as WeatherKind).tempOffset * weather.intensity + st.bandScale * bandDelta;
-  return Math.min(hi, Math.max(lo, t));
+  return Math.min(hi, Math.max(lo, t + st.bandScale * bandDelta));
+}
+
+/**
+ * ADR-239 seasonal air temperature (deg C) from the season weights, time of day, a per-day random swing and the weather.
+ * Without seasons: the legacy baseTemp + day/night + weather curve. Task 23: the weather offset applies after the
+ * seasonal clamp, so rain cools below the season's range and a heat wave clamps into its own band (summer 89-100F).
+ * `bandDelta` = biome band temperature - baseTemp.
+ */
+export function seasonalTemperature(env: EnvironmentTuning, si: SeasonInfo, time: TimeOfDayInfo, weather: { kind: number; intensity: number }, bandDelta = 0): number {
+  const st = env.seasons;
+  if (!st || si.lengthDays <= 0) return seasonalBaseTemp(env, si, time, bandDelta) + weatherDef(env, weather.kind as WeatherKind).tempOffset * weather.intensity;
+  const kind = weather.kind as WeatherKind;
+  let t = seasonalBaseTemp(env, si, time, bandDelta) + seasonalWeatherDef(env, si, kind).tempOffset * weather.intensity;
+  if (kind === WeatherKind.Heat) {
+    let hlo = 0, hhi = 0, hw = 0;
+    for (let i = 0; i < 3; i++) {
+      const wgt = si.weights[i]!; const range = st.seasons[i]!.heatWaveRange; if (wgt <= 0 || !range) continue;
+      hlo += wgt * range[0]; hhi += wgt * range[1]; hw += wgt;
+    }
+    if (hw > 0) t = Math.min(hhi / hw, Math.max(hlo / hw, t));
+  }
+  return t;
+}
+
+/** Task 23: snow / blizzard may fall only while the seasonal base temperature is below freezing. */
+export function snowAllowed(env: EnvironmentTuning, si: SeasonInfo, time: TimeOfDayInfo, bandDelta = 0): boolean {
+  return seasonalBaseTemp(env, si, time, bandDelta) < FREEZING_C;
 }
 
 /** Gameplay temperature/humidity curves for world climateAt: season + biome band + altitude + day/night + weather. */
@@ -156,7 +192,32 @@ export function ambientTemperature(world: World, x = 0, y = 0): number {
   return seasonalTemperature(env, worldSeason(world, env, time), time, w);
 }
 
-/** Spawn-pressure multiplier (night). */
+/**
+ * Task 23: the shelter's pull on air temperature at a tile (deg C): roof shade/warmth + wall insulation, toward
+ * comfort (solid walls insulate twice as well as window walls, and each material tier insulates more than the last).
+ * Pure, so the HUD gauge and the character sheet share the exact shift the exposure system applies.
+ */
+export function shelterTempShift(sh: Shelter, ambient: number, vt: VitalsTuning, shelterBonus: number): number {
+  // ADR-239: shelter warms when it is cold and shades (cools) when the air is above the comfort band
+  const shelter = (1 - sh.exposure) * (ambient > vt.comfortMax ? -shelterBonus : shelterBonus);
+  // Wall insulation pulls felt toward comfort, scaled by how sheltered the spot is (full inside, none in the open).
+  const wallShift = sh.insulation * (1 - sh.exposure) * (ambient > vt.comfortMax ? -1 : ambient < vt.comfortMin ? 1 : 0);
+  return shelter + wallShift;
+}
+
+/**
+ * Task 23: the air temperature where a body stands — outdoor air pulled by shelter (roof + walls); a fully enclosed
+ * roofed room clamps to the comfort band, like felt. Display only: felt temperature (exposureSystem) adds clothing
+ * insulation, fire heat, wetness and wind on top of this.
+ */
+export function shelteredAirTemp(world: World, x: number, y: number, z = 0, windDir?: number): { temp: number; sheltered: boolean; enclosed: boolean; exposure: number } {
+  const env = gameplayDefs(world).environment; const vt = gameplayDefs(world).vitals;
+  const ambient = ambientTemperature(world, x, y);
+  const sh = shelterAt(world, x, y, z, windDir);
+  const t = ambient + shelterTempShift(sh, ambient, vt, env.shelterTempBonus);
+  const enclosed = sh.exposure === 0;
+  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) : t, sheltered: sh.exposure < 1, enclosed, exposure: sh.exposure };
+}
 export function threatLevel(world: World): number {
   return dayPhase(timeOfDay(world).t) === DayPhase.Night ? gameplayDefs(world).environment.nightThreatMul : 1;
 }
@@ -185,12 +246,11 @@ export function exposureSystem(world: World, dt: number): void {
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
     const ambient = ambientTemperature(world, x, y);
-    // ADR-239: shelter warms when it is cold and shades (cools) when the air is above the comfort band
-    const shelter = (1 - sh.exposure) * (ambient > vt.comfortMax ? -env.shelterTempBonus : env.shelterTempBonus);
-    // Wall insulation pulls felt toward comfort, scaled by how sheltered the spot is (full inside, none in the open);
-    // solid walls insulate twice as well as window walls, and each material tier insulates more than the last.
-    const wallShift = sh.insulation * (1 - sh.exposure) * (ambient > vt.comfortMax ? -1 : ambient < vt.comfortMin ? 1 : 0);
-    let felt = ambient + ex.data.insulation[s]! + shelter + wallShift + heat
+    // Task 23: clothing insulation pulls felt toward the comfort band — it warms in the cold and shades in the heat
+    // (a fur coat no longer cooks its wearer in a heat wave); higher tiers insulate more (items.json).
+    const ins = ex.data.insulation[s]!;
+    const insShift = ambient > vt.comfortMax ? -ins : ambient < vt.comfortMin ? ins : 0;
+    let felt = ambient + insShift + shelterTempShift(sh, ambient, vt, env.shelterTempBonus) + heat
       - env.wetChill * wet - env.windChillPerSpeed * Math.sqrt(Math.max(0, w.windSpeed)) * sh.exposure;
     // Fully enclosed + roofed: protected from the elements and from death by them — felt never leaves the comfort band.
     if (sh.exposure === 0) felt = Math.min(vt.comfortMax, Math.max(vt.comfortMin, felt));

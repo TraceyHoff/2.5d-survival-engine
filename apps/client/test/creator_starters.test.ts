@@ -4,21 +4,23 @@ import { readFileSync } from "node:fs";
 import { loadManifest, mergeManifests } from "@engine/assets";
 import { creatorOptions, showCharacterCreator } from "../src/character-creator.js";
 import { readManifestJson } from "@engine/assets/read-manifest";
-const STARTERS = ["top_henley", "top_striped_tee", "top_polo", "top_cardigan", "bottom_capris", "bottom_cutoffs", "bottom_joggers", "bottom_pleated_skirt",
-  "shoes_loafers", "shoes_moccasins", "shoes_slip_ons", "shoes_trail_runners", "face_chops", "face_goatee", "face_long_beard", "face_rosy"];
+const CLOTHING_STARTERS = ["top_henley", "top_striped_tee", "top_polo", "top_cardigan", "bottom_capris", "bottom_cutoffs", "bottom_joggers", "bottom_pleated_skirt",
+  "shoes_loafers", "shoes_moccasins", "shoes_slip_ons", "shoes_trail_runners"];
+const FACE_STARTERS = ["face_chops", "face_goatee", "face_long_beard", "face_rosy"];
 function catalog(): any {
   const P = "packages/assets/pack/"; const base = readManifestJson(P + "manifest.json"); const cz = readManifestJson(P + "customization/manifest.customization.json");
   const { manifest } = mergeManifests([{ name: "pack", manifest: base }, { name: "customization", manifest: cz }] as any, { resolve: (p: string) => p } as any);
   const r = loadManifest(manifest, { lock: JSON.parse(readFileSync(P + "ids.lock.json", "utf8")) }) as any; return (r.registry ?? r).cosmetics;
 }
-it("ADR-115: every unlock-free starter wearable in the customization manifest is offered by the creator (both bodies)", () => {
+it("ADR-115 (Task 23): clothing is NOT offered by the creator — a new survivor starts with no clothes; face starters still are", () => {
   const cz = readManifestJson("packages/assets/pack/customization/manifest.customization.json");
   const list: any[] = Array.isArray(cz.wearables) ? cz.wearables : Object.entries(cz.wearables ?? {}).map(([key, v]: any) => ({ key, ...v }));
   const free = list.filter((w) => !(w.unlockTags ?? w.unlock ?? []).length).map((w) => w.key);
   const cat = catalog(); expect(cat).toBeTruthy();
   for (const b of [0, 1]) { const keys = new Set(Object.values(creatorOptions(cat, b)).flat().map((w: any) => w.key));
-    for (const k of STARTERS) expect(keys.has(k), `${k} body ${b}`).toBe(true);
-    expect(free.filter((k) => !keys.has(k) && !/hair_|face_/.test(k))).toEqual([]); }
+    for (const k of FACE_STARTERS) expect(keys.has(k), `${k} body ${b}`).toBe(true);
+    for (const k of CLOTHING_STARTERS) expect(keys.has(k), `${k} body ${b} (Task 23: no starting clothes)`).toBe(false);
+    expect(free.filter((k) => !keys.has(k) && !/hair_|face_/.test(k) && !/^(top|bottom|shoes|hat|acc)_/.test(k))).toEqual([]); } // Task 23: clothing, hats and accessories are wardrobe items, not starter choices
 });
 it("ADR-115: creator uses Art preview_bg and icon buttons (aria-labelled, @2x)", () => {
   document.body.innerHTML = ""; const p = showCharacterCreator({ root: document.body, catalog: catalog(), artBase: "/art/ui/creator/", pads: () => [] } as any);

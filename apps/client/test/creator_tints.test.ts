@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { slotIndex, validateAppearance, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
-import { EYE_COLOR_KEYS, SECONDARY_SLOTS, colorChoices, creatorShotFromQuery, creatorShotLook, loadCharacter, randomLook, saveCharacter, showCharacterCreator, stepLook } from "../src/character-creator.js";
+import { EYE_COLOR_KEYS, colorChoices, creatorShotFromQuery, creatorShotLook, loadCharacter, randomLook, saveCharacter, showCharacterCreator, stepLook } from "../src/character-creator.js";
 import { readManifestJson } from "@engine/assets/read-manifest";
 
 const W = (id: number, key: string, slot: WearableDef["slot"]): WearableDef =>
@@ -14,19 +14,22 @@ const cat: CosmeticCatalogLike = { wearable: (id) => parts.find((p) => p.id === 
 const rgb = (c: number) => [(c >> 16) & 255, (c >> 8) & 255, c & 255] as const;
 const dist = (a: number, b: number) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); };
 
-describe("creator eye / shoe / secondary colour rows", () => {
+describe("creator eye / hair colour rows (no clothing rows, no shared secondary — Task 23)", () => {
   it("palettes: mustard and gold are clearly distinct; every clothing colour is distinguishable", () => {
     const c = cat.clothingColors; const by = (k: string) => c.find((x) => x.key === k)!.color;
     expect(dist(by("mustard"), by("gold"))).toBeGreaterThan(60);
     for (let i = 0; i < c.length; i++) for (let j = i + 1; j < c.length; j++) expect(dist(c[i]!.color, c[j]!.color), `${c[i]!.key}/${c[j]!.key}`).toBeGreaterThan(25);
     expect(colorChoices(cat, "eyes").length).toBe(EYE_COLOR_KEYS.length); // all curated keys exist in the pack
   });
-  it("step: eyes cycle the curated list, shoes the clothing palette, secondary drives every 2-channel slot", () => {
+  it("step: eyes cycle the curated list; per-slot secondary (color2) steps only its own slot", () => {
     let v = randomLook(cat, () => 0.3); const eyes = colorChoices(cat, "eyes"); const seen = new Set<number>();
     for (let i = 0; i < eyes.length; i++) { v = stepLook(cat, v, "eyes:color", 1); seen.add(v.primary[slotIndex("eyes")]!); }
     expect([...seen].sort()).toEqual([...eyes].sort());
-    const s0 = v.primary[slotIndex("shoes")]!; v = stepLook(cat, v, "shoes:color", -1); expect(v.primary[slotIndex("shoes")]).toBe((s0 - 1 + cat.clothingColors.length) % cat.clothingColors.length);
-    v = stepLook(cat, v, "secondary", 3); const sec = v.secondary[slotIndex("top")]; for (const s of SECONDARY_SLOTS) expect(v.secondary[slotIndex(s)]).toBe(sec);
+    // the old shared "secondary" row is gone (Task 23): each slot's color2 steps only that slot
+    const e0 = v.secondary[slotIndex("eyes")]!; const h0 = v.secondary[slotIndex("hair")]!;
+    v = stepLook(cat, v, "eyes:color2", 1);
+    expect(v.secondary[slotIndex("eyes")]).toBe((e0 + 1) % cat.clothingColors.length);
+    expect(v.secondary[slotIndex("hair")]).toBe(h0); // untouched by the eyes step
     // server validation, wire and save keep the new tints
     expect(validateAppearance(cat, v, { mode: "reject" }).issues).toEqual([]);
     const m = new Map<string, string>(); saveCharacter("singleplayer", "t", { v: 1, name: "T", appearance: v }, { getItem: (k) => m.get(k) ?? null, setItem: (k, x) => void m.set(k, x), removeItem: () => undefined });
@@ -35,7 +38,7 @@ describe("creator eye / shoe / secondary colour rows", () => {
   it("dialog rows work with mouse/touch buttons, keyboard arrows and a gamepad", async () => {
     let pad: Gamepad | null = null; const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [pad] });
     const q = (a: string) => document.querySelector<HTMLButtonElement>(`[data-action="${a}"]`)!; const val = (f: string) => document.querySelector<HTMLElement>(`[data-role="creator-${f}"]`)!;
-    for (const f of ["eyes:color", "shoes:color", "secondary"]) { expect(q(`next-${f}`).style.minHeight).toBe("44px"); const b = val(f).textContent; q(`next-${f}`).click(); expect(val(f).textContent).not.toBe(b); expect(val(f).dataset["swatch"]).toMatch(/^#[0-9a-f]{6}$/); }
+    for (const f of ["eyes:color", "hair:color"]) { expect(q(`next-${f}`).style.minHeight).toBe("44px"); const b = val(f).textContent; q(`next-${f}`).click(); expect(val(f).textContent).not.toBe(b); expect(val(f).dataset["swatch"]).toMatch(/^#[0-9a-f]{6}$/); }
     q("next-eyes:color").focus(); const b = val("eyes:color").textContent; document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" })); expect(val("eyes:color").textContent).not.toBe(b);
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); expect(await p).toBeUndefined();
   });

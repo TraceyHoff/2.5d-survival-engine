@@ -10,7 +10,9 @@
  *  - Defend   — work_defend: hold the anchor, attack zombies near it (claim hostiles first, else any zombie
  *    within 12 tiles of the anchor). Zombies only; the bot never chases a player.
  *  - Farm     — work_farm: harvest mature crop nodes near the anchor (gather), water thirsty crops and plant
- *    seeds on tilled soil (Use on the watering-can / seed slot). Tilling new soil is the player's job for now.
+ *    seeds on tilled soil (Use on the watering-can / seed slot). Task 23: till new soil too — with seeds and a
+ *    hoe (withdrawn from the owner's storage if the worker carries none), till the nearest open tile, only while
+ *    every tilled plot can still be planted (empty soil < seeds carried).
  *  - Craft    — work_craft: craft the next unowned goal tool (stone_axe -> stone_pickaxe -> stone_spear, the same
  *    Task 16 purpose gate) by hand at the owner's base; output is stashed by the existing stash behavior.
  *  - Maintain — work_maintain: repair the most damaged piece near the anchor (scanBase's repair target), withdrawing
@@ -24,7 +26,7 @@ import { GameplayConfig } from "../config.js";
 import { countItem, exchangeItems, readSlots } from "../inventory.js";
 import { pieceCost, tribeOf } from "../building/place.js";
 import { maxHpOf } from "../building/integrity.js";
-import { FARMING, FARM_TOOL, plantableBySeed } from "../farming.js";
+import { FARMING, FARM_TOOL, FarmFail, plantableBySeed, till } from "../farming.js";
 import { GOAL_CRAFTS, stuckOn } from "./autonomy.js";
 import { crafterIdFor } from "../economy/provenance.js";
 import { containerSeq, goTo } from "./base_behaviors.js";
@@ -47,6 +49,21 @@ const stop = (o: { moveX: number; moveY: number }): void => { o.moveX = 0; o.mov
 const cooled = (c: Ctx, k: string, n: number): boolean => c.self.tick - c.bb.num(k, -1e9) >= n;
 const step01 = { type: "step" as const, at: 0.5 };
 const FARM_R = 12, DEFEND_R = 12;
+/** Task 23: nearest tile centre near `anchor` the bot may till (dry run): rings out to FARM_R, scan capped so a
+ * bot with no open ground does not burn the sensor tick. Tile centres sit at floor + 0.5. */
+function nearestTillSpot(world: World, self: Entity, anchor: { x: number; y: number }): { x: number; y: number } | undefined {
+  const cx = Math.floor(anchor.x), cy = Math.floor(anchor.y);
+  let checked = 0;
+  for (let r = 0; r <= FARM_R && checked < 60; r++) {
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      if (++checked > 60) return undefined;
+      const x = cx + dx + 0.5, y = cy + dy + 0.5;
+      if (till(world, self, x, y, true) === FarmFail.None) return { x, y };
+    }
+  }
+  return undefined;
+}
 
 /** First unowned goal tool whose hand recipe is affordable with room for the output (Task 16 room gate). */
 function hireCraftPick(world: World, self: Entity, defs: GameDefs): number | undefined {
@@ -102,10 +119,15 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
     let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
     const canSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && defs.items.get(it)?.key === FARM_TOOL.wateringCan) : -1;
     const seedSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && plantableBySeed(defs.items.get(it)?.key ?? "") > 0) : -1;
+    const hoeId = [...defs.items.values()].find((d) => d.key === FARM_TOOL.hoe)?.id ?? 0;
+    const hoeSlot = hoeId && slots ? slots.items.findIndex((it, i) => it === hoeId && slots.counts[i]) : -1;
+    const seedItem = seedSlot >= 0 ? slots!.items[seedSlot]! : 0;
+    const seedCount = seedItem ? countItem(world, self, seedItem) : 0;
     const cropKeys = new Set(FARMING.plantables.map((p) => p.becomes));
     let harvest: { id: number; x: number; y: number } | undefined; let hd = Infinity;
     let water: { id: number; x: number; y: number; slot: number; kind: "water" } | undefined; let wd = Infinity;
     let soil: { id: number; x: number; y: number; slot: number; kind: "plant" } | undefined; let sd = Infinity;
+    let emptySoil = 0;
     for (const e of installSpatialIndex(world).queryRadius(anchor.x, anchor.y, FARM_R)) {
       const t = world.get(e, Transform); if (!t) continue; const d = (t.x - anchor.x) ** 2 + (t.y - anchor.y) ** 2;
       if (world.has(e, ResourceNode) && (world.getField(e, ResourceNode, "amount") ?? 0) > 0) {
@@ -113,11 +135,21 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
         if (key && cropKeys.has(key) && d < hd) { hd = d; harvest = { id: e, x: t.x, y: t.y }; }
       } else if (world.has(e, Crop)) {
         const c = world.get(e, Crop)!;
-        if (c.kind > 0 && c.growth < 1 && c.waterUntilTick <= world.tick && canSlot >= 0 && d < wd) { wd = d; water = { id: e, x: t.x, y: t.y, slot: canSlot, kind: "water" }; }
-        else if (c.kind === 0 && seedSlot >= 0 && d < sd) { sd = d; soil = { id: e, x: t.x, y: t.y, slot: seedSlot, kind: "plant" }; }
+        if (c.kind === 0) { emptySoil++; if (seedSlot >= 0 && d < sd) { sd = d; soil = { id: e, x: t.x, y: t.y, slot: seedSlot, kind: "plant" }; } }
+        else if (c.kind > 0 && c.growth < 1 && c.waterUntilTick <= world.tick && canSlot >= 0 && d < wd) { wd = d; water = { id: e, x: t.x, y: t.y, slot: canSlot, kind: "water" }; }
       }
     }
-    if (harvest || water || soil) view.farm = { ...(harvest ? { harvest } : {}), ...(water ?? soil ? { tend: water ?? soil! } : {}) };
+    // Task 23: till new soil when the worker has seeds — planting existing soil comes first, and only while every
+    // tilled plot can still be planted (empty soil < seeds carried), so the field never outgrows the seed stock.
+    let tillTarget: { x: number; y: number; slot: number; lack?: { item: number; count: number } } | undefined;
+    if (seedSlot >= 0 && !soil && emptySoil < seedCount && (hoeSlot >= 0 || (hoeId && (bs?.storage?.counts?.get(hoeId) ?? 0) > 0))) {
+      const spot = nearestTillSpot(world, self, anchor);
+      if (spot) {
+        if (hoeSlot >= 0) tillTarget = { ...spot, slot: hoeSlot };
+        else tillTarget = { ...spot, slot: -1, lack: { item: hoeId, count: 1 } }; // hoe is in base storage: fetch it first
+      }
+    }
+    if (harvest || water || soil || tillTarget) view.farm = { ...(harvest ? { harvest } : {}), ...(water ?? soil ? { tend: water ?? soil! } : {}), ...(tillTarget ? { till: tillTarget } : {}) };
   }
   if (w.job === WorkerJob.Maintain) {
     const rep = bs?.repair;
@@ -154,7 +186,17 @@ export function hireBehaviors(): GameBehavior[] {
     { name: "work_farm", inertia: 0.5, traits: { industriousness: 0.8 }, considerations: [
         { name: "job", curve: step01, input: hiredJob(WorkerJob.Farm) },
         { name: "target", curve: step01, input: (c) => (c.world.farm ? 1 : 0) }],
-      run: (c, o) => { const f = c.world.farm; if (!f) return false; const target = f.harvest ?? f.tend; if (!target) return false;
+      run: (c, o) => { const f = c.world.farm; if (!f) return false;
+        if (f.till && !f.harvest && !f.tend) { // till new soil (harvest / tending come first)
+          const t = f.till;
+          if (t.lack) { const sb = c.world.bs?.storage; if (!sb) return false; // fetch the hoe from base storage first
+            if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) return false; return; } stop(o);
+            if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, t.lack.item, t.lack.count))) return false; return; }
+          if (goTo(c, o, t.x, t.y) > 0.9) { if (stuckOn(c, t.x, t.y)) return false; return; } stop(o);
+          // Use the hoe on the tile in front (farmUseSystem tills it); the sensor plants a seed there next tick
+          if (cooled(c, "farmTillAt", 20)) { const oc = o as unknown as AgentOutputWithCommands; (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: t.slot } }); c.bb.set("farmTillAt", c.self.tick); }
+          return false; }
+        const target = f.harvest ?? f.tend; if (!target) return false;
         if (goTo(c, o, target.x, target.y) > 1.2) { if (stuckOn(c, target.x, target.y)) return false; return; } stop(o);
         if (f.harvest) { o.actions.push("gather"); return false; } // mature crop node: gather it like any node
         const t = f.tend!; // water a thirsty crop / plant a seed on tilled soil (Use on the slot's item)

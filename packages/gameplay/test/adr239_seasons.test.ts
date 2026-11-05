@@ -80,26 +80,26 @@ describe("ADR-239 seasonal weather", () => {
 });
 
 describe("ADR-239 seasonal temperature", () => {
-  /** Every hour of 40 days of `season`, with every weather in its table at full intensity. */
-  const sample = (season: number): { all: number[]; clear: number[] } => {
-    const all: number[] = [], clear: number[] = [];
-    for (let day = 0; day < 40; day++) for (let h = 0; h < 24; h++) {
-      const si = seasonFromDays(season * L + 0.1, L, 0); const time = { t: h / 24, hours: h, day, tickOfDay: 0, dayLengthTicks: 72000 };
-      for (const d of st.seasons[season]!.weather) { const v = seasonalTemperature(env, si, time, { kind: d.kind, intensity: 1 }); all.push(v); if (d === st.seasons[season]!.weather[0]) clear.push(v); }
-    }
-    return { all, clear };
-  };
   const pct = (a: number[], p: number): number => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(p * (s.length - 1))]!; };
   const mean = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
-  it("summer ~20..35, fall ~5..18, winter ~-15..3 (5th-95th percentile, any weather)", () => {
-    const ranges: [number, number][] = [[20, 35], [5, 18], [-15, 3]];
+  it("Task 23 seasonal ranges: summer 70-88F, fall 36-69F, winter 0-35F (base climate, any hour/day)", () => {
+    // deg C: summer [21.1, 31.1], fall [2.2, 20.6], winter [-17.8, 1.7]. Intensity 0 probes the base climate
+    // (no weather offset); rain cools below the range and heat waves rise above it — see task23 tests.
+    const ranges: [number, number][] = [[21.1, 31.1], [2.2, 20.6], [-17.8, 1.7]];
+    const base: number[][] = [];
     for (let s = 0; s < 3; s++) {
-      const { all } = sample(s); const [lo, hi] = ranges[s]!;
-      expect(pct(all, 0.05)).toBeGreaterThanOrEqual(lo - 2); expect(pct(all, 0.95)).toBeLessThanOrEqual(hi + 2);
-      expect(Math.min(...all)).toBeGreaterThanOrEqual(st.seasons[s]!.tempRange[0]); expect(Math.max(...all)).toBeLessThanOrEqual(st.seasons[s]!.tempRange[1]);
-      expect(mean(all)).toBeGreaterThan(lo); expect(mean(all)).toBeLessThan(hi);
+      const b: number[] = [];
+      for (let day = 0; day < 40; day++) for (let h = 0; h < 24; h++) {
+        const si = seasonFromDays(s * L + 0.1, L, 0); const time = { t: h / 24, hours: h, day, tickOfDay: 0, dayLengthTicks: 72000 };
+        b.push(seasonalTemperature(env, si, time, { kind: WeatherKind.Clear, intensity: 0 }));
+      }
+      base.push(b);
+      const [lo, hi] = ranges[s]!;
+      expect(pct(b, 0.05)).toBeGreaterThanOrEqual(lo - 2); expect(pct(b, 0.95)).toBeLessThanOrEqual(hi + 2);
+      expect(Math.min(...b)).toBeGreaterThanOrEqual(lo - 0.01); expect(Math.max(...b)).toBeLessThanOrEqual(hi + 0.01);
+      expect(mean(b)).toBeGreaterThan(lo); expect(mean(b)).toBeLessThan(hi);
     }
-    expect(mean(sample(0).all)).toBeGreaterThan(mean(sample(1).all) + 10); expect(mean(sample(1).all)).toBeGreaterThan(mean(sample(2).all) + 10);
+    expect(mean(base[0]!)).toBeGreaterThan(mean(base[1]!) + 10); expect(mean(base[1]!)).toBeGreaterThan(mean(base[2]!) + 10);
   });
   it("obvious realistic variation: afternoons warmer than nights, days differ, weather matters", () => {
     for (let s = 0; s < 3; s++) {

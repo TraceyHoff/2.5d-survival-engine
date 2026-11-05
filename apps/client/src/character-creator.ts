@@ -1,7 +1,8 @@
 /**
  * ADR-114 character creator: shown after the main-menu mode choice and before entering the world.
- * Fields: name, body, skin, hair (+colour), face / beard, eyes, clothes (top / bottom / shoes, + colours); a rotating
- * preview (auto-turn + ⟲/⟳) and Randomize. The result is stored per save (mode + slot) and sent on join as the
+ * Fields: name, body, skin, hair (+colour), face / beard, eyes (+colour); a rotating
+ * preview (auto-turn + ⟲/⟳) and Randomize. Task 23: clothing is NOT offered here — a new survivor starts
+ * with no clothes and must craft clothing in game. The result is stored per save (mode + slot) and sent on join as the
  * normal SetAppearance command, so the server's checkAppearance (catalog + unlock + first-join gate) validates it.
  * A stored character skips the screen (Edit character on the main-menu flow / ?editchar=1 re-opens it).
  * Input: touch / mouse (buttons, ≥44px), keyboard (Tab / arrows, Enter, Esc = Back), gamepad (d-pad / stick, A, B = Back).
@@ -49,13 +50,15 @@ export function migrateStoredSkin(c: StoredCharacter, resave?: (c: StoredCharact
 export function saveCharacter(kind: CharacterSaveKind, slot: string, c: StoredCharacter, st: Store | undefined = defStore()): void { try { st?.setItem(characterKey(kind, slot), JSON.stringify({ ...c, skinScheme: SKIN_TONE_SCHEME })); } catch { /* private mode */ } }
 export function deleteCharacter(kind: CharacterSaveKind, slot: string, st: Store | undefined = defStore()): void { try { st?.removeItem(characterKey(kind, slot)); } catch { /* ignore */ } }
 
-/** Creator-visible slots (hat/accessory are wardrobe unlocks, not starter choices). */
-export const CREATOR_SLOTS: readonly WearableSlot[] = ["hair", "face", "eyes", "top", "bottom", "shoes"];
+/** Creator-visible slots (hat/accessory are wardrobe unlocks, not starter choices; Task 23: clothing — top /
+ * bottom / shoes — is not offered here at all, so a new survivor starts with no clothes to craft in game). */
+export const CREATOR_SLOTS: readonly WearableSlot[] = ["hair", "face", "eyes"];
 const OPTIONAL: ReadonlySet<WearableSlot> = new Set(["hair", "face"]); // bald / clean-shaven allowed
-/** Starter wearables per slot for a body: compatible and not unlock-gated (the server would reject those). */
+/** Starter wearables per slot for a body: compatible and not unlock-gated (the server would reject those).
+ * Task 23: only creator slots (hair / face / eyes) are ever offered — clothing is never a starter choice. */
 export function creatorOptions(cat: CosmeticCatalogLike, bodyType: number): Record<WearableSlot, WearableDef[]> {
   const body = BODY_TYPES[bodyType] ?? "male"; const out = Object.fromEntries(WEARABLE_SLOTS.map((s) => [s, [] as WearableDef[]])) as Record<WearableSlot, WearableDef[]>;
-  for (let id = 1, miss = 0; miss < 256; id++) { const w = cat.wearable(id); if (!w) { miss++; continue; } miss = 0; if (w.bodies[body] && !w.unlockTags.length) out[w.slot].push(w); }
+  for (let id = 1, miss = 0; miss < 256; id++) { const w = cat.wearable(id); if (!w) { miss++; continue; } miss = 0; if (!CREATOR_SLOTS.includes(w.slot)) continue; if (w.bodies[body] && !w.unlockTags.length) out[w.slot].push(w); }
   return out;
 }
 export interface CreatorPalettes { skin: number; hair: number; clothing: number }
@@ -65,13 +68,12 @@ const isHairish = (s: WearableSlot): boolean => s === "hair" || s === "face";
  * unchanged); natural browns / hazels / greens / blues / greys first, then a few fun ones. Missing keys are skipped. */
 export const EYE_COLOR_KEYS: readonly string[] = ["cocoa", "tan", "olive", "forest", "sage", "teal", "sky", "denim", "navy", "slate", "charcoal", "lavender", "plum", "berry", "gold"];
 /** Palette indices the creator cycles for a field: eyes use the curated list, hair/face the hair palette, else clothing. */
+export type CreatorField = "body" | "skin" | `${WearableSlot}` | `${WearableSlot}:color` | `${WearableSlot}:color2`;
 export function colorChoices(cat: CosmeticCatalogLike, s: WearableSlot): number[] {
   if (s === "eyes") { const ix = EYE_COLOR_KEYS.map((k) => cat.clothingColors.findIndex((c) => c.key === k)).filter((i) => i >= 0); if (ix.length) return ix; }
   const n = Math.max(1, (isHairish(s) ? cat.hairColors : cat.clothingColors).length); return Array.from({ length: n }, (_, i) => i);
 }
-/** Slots whose G (secondary) channel the single "Secondary colour" row drives (all 2-channel clothing in the creator). */
-export const SECONDARY_SLOTS: readonly WearableSlot[] = ["top", "bottom", "shoes"];
-export type CreatorField = "body" | "skin" | "secondary" | `${WearableSlot}` | `${WearableSlot}:color` | `${WearableSlot}:color2`;
+/** Palette indices the creator cycles for a field: eyes use the curated list, hair/face the hair palette, else clothing. */
 /** Slots with their own "<slot> secondary colour" row: shown only once a starter wearable in the slot has a G (color2) tint channel. */
 export const COLOR2_ROW_SLOTS: readonly WearableSlot[] = ["hair", "eyes", "face"];
 /** True when any wearable in `s` (or one of its layers) tints G from the secondary palette (tintChannels 2). */
@@ -86,11 +88,12 @@ export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.ra
   const pick = (n: number): number => Math.min(n - 1, Math.floor(rnd() * n));
   // `body` overrides the body roll; the roll is still consumed so the rest of a seed stream keeps its place
   const rolled = pick(BODY_TYPES.length); const bodyType = body !== undefined && body >= 0 && body < BODY_TYPES.length ? body : rolled; const v = defaultAppearance(cat, bodyType); const o = creatorOptions(cat, bodyType); const p = pal(cat);
+  // Task 23: a new survivor starts with no clothes, even if the catalog ships clothing defaults.
+  for (const s of WEARABLE_SLOTS) if (!CREATOR_SLOTS.includes(s)) v.parts[slotIndex(s)] = 0;
   v.skinTone = pick(p.skin); const hairCol = pick(p.hair);
   for (const s of CREATOR_SLOTS) { const opts = o[s]; const i = slotIndex(s); if (!opts.length) continue;
     const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
     v.primary[i] = isHairish(s) ? hairCol : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing); }
-  const sec = pick(p.clothing); for (const s of SECONDARY_SLOTS) v.secondary[slotIndex(s)] = sec;
   return v;
 }
 /** Deterministic PRNG (mulberry32) for the screenshot preset. */
@@ -122,7 +125,6 @@ export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: Cr
   if (field === "body") { const b = wrap(v.bodyType + d, BODY_TYPES.length); const o = creatorOptions(cat, b); const def = defaultAppearance(cat, b);
     n.bodyType = b; for (const s of CREATOR_SLOTS) { const i = slotIndex(s); if (n.parts[i] && !o[s].some((w) => w.id === n.parts[i])) n.parts[i] = def.parts[i] ?? 0; } return n; }
   if (field === "skin") { n.skinTone = wrap(v.skinTone + d, p.skin); return n; }
-  if (field === "secondary") { const c = wrap((v.secondary[slotIndex("top")] ?? 0) + d, p.clothing); for (const s of SECONDARY_SLOTS) n.secondary[slotIndex(s)] = c; return n; }
   if (field.endsWith(":color2")) { const s = field.slice(0, -7) as WearableSlot; const i = slotIndex(s); const m = isHairish(s) ? p.hair : p.clothing; n.secondary[i] = wrap((v.secondary[i] ?? 0) + d, m); return n; }
   if (field.endsWith(":color")) { const s = field.slice(0, -6) as WearableSlot; const i = slotIndex(s); const ch = colorChoices(cat, s); const k = ch.indexOf(v.primary[i] ?? 0);
     n.primary[i] = ch[wrap((k < 0 ? (d > 0 ? -1 : 0) : k) + d, ch.length)] ?? 0;
@@ -294,8 +296,11 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     right.append(grid); }
   const c2 = (s: WearableSlot, label: string): void => { if (cat && slotHasColor2(cat, s)) row(label, `${s}:color2`); };
   row("Hair", "hair"); row("Hair colour", "hair:color"); c2("hair", "Hair secondary colour"); row("Face / beard", "face"); c2("face", "Face secondary colour"); row("Eyes", "eyes");
-  row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes"); row("Shoe colour", "shoes:color");
-  row("Secondary colour", "secondary"); row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
+  row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
+  // Task 23: no clothing rows (top / bottom / shoes) and no shared secondary-colour row — a new survivor starts
+  // with no clothes and crafts them in game. Say so plainly under the options.
+  const noClothes = doc.createElement("p"); noClothes.dataset["role"] = "creator-no-clothes"; noClothes.textContent = "No starting clothes — craft clothing in game to stay warm and dry.";
+  noClothes.style.cssText = "grid-column:1 / -1;margin:0;font-size:14px"; right.append(noClothes);
   const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
   const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:-14px;margin-bottom:-14px;padding-bottom:14px;background:#FFF3DC;padding-top:6px";
   let done: (v: StoredCharacter | undefined) => void = () => undefined;
@@ -318,13 +323,11 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     const label = (f: string): string => {
       if (f === "body") return (BODY_TYPES[look.bodyType] ?? "male").replace(/^./, (c) => c.toUpperCase());
       if (f === "skin") return cat?.skinTones[look.skinTone]?.key?.replace(/_/g, " ") ?? `Tone ${look.skinTone + 1}`;
-      if (f === "secondary") { const i = look.secondary[slotIndex("top")] ?? 0; return cat?.clothingColors[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       if (f.endsWith(":color2")) { const s = f.slice(0, -7) as WearableSlot; const i = look.secondary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; const i = look.primary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       return cat ? partName(cat, look.parts[slotIndex(f as WearableSlot)] ?? 0) : "—";
     };
     const swatch = (f: string): number | undefined => { if (!cat) return undefined; if (f === "skin") return swatchColor(cat.skinTones[look.skinTone]);
-      if (f === "secondary") return cat.clothingColors[look.secondary[slotIndex("top")] ?? 0]?.color;
       if (f.endsWith(":color2")) { const s = f.slice(0, -7) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.secondary[slotIndex(s)] ?? 0]?.color; }
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.primary[slotIndex(s)] ?? 0]?.color; } return undefined; };
     skinChips.forEach((b, i) => { const on = i === look.skinTone; b.setAttribute("aria-checked", on ? "true" : "false"); b.style.boxShadow = on ? "0 0 0 3px #3B2433" : "0 0 0 1px #0004"; });

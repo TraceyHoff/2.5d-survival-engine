@@ -9,8 +9,8 @@ import { ReadyCmd } from "../ready.js";
  * The client sends intents through its net bridge (`gameplayNet(cmd)`); entity args (target/stall) are Entities here
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
-import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, Dead, Container, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, StallHeader, Wardrobe } from "../components.js";
+import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
+import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, StallHeader, Survival, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { carriedBags } from "../stance.js";
 import type { ItemCount } from "../defs.js";
@@ -19,7 +19,9 @@ import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost, pieceGates } from "../building/place.js";
-import { hasSkillUnlock, unlockRequirement } from "../skills/tree.js";
+import { hasSkillUnlock, unlockRequirement, xpToNext } from "../skills/tree.js";
+import { activeDiseases } from "../diseases.js";
+import { ambientTemperature, shelteredAirTemp, worldSeason } from "../systems/environment.js";
 import { BoilCmd, DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
 import { Equipment, Worn } from "../components.js";
 import { ItemCategory, WEAR_SLOTS } from "../defs.js";
@@ -244,6 +246,44 @@ export function wardrobeView(c: MenuCtx): WardrobeView {
 export const equipCosmeticIntent = (slot: number, wearable: number, primary = 0, secondary = 0): MenuIntent => intent(EquipCosmeticCmd, { slot, wearable, primary, secondary });
 export const setAppearanceIntent = (v: { bodyType: number; skinTone: number; parts: number[]; primary: number[]; secondary: number[] }): MenuIntent =>
   intent(SetAppearanceCmd, { bodyType: v.bodyType, skinTone: v.skinTone, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] });
+
+// ---- Task 23: live character sheet -----------------------------------------------------------------------
+/** Base insulation (deg C) of an unclothed body: bare skin provides no insulation in this model. */
+export const BASE_INSULATION_C = 0;
+export interface CharacterSheetWorn { slot: string; name: string; insulation: number }
+export interface CharacterSheetDisease { key: string; name: string; short: string; color: string }
+export interface CharacterSheetView {
+  name: string; bodyTempC: number; health: number; maxHealth: number; hunger: number; thirst: number; stamina: number; maxStamina: number;
+  level: number; xp: number; xpNext: number; diseases: CharacterSheetDisease[];
+  insulationBase: number; insulationClothing: number; worn: CharacterSheetWorn[];
+  ambientC: number; indoorC: number; sheltered: boolean; enclosed: boolean; season: number; seasonName: string;
+}
+/**
+ * Task 23: the live character sheet (body temperature, vitals, diseases, experience, insulation, shelter).
+ * Pure read over the client replica; the panel refreshes 4x/s while open, so the numbers track the player.
+ */
+export function characterSheetView(c: MenuCtx): CharacterSheetView | undefined {
+  const w = c.world; const p = c.player;
+  const sv = w.get(p, Survival); const hp = w.get(p, Health); if (!sv || !hp) return undefined;
+  const prog = w.get(p, Progression);
+  const t = w.get(p, Transform);
+  const air = t ? shelteredAirTemp(w, t.x, t.y, t.z) : undefined;
+  const ambient = t ? ambientTemperature(w, t.x, t.y) : ambientTemperature(w);
+  const si = worldSeason(w);
+  return {
+    name: nameOf(c, pidOf(w, p)),
+    bodyTempC: sv.bodyTemp, health: hp.hp, maxHealth: hp.max, hunger: sv.hunger, thirst: sv.thirst, stamina: sv.stamina, maxStamina: sv.maxStamina,
+    level: prog?.level ?? 1, xp: prog?.xp ?? 0, xpNext: xpToNext(prog?.level ?? 1),
+    diseases: activeDiseases(w, p).map((d) => ({ key: d.key, name: d.name, short: d.short, color: d.color })),
+    insulationBase: BASE_INSULATION_C,
+    insulationClothing: w.getField(p, Exposure, "insulation") ?? 0,
+    worn: equipmentView(c).filter((s) => s.slot >= 0 && s.item !== 0).map((s) => ({
+      slot: s.label, name: s.name, insulation: gameplayDefs(w).items.get(s.item)?.wear?.insulation ?? 0,
+    })),
+    ambientC: ambient, indoorC: air?.temp ?? ambient, sheltered: air?.sheltered ?? false, enclosed: air?.enclosed ?? false,
+    season: si.index, seasonName: SEASON_NAMES[si.index] ?? "summer",
+  };
+}
 
 // ---- social helpers -------------------------------------------------------------------------------------
 export interface PlayerRef { entity: Entity; playerId: number; name: string; distance: number }

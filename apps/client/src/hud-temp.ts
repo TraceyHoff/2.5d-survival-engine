@@ -4,7 +4,7 @@
  * (gameplay seasonalTemperature) evaluated on the client's server-tick day clock, so every peer reads the same number.
  */
 import { seasonAtDays, Weather, type World } from "@engine/core";
-import { gameplayDefs, seasonalTemperature } from "@engine/gameplay";
+import { gameplayDefs, seasonalTemperature, shelterAt, shelterTempShift } from "@engine/gameplay";
 
 export type TempUnit = "C" | "F";
 const SETTINGS_KEY = "engine-settings"; // menu.ts Settings (tempUnit)
@@ -34,4 +34,18 @@ export function hudAirTemp(w: World, days: number, weatherKind?: number): number
   const env = gameplayDefs(w).environment; const wx = w.env(Weather);
   const day = Math.floor(days), t = days - day;
   return seasonalTemperature(env, seasonAtDays(w, days), { t, hours: t * 24, day, tickOfDay: 0, dayLengthTicks: 1 }, { kind: weatherKind ?? wx.kind, intensity: weatherKind !== undefined ? 1 : wx.intensity });
+}
+
+/**
+ * Task 23: the air temperature where the player stands, on the HUD's server-tick day clock (same model as
+ * hudAirTemp): outdoor air pulled by shelter (roof + walls), clamped to the comfort band in a fully enclosed
+ * room. Without shelter data the world reports open sky and this is just the air temperature.
+ */
+export function hudShelteredTemp(w: World, days: number, x: number, y: number, z = 0, weatherKind?: number): { temp: number; sheltered: boolean; enclosed: boolean } {
+  const air = hudAirTemp(w, days, weatherKind);
+  const env = gameplayDefs(w).environment; const vt = gameplayDefs(w).vitals;
+  const sh = shelterAt(w, x, y, z, w.env(Weather).windDir);
+  const t = air + shelterTempShift(sh, air, vt, env.shelterTempBonus);
+  const enclosed = sh.exposure === 0;
+  return { temp: enclosed ? Math.min(vt.comfortMax, Math.max(vt.comfortMin, t)) : t, sheltered: sh.exposure < 1, enclosed };
 }

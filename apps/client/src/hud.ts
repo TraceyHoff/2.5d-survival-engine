@@ -5,11 +5,11 @@
  * so it never eats taps meant for the touch controls, which live in the lower half / right edge.
  */
 import { mountUi } from "./ui-root.js";
-import { Weather, type Entity, type World } from "@engine/core";
+import { Weather, Transform, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
 import { activeDiseases, Diseases, Exposure, Health, Survival } from "@engine/gameplay";
 import { seasonAtDays } from "@engine/core";
-import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, loadTempUnit, SEASON_GLYPH, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
+import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_GLYPH, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
 export const WEATHER_LABEL = ["Clear", "Rain", "Storm", "Snow", "Fog", "Overcast", "Heat", "Blizzard", "Windy"];
 const STATS = [
@@ -129,10 +129,16 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       const ex = p !== undefined ? w.get(p, Exposure) : undefined;
       // view-only overrides (?season/?time/?weather) shift the replicated felt temp by the same air delta (clothing/shelter offset kept)
       const felt = ex ? (ovr ? ex.feltTemp + air - hudAirTemp(w, days) : ex.feltTemp) : undefined;
-      const band = tempBand(felt ?? air); setAttr("band", tRow, "band", band);
-      setStyle("airLeft", tAir, "left", `${(gaugeFrac(air) * 100).toFixed(1)}%`); setText("tempVal", tVal, formatTemp(air, unit));
-      if (felt !== undefined && Math.abs(felt - air) >= 1) { setStyle("feltDisp", tFelt, "display", ""); setStyle("feltLeft", tFelt, "left", `${(gaugeFrac(felt) * 100).toFixed(1)}%`); } else setStyle("feltDisp", tFelt, "display", "none");
-      setAttr("rowTitle", tRow, "title", `Air ${formatTemp(air, unit)}${felt !== undefined ? ` · feels like ${formatTemp(felt, unit)}` : ""}`);
+      // Task 23: indoors the gauge shows the sheltered air temperature (what the building does to the air);
+      // outside it shows the air temperature as before. The outdoor air stays in the tooltip.
+      const tf = p !== undefined ? w.get(p, Transform) : undefined;
+      const indoor = !ovr && tf ? hudShelteredTemp(w, days, tf.x, tf.y, tf.z) : undefined;
+      const indoors = indoor !== undefined && indoor.sheltered && Math.abs(indoor.temp - air) >= 1;
+      const shown = indoors ? indoor!.temp : air;
+      const band = tempBand(felt ?? shown); setAttr("band", tRow, "band", band);
+      setStyle("airLeft", tAir, "left", `${(gaugeFrac(shown) * 100).toFixed(1)}%`); setText("tempVal", tVal, `${indoors ? "🏠 " : ""}${formatTemp(shown, unit)}`);
+      if (felt !== undefined && Math.abs(felt - shown) >= 1) { setStyle("feltDisp", tFelt, "display", ""); setStyle("feltLeft", tFelt, "left", `${(gaugeFrac(felt) * 100).toFixed(1)}%`); } else setStyle("feltDisp", tFelt, "display", "none");
+      setAttr("rowTitle", tRow, "title", `Air ${formatTemp(air, unit)}${indoors ? ` · ${indoor!.enclosed ? "indoors" : "sheltered"} ${formatTemp(indoor!.temp, unit)}` : ""}${felt !== undefined ? ` · feels like ${formatTemp(felt, unit)}` : ""}`);
       if (ui) { const k = band === "mild" ? "icon_temp" : `icon_temp_${band}`; const url = ui.url(k) ?? ui.url("icon_temp"); if (url && tempIcon !== k) { tIc.src = url; tempIcon = k; } }
     } catch { setText("tempVal", tVal, ""); }
     const hp = p !== undefined ? w.get(p, Health) : undefined, sv = p !== undefined ? w.get(p, Survival) : undefined;

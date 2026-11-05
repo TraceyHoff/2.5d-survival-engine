@@ -23,8 +23,9 @@ import { iconForItem, ROADS, clanTintIndex,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
-  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
+  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView,
 } from "@engine/gameplay";
+import { formatTemp, loadTempUnit } from "./hud-temp.js";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, Membership, PlayerId, SLOT_PALETTE, swatchColor, Transform, type Entity, type WearableSlot } from "@engine/core";
 
@@ -576,6 +577,26 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
     }
     case "character": {
       const v = wardrobeView(c); const out: Node[] = [];
+      // Task 23: live character sheet above the wardrobe — body temperature, vitals, diseases, experience,
+      // insulation and shelter. The panel refreshes 4x/s while open, so these numbers track the player.
+      const sheet = characterSheetView(c);
+      if (sheet) {
+        const unit = loadTempUnit();
+        const row = (label: string, text: string, role: string): HTMLElement => { const p = kit.para(`${label}: ${text}`); p.dataset["role"] = role; return p; };
+        out.push(heading(`Character sheet — ${sheet.name || "Survivor"}`));
+        out.push(row("Body temperature", formatTemp(sheet.bodyTempC, unit), "sheet-body-temp"));
+        out.push(row("Health", `${Math.round(sheet.health)}/${Math.round(sheet.maxHealth)}`, "sheet-health"));
+        out.push(row("Food", `${Math.round(sheet.hunger)}/100`, "sheet-hunger"));
+        out.push(row("Water", `${Math.round(sheet.thirst)}/100`, "sheet-thirst"));
+        out.push(row("Energy", `${Math.round(sheet.stamina)}/${Math.round(sheet.maxStamina)}`, "sheet-stamina"));
+        out.push(row("Experience", `Level ${sheet.level} · ${sheet.xp}/${sheet.xpNext} XP`, "sheet-xp"));
+        out.push(row("Diseases", sheet.diseases.length ? sheet.diseases.map((d) => d.name).join(", ") : "Healthy", "sheet-diseases"));
+        out.push(row("Insulation", `Base ${sheet.insulationBase.toFixed(1)}°C + clothing ${sheet.insulationClothing.toFixed(1)}°C`, "sheet-insulation"));
+        if (sheet.worn.length) for (const it of sheet.worn) out.push(row(it.slot, `${it.name} · +${it.insulation.toFixed(1)}°C`, "sheet-worn"));
+        else out.push(row("Worn", "Nothing — craft clothing to stay warm and dry", "sheet-worn"));
+        out.push(row(sheet.enclosed ? "Indoors" : sheet.sheltered ? "Sheltered" : "Outside",
+          `${formatTemp(sheet.indoorC, unit)}${sheet.sheltered ? ` (outside ${formatTemp(sheet.ambientC, unit)})` : ""} · ${sheet.seasonName}`, "sheet-shelter"));
+      }
       out.push(kit.para(v.canEdit ? (v.created ? "At a wardrobe: change your look." : "Create your character.") : "Stand near a wardrobe to change your look."));
       const sg = grid(); for (const s of v.slots) sg.append(btn(`${s.key}${s.equipped ? "" : " (none)"}`, `wslot-${s.slot}`, () => { wardrobeSlot = s.slot; kit.rerender(); }, { pressed: s.slot === wardrobeSlot, alt: s.slot !== wardrobeSlot }));
       out.push(heading("Slot"), sg);

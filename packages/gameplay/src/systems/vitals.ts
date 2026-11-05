@@ -17,6 +17,8 @@ import { fillContainer, spoilStageIndex, spoilStages, takeSip } from "../food.js
 import { inWater } from "./movement.js";
 import { pendingReady } from "../ready.js";
 import { TerrainRes } from "../world.js";
+import { EmitterIndexRes } from "@engine/world";
+import { EmitterKind } from "../realism.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
@@ -114,6 +116,9 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
   }
 }
 
+/** Task 23: heat-wave damage starts when the temperature reaches 90F (32.2C) — the air itself hurts, before body
+ * temperature has had time to catch up. Same rate as hypo/hyperthermia (exposureDps). */
+export const HEAT_DAMAGE_ABOVE_C = 32.2;
 /** Iron Stomach trade-off: spoiled food costs this much hp instead of sickness. */
 export const IRON_STOMACH_HP = 4;
 
@@ -210,6 +215,14 @@ export function vitalsSystem(world: World, dt: number): void {
     if (thirst === 0) hurt(vt.dehydrationDps * dt, DamageCause.Dehydration);
     if (body < vt.hypothermiaBelow) hurt(vt.exposureDps * dt, DamageCause.Hypothermia);
     if (body > vt.hyperthermiaAbove) hurt(vt.exposureDps * dt, DamageCause.Hyperthermia);
+    // Task 23: 90F+ air hurts directly (felt temperature, so shelter and clothing insulation both protect).
+    // Fire heat is subtracted: a campfire's warmth is a controllable heat source, not the weather.
+    if (ex.has(idx)) {
+      const felt = ex.data.feltTemp[ex.slot(idx)]!;
+      const t = world.get(e, Transform);
+      const fireHeat = t ? (world.getResource(EmitterIndexRes)?.sampleField(EmitterKind.Heat, t.x, t.y, t.z) ?? 0) : 0;
+      if (felt - fireHeat >= HEAT_DAMAGE_ABOVE_C) hurt(vt.exposureDps * dt, DamageCause.Hyperthermia);
+    }
     let hp = hs.data.hp[h]!;
     if (dmg > 0) { hp -= dmg; vs.data.lastDamageCause[v] = cause; }
     else if (hp > 0) { // hp 0 = dying this tick (death system runs next); no regen back from 0
