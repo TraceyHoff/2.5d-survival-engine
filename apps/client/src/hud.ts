@@ -103,6 +103,17 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
   const setStyle = (k: string, el: HTMLElement, prop: "width" | "left" | "display", v: string): void => { if (last.get(k) === v) return; last.set(k, v); el.style[prop] = v; };
   const setAttr = (k: string, el: HTMLElement, prop: "title" | "band", v: string): void => { if (last.get(k) === v) return; last.set(k, v); if (prop === "title") el.title = v; else el.dataset["band"] = v; };
   mountUi(root);
+  // Task 26 smoothness: the 250 ms tick used to read root.offsetHeight on every tick — a forced layout
+  // for a value that only changes when the HUD's content changes (disease chips, icon swaps). Publish
+  // --hud-bottom from a ResizeObserver instead (fires only when the size actually changes); without one
+  // (jsdom / old browsers) fall back to measuring when the chips change and once at mount.
+  const publishHudBottom = (): void => {
+    const hb = root.offsetTop + root.offsetHeight + 4;
+    if (root.offsetHeight > 0 && hb !== hudBottom) { hudBottom = hb; document.documentElement.style.setProperty("--hud-bottom", `${hb}px`); }
+  };
+  const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
+  let ro: ResizeObserver | undefined;
+  if (RO) { ro = new RO(() => publishHudBottom()); ro.observe(root); } else publishHudBottom();
   // Art's UI kit: panel_hud plaque, bar_track / bar_fill_* nine-slices, vital_* icons (falls back to the CSS look)
   void uiSprites(base).then((u) => {
     ui = u; const css: string[] = [];
@@ -157,8 +168,6 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     const hp = p !== undefined ? w.get(p, Health) : undefined, sv = p !== undefined ? w.get(p, Survival) : undefined;
     const vals = [hp ? hp.hp / (hp.max || 100) : 1, sv ? sv.hunger / 100 : 1, sv ? sv.thirst / 100 : 1, sv ? sv.stamina / (sv.maxStamina || 100) : 1];
     if (ui) vals.forEach((v, i) => { const low = v < 0.25; const ic = icons[i]!; if (ic.dataset["low"] !== String(low)) { const u = ui!.url(`vital_${SPRITE_KEYS[i]}${low ? "_low" : ""}`); if (u) { ic.src = u; ic.dataset["low"] = String(low); } } });
-    // ADR-239: publish the HUD's bottom edge so the touch XP chip (gather-fx) stacks under the taller panel, never over it
-    const hb = root.offsetTop + root.offsetHeight + 4; if (root.offsetHeight > 0 && hb !== hudBottom) { hudBottom = hb; document.documentElement.style.setProperty("--hud-bottom", `${hb}px`); }
     vals.forEach((v, i) => { setStyle(`fill${i}`, fills[i]!, "width", `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`); });
     // Task 13: disease chips follow the replicated component (added / removed as diseases come and go)
     try {
@@ -167,9 +176,10 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       if (chips.dataset["keys"] !== keys) {
         chips.dataset["keys"] = keys; chips.innerHTML = "";
         for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.textContent = d.short; c.title = d.name; c.style.background = d.color; chips.append(c); }
+        if (!ro) publishHudBottom(); // no ResizeObserver: chips are the only content that changes the HUD height
       }
     } catch { /* replica without Diseases yet */ }
   };
   const timer = setInterval(update, 250); update();
-  return { destroy: () => { clearInterval(timer); root.remove(); style.remove(); } };
+  return { destroy: () => { clearInterval(timer); ro?.disconnect(); root.remove(); style.remove(); } };
 }

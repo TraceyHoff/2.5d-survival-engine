@@ -11,7 +11,11 @@ export function randomAppearance(cat: CosmeticCatalogLike, rnd: () => number): R
   for (let i = 0; i < SLOT_COUNT; i++) {
     const slot = WEARABLE_SLOTS[i]!; const l = bySlot.get(slot) ?? [];
     if (l.length && !(optional.has(slot) && rnd() < 0.5)) a.parts[i] = l[Math.floor(rnd() * l.length)]!;
-    const n = Math.max(1, cat[SLOT_PALETTE[slot]].length); a.primary[i] = Math.floor(rnd() * n); a.secondary[i] = Math.floor(rnd() * n);
+    const n = Math.max(1, cat[SLOT_PALETTE[slot]].length); a.primary[i] = Math.floor(rnd() * n);
+    // Task 26: hair/face secondary follows the primary — a random black secondary (palette index 0)
+    // turns the hair's highlight regions into black bars across the face in the world. Other slots
+    // keep their random secondary (their palette index 0 is white, and two-tone clothes are fine).
+    a.secondary[i] = slot === "hair" || slot === "face" ? a.primary[i]! : Math.floor(rnd() * n);
   }
   return validateAppearance(cat, a).value ?? defaultAppearance(cat, bt);
 }

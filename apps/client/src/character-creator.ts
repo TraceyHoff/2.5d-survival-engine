@@ -95,7 +95,10 @@ export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.ra
     const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
     // Task 25: the face (beard/brows) rolls its own hair-palette colour — it no longer inherits the hair colour
     // (the old shared hairCol put the hair tint on the face slot for every random look, bald or not).
-    v.primary[i] = s === "hair" ? hairCol : s === "face" ? pick(p.hair) : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing); }
+    v.primary[i] = s === "hair" ? hairCol : s === "face" ? pick(p.hair) : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing);
+    // Task 26: hair/face secondary follows the primary — a random look must never carry the palette-default
+    // black secondary, which turns the hair's highlight regions into black bars across the face.
+    if (isHairish(s)) v.secondary[i] = v.primary[i]!; }
   return v;
 }
 /** Deterministic PRNG (mulberry32) for the screenshot preset. */
@@ -130,6 +133,11 @@ export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: Cr
   if (field.endsWith(":color2")) { const s = field.slice(0, -7) as WearableSlot; const i = slotIndex(s); const m = isHairish(s) ? p.hair : p.clothing; n.secondary[i] = wrap((v.secondary[i] ?? 0) + d, m); return n; }
   if (field.endsWith(":color")) { const s = field.slice(0, -6) as WearableSlot; const i = slotIndex(s); const ch = colorChoices(cat, s); const k = ch.indexOf(v.primary[i] ?? 0);
     n.primary[i] = ch[wrap((k < 0 ? (d > 0 ? -1 : 0) : k) + d, ch.length)] ?? 0;
+    // Task 26: the hair/face secondary follows the primary — the old default (palette index 0 = black)
+    // turned the tintmask's highlight regions into black bars across the face. The player can still
+    // diverge it afterwards via the :color2 row for a deliberate two-tone look; changing the primary
+    // only re-syncs the secondary, it never touches another slot (Task 25 independence preserved).
+    if (isHairish(s)) n.secondary[i] = n.primary[i]!;
     return n; } // Task 25: the beard/face colour is independent — stepping hair:color no longer rewrites the face
   // slot (the old beard-follows-hair sync put the hair colour on the face even for a bald survivor, whose face
   // layer then carried the hair tint; the resolver is per-slot, so independence is safe here).

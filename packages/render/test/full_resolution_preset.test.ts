@@ -2,7 +2,7 @@
  *  Blur fix: @2x atlas pages are actually used (page scale was never wired before), the drawn
  *  season's ground may use its @2x page, and capable phones get a 256 MB atlas budget. */
 import { describe, it, expect } from "vitest";
-import { atlasPageScaleForPreset, QualityController, parsePreset, QUALITY_PRESETS } from "../src/quality.js";
+import { atlasPageScaleForPreset, DEFAULT_QUALITY_PRESET, loadPreset, PRESET_STORAGE_KEY, QualityController, parsePreset, QUALITY_PRESETS, savePreset } from "../src/quality.js";
 import { clampDrawingBuffer, detectCapabilities } from "../src/gl/capabilities.js";
 import { Canvas2DRenderer } from "../src/canvas2d.js";
 import { AtlasManager, NON_CRISP_ATLAS_RE, VISIBLE_PIN_RE } from "../src/assets/atlasManager.js";
@@ -113,5 +113,22 @@ describe("Full Resolution preset", () => {
     r.setQualityPreset("auto");
     r.resize(100, 50, 3);
     expect(canvas.width).toBe(150);
+  });
+});
+
+describe("Task 26: Full is the default preset on every device", () => {
+  const store = new Map<string, string>();
+  const stub = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) };
+  const prev = (globalThis as Record<string, unknown>).localStorage;
+  const withStorage = (fn: () => void): void => { (globalThis as Record<string, unknown>).localStorage = stub; try { fn(); } finally { (globalThis as Record<string, unknown>).localStorage = prev; } };
+  it("DEFAULT_QUALITY_PRESET is full; a fresh install (nothing stored) loads Full", () => {
+    expect(DEFAULT_QUALITY_PRESET).toBe("full");
+    withStorage(() => { store.clear(); expect(loadPreset()).toBe("full"); expect(new QualityController().preset).toBe("full"); expect(new QualityController().fullResolution).toBe(true); });
+  });
+  it("a stored choice is always kept — only the default changes", () => {
+    withStorage(() => {
+      for (const p of ["auto", "low", "medium", "high", "ultra", "full"] as const) { savePreset(p); expect(loadPreset()).toBe(p); }
+      store.set(PRESET_STORAGE_KEY, "nonsense"); expect(loadPreset()).toBe("full"); // unparseable stored value falls back to the default
+    });
   });
 });

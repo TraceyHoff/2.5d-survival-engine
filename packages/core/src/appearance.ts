@@ -137,7 +137,11 @@ export function defaultAppearance(cat?: CosmeticCatalogLike, bodyType = 0): Appe
   for (const src of [cat?.defaults, cat?.bodyDefaults?.(body)]) if (src) for (const [s, id] of Object.entries(src)) {
     const w = cat!.wearable(id ?? 0); if (w && w.slot === s && w.bodies[body]) parts[slotIndex(s as WearableSlot)] = id!;
   }
-  return { bodyType: bodyType < BODY_TYPES.length ? bodyType : 0, skinTone: 0, parts, primary: new Array<number>(SLOT_COUNT).fill(0), secondary: new Array<number>(SLOT_COUNT).fill(0) };
+  // Task 26: a slot's secondary starts equal to its primary (uniform look). The old fill(0) left hair/face
+  // on palette index 0 = black while the primary was later set elsewhere, and a black hair secondary turns
+  // the tintmask's highlight regions into black bars across the face (see validateAppearance below).
+  const primary = new Array<number>(SLOT_COUNT).fill(0);
+  return { bodyType: bodyType < BODY_TYPES.length ? bodyType : 0, skinTone: 0, parts, primary, secondary: [...primary] };
 }
 
 export interface ValidateAppearanceOptions {
@@ -170,6 +174,23 @@ export function validateAppearance(cat: CosmeticCatalogLike, a: Partial<Appearan
     for (const k of ["primary", "secondary"] as const) {
       const v = a[k]?.[i] ?? 0;
       if (inPal(v, Math.max(len, 1))) out[k][i] = v; else issues.push(`${slot}: bad ${k} color ${v}`);
+    }
+  }
+  // Task 26: a hair/face secondary of palette "black" with a non-black primary renders the tintmask's
+  // secondary (highlight streak + hairline) regions near-black — black bars across the face that move
+  // with facing/anim phase (the mask's G regions are the hair's highlights, not shadows; the tint math
+  // itself is correct and pinned by ADR-082). Black is also palette index 0, i.e. the default every
+  // look carried until the player picked a secondary, so a stored black secondary is the accidental
+  // default, not a choice. Repair it to the primary (uniform hair); any other secondary still gives a
+  // two-tone look. Clamp mode records the issue so load-time repair (persist ensureAppearance) rewrites
+  // the stored look; reject mode normalises silently so a submission is accepted with the repaired
+  // value instead of being blocked.
+  const black = cat.hairColors.findIndex((c) => c.key === "black");
+  if (black >= 0) for (const slot of ["hair", "face"] as const) {
+    const i = slotIndex(slot);
+    if (out.secondary[i] === black && out.primary[i] !== black) {
+      out.secondary[i] = out.primary[i]!;
+      if (opts.mode !== "reject") issues.push(`${slot}: black secondary reset to primary`);
     }
   }
   for (const slot of cat.requiredSlots ?? []) {

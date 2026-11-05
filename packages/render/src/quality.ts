@@ -2,7 +2,11 @@
  * Adaptive quality: fixed tiers + a frame-time governor (target 60 fps, floor 30 fps, hysteresis) and the user-facing
  * Settings preset (Auto / Low / Medium / High / Ultra / Full, persisted; ADR-116). Auto runs the governor; fixed presets pin a tier.
  * Full pins the Ultra tier AND bypasses the soft DPR / pixel-budget caps in IsoRenderer.resize() (hard GPU limits
- * still apply), so it renders at the device's native DPR. It is opt-in only: Auto keeps its device ceiling and caps.
+ * still apply), so it renders at the device's native DPR. Task 26: Full is now the DEFAULT on every device
+ * (reversing the Task 1 decision that kept Auto as the safe default) — the user explicitly requires it.
+ * Auto / Low / Medium / High / Ultra stay selectable, and a stored choice is always kept (only the
+ * default for fresh installs changes). Trade-off, stated plainly: low-end phones render at native DPR
+ * and may run hotter/slower; the player can lower the preset in Settings at any time.
  */
 export interface QualityTier { name: string; resScale: number; lightDownscale: number; bloom: boolean; weather: number; particles: number;
   /** ADR-116: clutter density multiplier (1+ on ultra) */ clutter: number; /** max sprite/anim detail (all dir frames, full wearables) */ maxDetail: boolean }
@@ -15,6 +19,8 @@ export const QUALITY_TIERS: readonly QualityTier[] = [
 ];
 export type QualityPreset = "auto" | "low" | "medium" | "high" | "ultra" | "full";
 export const QUALITY_PRESETS: readonly QualityPreset[] = ["auto", "low", "medium", "high", "ultra", "full"];
+/** Task 26: the default preset for fresh installs (no stored choice). Stored choices are always kept. */
+export const DEFAULT_QUALITY_PRESET: QualityPreset = "full";
 /** Atlas page scale a preset asks for: Ultra / Full use the @2x pages where they exist (1x otherwise);
  *  every other preset stays on 1x pages, so Auto never triggers an atlas rebuild on a governor step. */
 export function atlasPageScaleForPreset(p: QualityPreset): number { return p === "ultra" || p === "full" ? 2 : 1; }
@@ -67,7 +73,7 @@ export class QualityController {
   /** called once the Auto level has held >= 30 s (remember per device) */ onStable: ((level: number) => void) | undefined;
   private bench: number[] | undefined; private benchSkip = 0; private stableMs = 0; private stableSaved = -1;
   private benchAdjust: ((median: number) => number) | undefined;
-  constructor(preset: QualityPreset = "auto", startLevel?: number) { this.preset = preset; this.governor = new QualityGovernor(startLevel); }
+  constructor(preset: QualityPreset = DEFAULT_QUALITY_PRESET, startLevel?: number) { this.preset = preset; this.governor = new QualityGovernor(startLevel); }
   /** Apply the probe result: Auto starts at `start`, never steps above `ceiling`; optional first-seconds bench. */
   configure(d: NonNullable<QualityController["detected"]>, bench?: (median: number) => number): void {
     this.detected = d; this.governor.reset(d.start, d.ceiling); this.stableMs = 0;
@@ -97,5 +103,5 @@ export class QualityController {
 }
 
 export function parsePreset(v: string | null | undefined): QualityPreset | null { return v && (QUALITY_PRESETS as readonly string[]).includes(v) ? v as QualityPreset : null; }
-export function loadPreset(): QualityPreset { try { return parsePreset(globalThis.localStorage?.getItem(PRESET_STORAGE_KEY)) ?? "auto"; } catch { return "auto"; } }
+export function loadPreset(): QualityPreset { try { return parsePreset(globalThis.localStorage?.getItem(PRESET_STORAGE_KEY)) ?? DEFAULT_QUALITY_PRESET; } catch { return DEFAULT_QUALITY_PRESET; } }
 export function savePreset(p: QualityPreset): void { try { globalThis.localStorage?.setItem(PRESET_STORAGE_KEY, p); } catch { /* private mode */ } }

@@ -76,9 +76,9 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
   // Own markers list (removal is owner-only server-side, so only own markers get a Remove button).
   const list = doc.createElement("div"); list.dataset["role"] = "marker-list"; list.style.cssText = "display:flex;flex-direction:column;gap:4px";
   let listKey = "";
-  const rebuildList = (): void => { const w = src.world(), p = src.player(); if (!w || p === undefined) { if (listKey !== "") { listKey = ""; list.replaceChildren(); } return; }
+  // Task 26: takes the markers draw() already computed (one visibleMarkers query per frame, not two).
+  const rebuildList = (all: ReturnType<typeof visibleMarkers>): void => { const w = src.world(), p = src.player(); if (!w || p === undefined) { if (listKey !== "") { listKey = ""; list.replaceChildren(); } return; }
     // Every visible marker is listed; removal of a marker the viewer does not own is rejected server-side (not_owner).
-    const all = visibleMarkers(w, p);
     const key = all.map((m) => `${m.entity}:${m.label}:${m.visibility}`).join("|"); if (key === listKey) return; listKey = key; list.replaceChildren();
     for (const m of all) { const row = doc.createElement("div"); row.style.cssText = "display:flex;gap:6px;align-items:center;font-size:13px";
       // Task 25: custom pin icon (was 📍 emoji); the visibility is also spelled out in the label text.
@@ -116,26 +116,49 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", endPointer);
   canvas.addEventListener("wheel", (e) => { e.preventDefault(); state.scale = Math.min(32, Math.max(2, state.scale * (e.deltaY < 0 ? 1.25 : 0.8))); draw(); }, { passive: false });
-  const draw = (): void => { const ctx = canvas.getContext("2d"); if (!ctx) return; const w = src.world(), p = src.player(); if (w && p !== undefined) { const t = w.get(p, Transform); if (t && state.following) state.centre = { x: t.x, y: t.y }; }
+  // Task 26 smoothness: the map used to redraw every tile (~2700 fillRects) on every rAF while open, even
+  // when the player stood still. Skip the canvas work when nothing it depends on changed (centre/scale,
+  // player pos/facing/idle, visible markers, visible chunks' versions); the rAF loop stays so a moving
+  // player, a new chunk, or a marker change still repaints promptly. lastSig starts empty: first draw runs.
+  let lastSig = "";
+  const draw = (): void => { const ctx = canvas.getContext("2d"); if (!ctx) return; const w = src.world(), p = src.player();
+    const t = w && p !== undefined ? w.get(p, Transform) : undefined;
+    if (t && state.following) state.centre = { x: t.x, y: t.y };
+    const markers = w && p !== undefined ? visibleMarkers(w, p) : [];
+    const idle = t ? mapIdle.isIdle(t, performance.now()) : true;
+    const facing = t ? compassOf(t.facing) : undefined;
+    const rose = t ? (idle ? idleCompass() : facing!) : undefined;
+    const tiles = src.tiles();
+    let tv = 0;
+    if (tiles) {
+      const s0 = state.scale, c0 = state.centre;
+      const tx0 = Math.floor(c0.x - canvas.width / 2 / s0) - 1, tx1 = Math.ceil(c0.x + canvas.width / 2 / s0) + 1, ty0 = Math.floor(c0.y - canvas.height / 2 / s0) - 1, ty1 = Math.ceil(c0.y + canvas.height / 2 / s0) + 1;
+      tv = (tiles as { chunkCount?: number }).chunkCount ?? 0;
+      const getChunk = (tiles as { getChunk?: (cx: number, cy: number) => { version?: number } | undefined }).getChunk;
+      if (getChunk) for (let cy = Math.floor(ty0 / 32); cy <= Math.floor(ty1 / 32); cy++) for (let cx = Math.floor(tx0 / 32); cx <= Math.floor(tx1 / 32); cx++) tv += getChunk.call(tiles, cx, cy)?.version ?? 0;
+    }
+    const sig = [state.centre.x.toFixed(2), state.centre.y.toFixed(2), state.scale, t ? t.x.toFixed(2) : "", t ? t.y.toFixed(2) : "", facing ? Math.round(facing.heading / 2) : "", idle, markers.map((m) => `${m.entity}:${m.label}:${m.visibility}`).join("|"), tv].join("|");
+    rebuildList(markers);
+    if (sig === lastSig) return;
+    lastSig = sig;
     const W = canvas.width, H = canvas.height, s = state.scale, c = state.centre;
     ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#1b1f1a"; ctx.fillRect(0, 0, W, H);
-    const tiles = src.tiles(); const x0 = Math.floor(c.x - W / 2 / s) - 1, x1 = Math.ceil(c.x + W / 2 / s) + 1, y0 = Math.floor(c.y - H / 2 / s) - 1, y1 = Math.ceil(c.y + H / 2 / s) + 1;
+    const x0 = Math.floor(c.x - W / 2 / s) - 1, x1 = Math.ceil(c.x + W / 2 / s) + 1, y0 = Math.floor(c.y - H / 2 / s) - 1, y1 = Math.ceil(c.y + H / 2 / s) + 1;
     if (tiles) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const id = tiles.getTile(x, y); if (!id) continue; ctx.fillStyle = TILE_COLORS[id % TILE_COLORS.length]!; ctx.fillRect((x - c.x) * s + W / 2, (y - c.y) * s + H / 2, Math.ceil(s) + 0.5, Math.ceil(s) + 0.5); }
     // Crosshair at the centre (the gamepad placement point).
     ctx.strokeStyle = "rgba(255,250,240,.8)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2 - 8, H / 2); ctx.lineTo(W / 2 + 8, H / 2); ctx.moveTo(W / 2, H / 2 - 8); ctx.lineTo(W / 2, H / 2 + 8); ctx.stroke();
     // Markers (small but visible pins).
-    if (w && p !== undefined) for (const m of visibleMarkers(w, p)) { const { px, py } = worldToCanvas(m.x, m.y, W, H, c, s); if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+    for (const m of markers) { const { px, py } = worldToCanvas(m.x, m.y, W, H, c, s); if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
       ctx.fillStyle = markerPinColor(m.visibility); ctx.beginPath(); ctx.arc(px, py - 4, 5, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(px - 1, py - 4, 2, 8);
       ctx.font = "bold 11px system-ui,sans-serif"; ctx.strokeStyle = "rgba(0,0,0,.8)"; ctx.lineWidth = 3; ctx.strokeText(m.label || "Marker", px + 8, py); ctx.fillStyle = "#FFFAF0"; ctx.fillText(m.label || "Marker", px + 8, py); }
     // Player arrow (always the true facing) + compass rose (settles north when standing still, like the HUD compass).
-    if (w && p !== undefined) { const t = w.get(p, Transform); if (t) { const { px, py } = worldToCanvas(t.x, t.y, W, H, c, s); const { heading } = compassOf(t.facing);
+    if (t && facing && rose) { const { px, py } = worldToCanvas(t.x, t.y, W, H, c, s); const { heading } = facing;
       ctx.save(); ctx.translate(px, py); ctx.rotate(heading * Math.PI / 180); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(6, 8); ctx.lineTo(0, 4); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.restore();
       // Rose: fixed N/E/S/W, needle = facing, or north when idle.
-      const rose = mapIdle.isIdle(t, performance.now()) ? idleCompass() : compassOf(t.facing);
       const rx = W - 34, ry = 34; ctx.save(); ctx.translate(rx, ry); ctx.fillStyle = "rgba(43,28,36,.85)"; ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#FFFAF0"; ctx.font = "bold 11px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("N", 0, -17); ctx.fillText("S", 0, 17); ctx.fillText("E", 17, 0); ctx.fillText("W", -17, 0);
-      ctx.rotate(rose.heading * Math.PI / 180); ctx.fillStyle = "#ff6b5e"; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill(); ctx.restore(); } }
-    rebuildList(); };
+      ctx.rotate(rose.heading * Math.PI / 180); ctx.fillStyle = "#ff6b5e"; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  };
   let raf = 0; const loop = (): void => { if (!el.isConnected) return; draw(); raf = requestAnimationFrame(loop); }; raf = requestAnimationFrame(loop);
   draw();
   return { el, destroy: () => { cancelAnimationFrame(raf); } };
