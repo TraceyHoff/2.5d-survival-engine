@@ -15,14 +15,15 @@ describe("ADR-246 gt_ ground art", () => {
     let n = 0; for (let k = 0; k < 256; k++) if (blobReduce(k) === k) n++; expect(n).toBe(47);
     expect(blobReduce(1 | 16)).toBe(1); expect(blobReduce(16)).toBe(16);
   });
-  it("layers: base variant + season suffix, higher-priority edges only, shore on sand / bank elsewhere", () => {
+  it("layers: base variant + season suffix, higher-priority edges only, no shore/bank water wedge (Task 21)", () => {
     const t = grid(["sgg", "sdg", "~~~"]); const L = groundLayers(t, 1, 1, 1);
     const v = ["", "_b", "_c", "_d", "_e", "_f"][groundHash(1, 1) % 6];
     expect(L[0]).toEqual({ key: `gt_dirt${v}_fall`, kind: 0 });
     expect(L.map((l) => l.key)).toContain("gt_grass_edge_3_fall"); // N + E (NE reduced away)
     expect(L.some((l) => l.key.startsWith("gt_sand_edge"))).toBe(false); // sand is below dirt
-    expect(L.at(-1)!.key).toBe("gt_bank_4_fall");
-    expect(groundLayers(t, 0, 1, 0).at(-1)!.key).toBe("gt_shore_4");
+    expect(L.at(-1)!.key).toBe("gt_grass_edge_3_fall"); // Task 21: water no longer paints over land cells
+    expect(groundLayers(t, 0, 1, 0).map((l) => l.key)).not.toContain("gt_shore_4");
+    expect(groundLayers(t, 0, 1, 0).some((l) => l.key.includes("shore") || l.key.includes("bank"))).toBe(false);
   });
   it("water: animated + tinted in summer, fall leaves on top, winter = static ice (no water layer)", () => {
     const t = grid(["~~~~", "~~~~"]); expect(groundLayers(t, 1, 1, 0)).toEqual([{ key: "gt_water", kind: 3 }]);

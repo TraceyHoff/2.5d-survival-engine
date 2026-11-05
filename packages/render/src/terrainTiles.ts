@@ -17,7 +17,7 @@ import { SEASON_GROUND_GLSL } from "./season.js";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
-import { TileId, TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
+import { TileId, TERRAIN_SPRITES, isWaterTile } from "./ids.js";
 import { GroundArt, GroundLayerKind, groundHash, groundLayers, groundMaterial, groundSideKey, groundSideLevels, type GroundLayer } from "./groundArt.js";
 import type { SurfaceState, SurfaceProvider } from "./tilemap.js";
 
@@ -229,12 +229,10 @@ export class TileTerrain {
         }
         if (n) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); continue; }
       }
+      // Task 21: legacy path draws plain sand next to water. The old tile_shore_* sprites (like the gt_shore_*
+      // overlays) paint a blue water strip over the sand cell, which is the reported "line of water on top of
+      // the shore"; the mesh cliff + side faces already mark the transition, so no shore sprite is used here.
       let key: string | undefined;
-      if (!water && (id === TileId.Sand)) {
-        const w = (dx: number, dy: number): boolean => isWaterTile(tileAt(x + dx, y + dy));
-        if (w(0, -1)) key = SHORE_SPRITES.n; else if (w(1, 0)) key = SHORE_SPRITES.e; else if (w(0, 1)) key = SHORE_SPRITES.s; else if (w(-1, 0)) key = SHORE_SPRITES.w;
-        else if (w(1, -1)) key = SHORE_SPRITES.ne; else if (w(1, 1)) key = SHORE_SPRITES.se; else if (w(-1, 1)) key = SHORE_SPRITES.sw; else if (w(-1, -1)) key = SHORE_SPRITES.nw;
-      }
       const variants = TERRAIN_SPRITES[water ? TileId.Water : id] ?? TERRAIN_SPRITES[TileId.Dirt]!; // ADR-182: all water shares one art; depth = tint
       const hsh = ((Math.imul(tx, 374761393) ^ Math.imul(ty, 668265263)) >>> 0) % 997; // world tile: variants stay put on rotation
       let e = key ? E(key) : null;

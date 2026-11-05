@@ -91,6 +91,17 @@ export function paperDollDepth(key: number, frameH: number, anchorY: number, sca
  * depth nearer than the whole doll - never against the character's own wear/face/hair.
  */
 export function silhouetteKey(bodyKey: number, layerCount: number): number { return bodyKey + (layerCount + 2) * LAYER_BIAS; }
+/**
+ * Task 21: final alpha of an explicit Occluder at smoothed occlusion amount `occT` (0 = clear, 1 = fully
+ * covering the focus). It interpolates from opaque to the Occluder's own `fade` value — it does NOT divide by
+ * (1 - styleAlpha): the old formula `1 - (1 - fade) * occT / (1 - styleAlpha)` evaluated to 0 at full occlusion
+ * for the standard tree setup (fade 0.35, style alpha 0.35), so trees went fully invisible behind the player
+ * instead of translucent. The shader's own mix(1, uOccAlpha, vOcc) does not apply here: explicit occluders
+ * zero occT after this computation, so this value IS the final alpha. `fade` 1 (never-fade props) stays opaque.
+ */
+export function occluderFade(fade: number, occT: number): number {
+  const t = Math.max(0, Math.min(1, occT)); return 1 - (1 - fade) * t;
+}
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
 /** Render-internal instance flag: face/eyes paper-doll layer (mip bias, small contrast lift, partial darkness bypass; see characterOpts.face*). */
@@ -843,8 +854,8 @@ export class SpriteBatch {
         // actors without an explicit Occluder never fade: also reset the smoothed state (entity indices are reused, e.g.
         // a character spawned on a destroyed tree's slot inherited its fade -> semi-transparent character in chars_lineup)
         if (actor && os < 0) { if (i < this.occT.length) this.occT[i] = 0; occT = 0; } else occT = occAmount(i, hit);
-        // explicit Occluder.fade overrides the style alpha (fade mode)
-        if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = 1 - (1 - oc.data.fade[os]!) * occT / Math.max(1e-3, 1 - occ.alpha); occT = 0; }
+        // explicit Occluder.fade overrides the style alpha (fade mode); see occluderFade (Task 21)
+        if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = occluderFade(oc.data.fade[os]!, occT); occT = 0; }
       }
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
       else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot

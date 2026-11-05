@@ -1,8 +1,10 @@
 /**
  * ADR-246: Art & Assets' `gt_` ground tileset (ground_tileset_spec.md): per-season base variants, blob-47 transition
- * overlays, shore/bank overlays, winter ice and fall leaf decals. Pure layer composition (mirrors Art's
+ * overlays, winter ice and fall leaf decals. Pure layer composition (mirrors Art's
  * ground_preview.py `tile_layers`) shared by the WebGL2 TileTerrain pass and the Canvas2D block cache, plus the
  * per-registry key resolver ("ground season loader": `<key>_<fall|winter>` first, winter water aliased to gt_ice).
+ * Task 21: the shore/bank overlays are deliberately NOT emitted (see groundLayers): their art paints water over
+ * land cells, and the mesh cliff + gt_side faces already mark the shoreline.
  *
  * Cell: 68x52 px (64x48 art + 2 px pad), diamond centre at frame px (34, 18) = anchor (0.5, 18/52); @2x pages 136x104.
  */
@@ -65,8 +67,12 @@ export function groundLayers(tileAt: (x: number, y: number) => number, x: number
     const inv = GROUND_PRIORITY[p]!; let m = 0; for (let d = 0; d < 8; d++) if (nm[d] === inv) m |= BLOB_DIRS[d]![2];
     m = blobReduce(m); if (m) out.push({ key: `gt_${inv}_edge_${m}${suf}`, kind: GroundLayerKind.Edge });
   }
-  let w = 0; for (let d = 0; d < 8; d++) if (nm[d] === "water") w |= BLOB_DIRS[d]![2];
-  w = blobReduce(w); if (w) out.push({ key: `gt_${mat === "sand" ? "shore" : "bank"}_${w}${suf}`, kind: GroundLayerKind.Shore });
+  // Task 21: NO shore/bank overlay. The gt_shore_*/gt_bank_* sprites paint a blue water wedge over the
+  // water-facing half of the land cell (verified against the packed art), so every shoreline showed a line of
+  // water on top of the shore/sand. Water must stop at water tiles: the transition is already marked by the
+  // vertex-colour mesh cliff on the drop (tilemap.ts emits a cliff face on every side whose neighbour is lower,
+  // including the 0.25 water inset) and by gt_side faces on drops >= 1 level, so removing this layer leaves no
+  // hole. GroundLayerKind.Shore stays defined (unused) so existing kind numbers do not shift.
   return out;
 }
 
