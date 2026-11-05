@@ -12,6 +12,7 @@ import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pa
 const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLInputElement && t.type !== "checkbox" && t.type !== "range";
 import { EasedBar, zombiePose } from "./load-progress.js";
 import { TIPS, TIP_COLOR, TIP_ROTATION_MS, nextTip } from "./tips.js";
+import { installKeyboardViewport } from "./keyboard-viewport.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
@@ -67,7 +68,7 @@ font:600 12px system-ui,sans-serif;color:#E6C47E;opacity:.85;pointer-events:none
 .boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}.boot .tip{font-size:13px;color:${TIP_COLOR};min-height:2em;max-width:420px;text-align:center}
 .boot .panel{display:flex;flex-direction:column;gap:12px;background:#F6EAD2;border:4px solid #74432C;border-radius:18px;padding:18px 22px;
 box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433;box-sizing:border-box;
-max-height:calc(100vh - 24px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;flex-shrink:0}
+max-height:calc(100vh - 24px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px - var(--kb-inset,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;flex-shrink:0}
 .boot button{font:700 20px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:#5A9A4A;border:3px solid #3B2433;border-radius:14px;padding:10px 18px;
 box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:0 2px 0 #2D5A2E;min-height:48px}
 .boot .panel.has-footer{max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);overflow-y:auto;padding-bottom:0}
@@ -253,12 +254,19 @@ export class BootUI {
     this.tipsOn(false); // the menu is not a loading screen
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
+      // Task 18: shrink the fixed menu above the phone keyboard while it is open
+      // (the Multiplayer page's room-code / server-url inputs sit in .boot .panel,
+      // which subtracts --kb-inset); uninstalled when the choice resolves, so
+      // the loading screens that reuse this root are untouched.
+      const kbWin = this.root.ownerDocument.defaultView;
+      const uninstallKb = kbWin ? installKeyboardViewport(this.root, kbWin) : undefined;
+      const finish = (c: MenuChoice): void => { uninstallKb?.(); resolve(c); };
       let notice = opts.notice;
       const main = (): void => {
         const extra: HTMLElement[] = [];
         if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
         this.screen([
-          ["Singleplayer", () => { enterFullscreen(); resolve({ kind: "singleplayer" }); }],
+          ["Singleplayer", () => { enterFullscreen(); finish({ kind: "singleplayer" }); }],
           ["Multiplayer", multi],
           ["Delete progress", saves, "alt"],
           ["Settings", settings, "alt"],
@@ -272,7 +280,7 @@ export class BootUI {
         const mp = opts.mp ?? {};
         const extra: HTMLElement[] = [];
         if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
-        const go = (c: MenuChoice): void => { enterFullscreen(); resolve(c); };
+        const go = (c: MenuChoice): void => { enterFullscreen(); finish(c); };
         const host = mpButton("Host game", "mp-host", () => go({ kind: "host" })); host.dataset["autofocus"] = "1";
         extra.push(mpSection("Host", `Run the world in this browser${mp.hostCap ? ` · up to ${mp.hostCap} players` : ""}. The room code is in Pause → Session.`, host));
         const code = mpInput("room-code", "Room code", "ABC-234"); code.maxLength = 7; code.autocapitalize = "characters"; code.style.textTransform = "uppercase";

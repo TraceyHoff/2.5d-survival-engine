@@ -12,6 +12,7 @@
  * The panel scrolls (overflow:auto, touch pan) and fits fullscreen phones (dvh units).
  */
 import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
+import { installKeyboardViewport } from "./keyboard-viewport.js";
 import { markNavFocus } from "./back-history.js";
 import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
@@ -210,7 +211,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const wrap = doc.createElement("div"); wrap.dataset["boot"] = "creator"; wrap.className = "boot creator"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-label", "Create your character");
   wrap.setAttribute("style", "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(30,20,28,.72);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)");
   const panel = doc.createElement("div"); panel.className = "panel ui-scroll";
-  panel.setAttribute("style", "max-height:calc(100dvh - 24px);box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
+  panel.setAttribute("style", "max-height:calc(100dvh - 24px - var(--kb-inset,0px));box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
   const h = doc.createElement("h2"); h.textContent = o.title ?? (o.initial ? "Edit character" : "Create your character"); h.style.cssText = "flex:1 1 100%;margin:0";
   const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px";
   // preview host: sketch canvas until the sprite preview (WebGL2 / Canvas2D) is up; drag on it turns the character
@@ -241,6 +242,9 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   rot.append(rl, rnd, rr); left.append(host, rot);
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname"); nameIn.setAttribute("enterkeyhint", "done"); nameIn.id = "creator-name-input";
   nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
+  // Task 18: when the phone keyboard opens, keep the name field in view inside
+  // the (now keyboard-shrunk) panel instead of letting it sit behind the IME.
+  nameIn.addEventListener("focus", () => { try { nameIn.scrollIntoView?.({ block: "nearest" }); } catch { /* headless harnesses */ } });
   const nl = doc.createElement("label"); nl.textContent = "Name"; nl.htmlFor = nameIn.id;
   // Task 17: the creator opens asynchronously (after art/catalog loads), so the
   // focus() on open runs outside any tap gesture and mobile browsers will not
@@ -349,6 +353,11 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     raf = win?.requestAnimationFrame?.(tick) ?? 0;
   };
   raf = win?.requestAnimationFrame?.(tick) ?? 0;
-  o.root.append(wrap); (o.initial ? ok : nameIn).focus();
-  return new Promise((resolve) => { done = (v) => { disposed = true; oskNav?.destroy(); oskNav = undefined; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); doc.removeEventListener("keyup", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
+  o.root.append(wrap);
+  // Task 18: shrink the fixed overlay + panel above the phone keyboard (the
+  // --kb-inset var the panel's max-height subtracts); no-op on desktop.
+  const kbWin = doc.defaultView;
+  const uninstallKb = kbWin ? installKeyboardViewport(wrap, kbWin) : undefined;
+  (o.initial ? ok : nameIn).focus();
+  return new Promise((resolve) => { done = (v) => { disposed = true; oskNav?.destroy(); oskNav = undefined; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); doc.removeEventListener("keyup", onKey); if (raf) win?.cancelAnimationFrame?.(raf); uninstallKb?.(); wrap.remove(); resolve(v); }; });
 }

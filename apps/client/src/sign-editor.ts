@@ -9,6 +9,7 @@
  * DOM hooks: `#sign-editor`, `[data-role=sign-input|sign-preview|sign-count|submit|close|osk-toggle]`, `.osk [data-osk]`.
  */
 import { sanitizeSignText, SIGN_TEXT_MAX } from "@engine/gameplay";
+import { installKeyboardViewport } from "./keyboard-viewport.js";
 
 export interface SignEditorOptions {
   kindName: string; maxLen: number; initial: string;
@@ -31,7 +32,7 @@ export function signEditorState(raw: string, maxLen: number): { stored: string; 
 }
 export const OSK_ROWS = ["1234567890", "QWERTYUIOP", "ASDFGHJKL'", "ZXCVBNM-.,", "!?&:/#()+"] as const;
 const CSS = `#sign-editor{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(20,14,18,.55);padding:calc(8px + var(--sat,0px)) 8px calc(8px + var(--sab,0px))}
-#sign-editor .se-panel{box-sizing:border-box;width:min(520px,100%);max-height:calc(100dvh - 16px - var(--sat,0px) - var(--sab,0px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+#sign-editor .se-panel{box-sizing:border-box;width:min(520px,100%);max-height:calc(100dvh - 16px - var(--sat,0px) - var(--sab,0px) - var(--kb-inset,0px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;
 background:#F6EAD2;color:#3B2433;border:3px solid #74432C;border-radius:14px;box-shadow:0 4px 0 #432C24;padding:12px 14px;font:500 15px Fredoka,system-ui,sans-serif}
 #sign-editor h2{margin:0 0 8px;font-size:18px}#sign-editor .se-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
 #sign-editor input[data-role=sign-input]{flex:1;min-width:0;min-height:44px;font:600 16px Fredoka,system-ui,sans-serif;padding:4px 10px;border:2px solid #74432C;border-radius:8px;background:#fffaf0;color:#3B2433}
@@ -94,5 +95,9 @@ export function buildSignEditor(o: SignEditorOptions): HTMLElement {
   // keep taps on the backdrop from reaching the game; tap outside the panel = Back
   root.addEventListener("pointerdown", (e) => { if (e.target === root) { e.preventDefault(); o.close(); } });
   update();
+  // Task 18: same keyboard treatment as the creator (the --kb-inset var the
+  // .se-panel max-height subtracts). No disposal hook here — the helper
+  // self-cleans when UINav removes the element on close.
+  { const w = document.defaultView; if (w) installKeyboardViewport(root, w); }
   return root;
 }
