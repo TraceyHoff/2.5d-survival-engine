@@ -63,7 +63,7 @@ describe("ADR-238 ground loot despawn (server + replication)", () => {
     addItem(r1.gs.world, A.e, PLANK, 3, A.pid); const bag = dropItem(r1.gs.world, A.e, PLANK, 3)!; const lb = { ...r1.gs.world.get(bag, LootBag)! }; const at = { ...r1.gs.world.get(bag, Transform)! };
     r1.tick(60); const acct = A.account(); expect(acct).toMatch(/^[0-9a-f]{32}$/); await r1.gs.shutdown();
     let restoredTick = 0;
-    const r2 = await setup(await SqliteWorldStore.open(path), (w) => { restoredTick = w.tick; w.tick = lb.despawnAtTick - 60; }); // restart, then ~10 min of uptime pass
+    const r2 = await setup(await SqliteWorldStore.open(path), (w) => { restoredTick = w.tick; w.tick = lb.despawnAtTick - 60; }); // restart, then ~3 min of uptime pass
     expect(restoredTick).toBeGreaterThan(lb.spawnTick);
     await r2.join(acct); r2.tick(5);
     const [b2] = near(r2.gs.world, at.x, at.y); expect(b2).toBeDefined(); expect(r2.gs.world.get(b2!, LootBag)).toMatchObject({ spawnTick: lb.spawnTick, despawnAtTick: lb.despawnAtTick, kind: LootSource.Dropped });

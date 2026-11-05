@@ -20,7 +20,7 @@
     "igniteRadiusFrac": 0.5
   },
   "despawn": {
-    "droppedSeconds": 600,
+    "droppedSeconds": 180,
     "deathBagSeconds": 1800,
     "thrownSeconds": 300,
     "creatureLootSeconds": 120,

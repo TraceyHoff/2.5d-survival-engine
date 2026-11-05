@@ -2,6 +2,7 @@ import { ContainerToSlotCmd, MoveSlotCmd, SplitStackCmd } from "../inventory_ops
 import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetGuardCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
 import { AnimalSkillCmd } from "../animal_skills.js";
 import { DismissWorkerCmd, HireWorkerCmd, nearestWorker, SetWorkerJobCmd } from "../recruitment.js";
+import { DyeCmd, DyeKind, DyePalette } from "../dye.js";
 import { ReadyCmd } from "../ready.js";
 /**
  * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
@@ -9,12 +10,12 @@ import { ReadyCmd } from "../ready.js";
  * The client sends intents through its net bridge (`gameplayNet(cmd)`); entity args (target/stall) are Entities here
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
-import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, RoomHeat, StallHeader, Survival, Wardrobe } from "../components.js";
+import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, getAppearance, slotIndex, SLOT_PALETTE, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
+import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, RoomHeat, SlotDye, StallHeader, Survival, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { carriedBags } from "../stance.js";
 import type { ItemCount } from "../defs.js";
-import { countItem, listSlots, readSlots, slotsWeight } from "../inventory.js";
+import { countItem, hasBrushInHotbar, listSlots, readSlots, slotItem, slotsWeight } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
@@ -246,6 +247,39 @@ export function wardrobeView(c: MenuCtx): WardrobeView {
 export const equipCosmeticIntent = (slot: number, wearable: number, primary = 0, secondary = 0): MenuIntent => intent(EquipCosmeticCmd, { slot, wearable, primary, secondary });
 export const setAppearanceIntent = (v: { bodyType: number; skinTone: number; parts: number[]; primary: number[]; secondary: number[] }): MenuIntent =>
   intent(SetAppearanceCmd, { bodyType: v.bodyType, skinTone: v.skinTone, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] });
+
+// ---- Task 25: dyeing ------------------------------------------------------------------------------------
+/** One dyeable appearance target (hair or a worn slot): its palette (0 hair / 1 clothing) and current colour. */
+export interface DyeTargetView { kind: number; slot: number; key: string; equipped: number; primary: number; palette: number }
+/** Dye panel view: brush/dye readiness, the palettes (for swatches), hair + worn targets, the held tool/weapon. */
+export interface DyeView {
+  brush: boolean; dye: number;
+  hairPalette: { index: number; key: string; color: number }[]; clothingPalette: { index: number; key: string; color: number }[];
+  hair: DyeTargetView | undefined; worn: DyeTargetView[];
+  held: { slot: number; item: number; name: string; color: number } | undefined;
+}
+/** Pure read over the client replica: what this player can dye right now, and with what colours. */
+export function dyeView(c: MenuCtx): DyeView {
+  const w = c.world; const a = w.isRegistered(Appearance) ? getAppearance(w, c.player) : undefined;
+  const dye = (() => { try { return countItem(w, c.player, gameplayDefs(w).itemId("dye")); } catch { return 0; } })();
+  const hairPalette = c.catalog?.hairColors ?? []; const clothingPalette = c.catalog?.clothingColors ?? [];
+  const hair: DyeTargetView | undefined = { kind: DyeKind.Hair, slot: slotIndex("hair"), key: "hair", equipped: a?.parts[slotIndex("hair")] ?? 0, primary: a?.primary[slotIndex("hair")] ?? 0, palette: DyePalette.Hair };
+  const worn: DyeTargetView[] = WEARABLE_SLOTS.map((k, i) => ({ kind: DyeKind.Worn, slot: i, key: k, equipped: a?.parts[i] ?? 0, primary: a?.primary[i] ?? 0, palette: SLOT_PALETTE[k] === "hairColors" ? DyePalette.Hair : DyePalette.Clothing }))
+    .filter((t) => t.key !== "hair" && t.equipped !== 0);
+  let held: DyeView["held"];
+  const eq = w.isRegistered(Equipment) ? w.get(c.player, Equipment) : undefined;
+  const hs = eq?.mainHandSlot ?? 255;
+  if (hs !== 255) {
+    let item = 0; try { item = slotItem(w, c.player, hs).item; } catch { item = 0; }
+    const d = item ? gameplayDefs(w).items.get(item) : undefined;
+    if (item && d && (d.tool || d.weapon || d.ranged || d.thrown)) {
+      const colors = w.has(c.player, SlotDye) ? w.getArray(c.player, SlotDye, "colors") : undefined;
+      held = { slot: hs, item, name: d.name, color: colors?.[hs] ?? 0 };
+    }
+  }
+  return { brush: hasBrushInHotbar(w, c.player), dye, hairPalette, clothingPalette, hair, worn, held };
+}
+export const dyeIntent = (kind: number, slot: number, palette: number, index: number): MenuIntent => intent(DyeCmd, { kind, slot, palette, index });
 
 // ---- Task 23: live character sheet -----------------------------------------------------------------------
 /** Base insulation (deg C) of an unclothed body: bare skin provides no insulation in this model. */
@@ -525,12 +559,13 @@ export function onlineTargets(c: MenuCtx, dir: SocialDirectory | undefined, excl
   for (const pid of dir?.online ?? []) if (pid !== me && !exclude.has(pid) && !out.has(pid)) out.set(pid, { playerId: pid, name: nameOf(c, pid), entity: entityOfPlayer(c.world, pid), distance: undefined });
   return [...out.values()].sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || a.name.localeCompare(b.name));
 }
-/** Nearest paintable build piece within build reach (Build panel "Paint" target). */
+/** Nearest paintable build piece within build reach (Build panel "Paint" target). Matches the server rule in
+ * building/actions.ts: flagged paintable OR tiered (tiered pieces were always paintable server-side). */
 export function paintTarget(c: MenuCtx): Entity | undefined {
   const w = c.world; const d = gameplayDefs(w); const me = w.get(c.player, Transform); if (!me) return undefined;
   let best: Entity | undefined; let bd = d.building.buildReach;
   for (const e of w.query([BuildPiece, Transform])) {
-    if (!d.pieces.get(w.get(e, BuildPiece)!.type)?.paintable) continue;
+    const def = d.pieces.get(w.get(e, BuildPiece)!.type); if (!def?.paintable && !def?.tiered) continue;
     const t = w.get(e, Transform)!; const dist = Math.hypot(t.x - me.x, t.y - me.y); if (dist <= bd) { bd = dist; best = e; }
   }
   return best;

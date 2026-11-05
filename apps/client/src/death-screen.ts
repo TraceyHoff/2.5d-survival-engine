@@ -7,6 +7,7 @@
  * Hooks: `#death-screen[data-ready]`, `#death-respawn`, `#bag-compass[data-dist]`.
  */
 import { navPad, padHeld, padKeyEdge } from "./pad-input.js";
+import { iconUrl } from "./game-icons.js";
 import { setData, setDisabled, setHidden, setStyle, setText } from "./dom-diff.js";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen, DEFAULT_ISO } from "@engine/world";
@@ -61,9 +62,9 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
   const now = o.now ?? (() => performance.now());
   if (!document.getElementById("death-screen-css")) { const st = document.createElement("style"); st.id = "death-screen-css"; st.textContent = CSS; document.head.append(st); }
   const el = document.createElement("div"); el.id = "death-screen"; el.hidden = true; el.setAttribute("role", "alertdialog"); el.setAttribute("aria-labelledby", "death-title");
-  el.innerHTML = `<div class="card"><h2 id="death-title">You died</h2><p>Your items dropped in a bag where you fell. Follow the 🎒 compass to get them back.</p><button type="button" id="death-respawn" disabled>Respawn</button><div class="hint">Click, tap, press Enter / R, or Ⓐ on a controller</div></div>`;
+  el.innerHTML = `<div class="card"><h2 id="death-title">You died</h2><p>Your items dropped in a bag where you fell. Follow the bag compass to get them back.</p><button type="button" id="death-respawn" disabled>Respawn</button><div class="hint">Click, tap, press Enter / R, or Ⓐ on a controller</div></div>`;
   const btn = el.querySelector<HTMLButtonElement>("#death-respawn")!;
-  const compass = document.createElement("div"); compass.id = "bag-compass"; compass.hidden = true; compass.innerHTML = `🎒 <span class="lbl">Your bag</span> <span class="dist"></span> <span class="arrow">➜</span>`;
+  const compass = document.createElement("div"); compass.id = "bag-compass"; compass.hidden = true; compass.innerHTML = `<img src="${iconUrl("ic_backpack.png")}" alt="" style="width:18px;height:18px;image-rendering:pixelated"> <span class="lbl">Your bag</span> <span class="dist"></span> <span class="arrow">➜</span>`;
   root.append(el, compass);
   let dead = false; let deadAt = 0; let deathSpot: { x: number; y: number } | undefined; let sentAt: number | undefined; let prevPad = false; let lastLabel = "";
   const press = (): boolean => {

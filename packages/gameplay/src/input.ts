@@ -11,6 +11,7 @@ import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
 import { ANIMAL_SKILL_COMMANDS } from "./animal_skills.js";
 import { WORKER_COMMANDS, WORKER_ENTITY_FIELDS } from "./recruitment.js";
+import { DYE_COMMANDS } from "./dye.js";
 import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
 import { MAP_MARKER_COMMANDS, MAP_MARKER_ENTITY_FIELDS } from "./map_marker_commands.js";
 import { READY_COMMANDS } from "./ready.js";
@@ -86,6 +87,7 @@ export const COMMAND_RATES: Readonly<Record<string, number>> = {
   ...Object.fromEntries(MAP_MARKER_COMMANDS.map((d) => [d.name, 10])),
   ...Object.fromEntries(DISEASE_COMMANDS.map(([d]) => [d.name, 10])),
   ...Object.fromEntries(WORKER_COMMANDS.map((d) => [d.name, 10])),
+  ...Object.fromEntries(DYE_COMMANDS.map((d) => [d.name, 10])),
 };
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
@@ -112,6 +114,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of READY_COMMANDS) reg.register(d); // append-only (Task 14): client loaded-in signal
   for (const d of ANIMAL_SKILL_COMMANDS) reg.register(d); // append-only (Task 15): animal skill purchase
   for (const d of WORKER_COMMANDS) reg.register(d); // append-only (Task 22): AI-human hire / job / dismiss
+  for (const d of DYE_COMMANDS) reg.register(d); // append-only (Task 25): dye hair / worn / held (brush + dye)
   return reg;
 }
 

@@ -12,7 +12,8 @@
  * `#road-tool[data-surface][data-device]`, `#world-tool-bar [data-tool=road|sign]`, `#road-confirm [data-role=confirm|cancel]`,
  * `#road-preview`, `#road-cursor`.
  */
-import { setAttr, setDisabled, setText } from "./dom-diff.js";
+import { setAttr, setDisabled } from "./dom-diff.js";
+import { iconImg } from "./game-icons.js";
 import { Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen, DEFAULT_ISO, type IsoConfig } from "@engine/world";
 import {
@@ -107,9 +108,11 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
   const tool = document.createElement("div"); tool.id = "road-tool"; tool.style.display = "none";
   const toast = document.createElement("div"); toast.id = "horde-toast"; toast.setAttribute("role", "alert"); toast.style.opacity = "0";
   const bar = document.createElement("div"); bar.id = "world-tool-bar"; bar.setAttribute("aria-label", "Road and sign tools");
-  const mkBtn = (txt: string, attr: string, val: string, fn: () => void, title: string): HTMLButtonElement => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; b.dataset[attr] = val; b.title = title; b.setAttribute("aria-label", title); b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); return b; };
-  const roadBtn = mkBtn("🛣 Road", "tool", "road", () => road(), "Road tool (G): path, gravel, paved, off");
-  const signBtn = mkBtn("🪧 Sign", "tool", "sign", () => { if (!editNearestSign()) placeSign(); }, "Place a sign you carry (N), or edit the sign next to you");
+  // Task 25: buttons carry a custom icon (ic_road.png / ic_sign.png) + a text span; setBtnLabel updates only the span so the icon survives.
+  const mkBtn = (txt: string, attr: string, val: string, fn: () => void, title: string, icon?: string): HTMLButtonElement => { const b = document.createElement("button"); b.type = "button"; if (icon) b.append(iconImg(icon, 18, "")); const s = document.createElement("span"); s.textContent = txt; b.append(s); b.dataset[attr] = val; b.title = title; b.setAttribute("aria-label", title); b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); return b; };
+  const setBtnLabel = (b: HTMLButtonElement, v: string): void => { const s = b.querySelector("span"); if (s && s.textContent !== v) s.textContent = v; };
+  const roadBtn = mkBtn("Road", "tool", "road", () => road(), "Road tool (G): path, gravel, paved, off", "ic_road.png");
+  const signBtn = mkBtn("Sign", "tool", "sign", () => { if (!editNearestSign()) placeSign(); }, "Place a sign you carry (N), or edit the sign next to you", "ic_sign.png");
   bar.append(roadBtn, signBtn);
   const confirmBar = document.createElement("div"); confirmBar.id = "road-confirm"; confirmBar.style.display = "none";
   confirmBar.append(mkBtn("✓ Lay road", "role", "confirm", () => confirmRoad(), "Lay the planned road"), mkBtn("✕ Cancel", "role", "cancel", () => cancelRoad(), "Cancel the planned road"));
@@ -192,7 +195,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
     const pts = [[t.x, t.y], [t.x + 1, t.y], [t.x + 1, t.y + 1], [t.x, t.y + 1]].map(([x, y]) => { const c = isoToCss(cam, x!, y!); return `${c.x.toFixed(1)},${c.y.toFixed(1)}`; }).join(" ");
     const p = document.createElementNS(SVGNS, "polygon"); p.setAttribute("points", pts); if (cls) p.setAttribute("class", cls); return p;
   };
-  let raf = 0, slow = 0;
+  let raf = 0, slow = 0; let placeLabel = "";
   const frame = (): void => {
     raf = requestAnimationFrame(frame);
     try {
@@ -200,7 +203,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       layer.style.display = hide ? "none" : "";
       { const vis = worldToolBarState({ active: rt.active, nearSign: !hide && nearestSign() !== undefined, hidden: hide }); bar.style.display = vis.bar ? "" : "none"; roadBtn.style.display = vis.road ? "" : "none"; signBtn.style.display = vis.sign ? "" : "none"; }
       const dev = device();
-      setAttr(roadBtn, "aria-pressed", String(rt.active)); setText(roadBtn, rt.active ? `🛣 ${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "🛣 Road");
+      setAttr(roadBtn, "aria-pressed", String(rt.active)); setBtnLabel(roadBtn, rt.active ? `${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "Road");
       tool.style.display = rt.active && !hide ? "" : "none";
       if (rt.active) { tool.dataset["surface"] = String(rt.surface); tool.dataset["device"] = dev; tool.textContent = `Road tool: ${ROADS.surfaces[rt.surface - 1]!.name} — ${roadPrompt(dev, { start: !!rt.start, pending: !!rt.pending })}`; }
       confirmBar.style.display = rt.active && rt.pending && !hide && dev !== "gamepad" ? "flex" : "none";
@@ -215,7 +218,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       if (rt.active && dev === "gamepad" && ct && cam && !hide) { const c = isoToCss(cam, ct.x + 0.5, ct.y + 0.5); cursorEl.style.display = ""; cursorEl.style.left = `${c.x.toFixed(1)}px`; cursorEl.style.top = `${c.y.toFixed(1)}px`; }
       else cursorEl.style.display = "none";
       if (hide || !w.isRegistered(Sign)) return;
-      const near = nearestSign() !== undefined; setText(signBtn, near ? "✎ Edit sign" : "🪧 Sign"); setDisabled(signBtn, !near && signKind() <= 0);
+      const near = nearestSign() !== undefined; setBtnLabel(signBtn, near ? "✎ Edit sign" : "Sign"); setDisabled(signBtn, !near && signKind() <= 0);
       const pt = w.get(p!, Transform); if (!pt) return;
       const seen = new Set<Entity>();
       for (const e of w.query([Sign, Transform])) {
@@ -231,7 +234,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       // settlement label
       const list = classifySettlements(homesteads(w, (tribe) => tribe !== 0));
       const s = settlementNear(list, pt.x, pt.y); place.style.display = s ? "" : "none";
-      if (s) { place.dataset["kind"] = String(s.kind); place.textContent = `📍 ${s.label}${s.players.length > 1 ? ` · ${s.players.length} residents` : ""}`; }
+      if (s) { place.dataset["kind"] = String(s.kind); const label = `${s.label}${s.players.length > 1 ? ` · ${s.players.length} residents` : ""}`; if (placeLabel !== label) { placeLabel = label; place.replaceChildren(iconImg("ic_pin.png", 14, ""), document.createTextNode(` ${label}`)); } }
       // hordes
       const st = w.has(w.environment, HordeStatus) ? w.get(w.environment, HordeStatus)! : undefined;
       const cur = st ? { phase: st.phase, seq: st.seq } : undefined;

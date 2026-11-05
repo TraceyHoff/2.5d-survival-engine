@@ -10,7 +10,7 @@ describe("ADR-161 client loot labels", () => {
   it("prompt follows the active device", () => {
     expect(lootPrompt("keyboardMouse", "E")).toBe("[E] Open");
     expect(lootPrompt("gamepad", "X")).toBe("[X] Open");
-    expect(lootPrompt("touch", "E")).toBe("Tap ✋ to open");
+    expect(lootPrompt("touch", "E")).toBe("Tap to open");
   });
   it("labels only bags in range with a summary; own death bag reads Your bag", () => {
     const w = new World({ seed: 1, maxEntities: 4096 }); G.installGameplay(w, {}); installPermissions(w);

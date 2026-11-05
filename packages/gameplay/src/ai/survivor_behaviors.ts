@@ -3,11 +3,13 @@
  * they read only the bot's own replica (fillAgentSensors) and write AgentOutput (action strings, see agent_output.ts).
  * Entity ids in the view are replica ids; hosts whose replica ids differ from the server's translate open/buy targets.
  */
-import { Membership, PlayerId, StallDisplay, Transform, type Entity, type World } from "@engine/core";
+import { Appearance, Membership, PlayerId, StallDisplay, Transform, getAppearance, slotIndex, timeOfDay, type Entity, type World } from "@engine/core";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js";
 import { GameplayConfig } from "../config.js";
-import { readSlots, countItem, slotFreshness, exchangeItems } from "../inventory.js";
+import { Customization } from "../customization.js";
+import { DyeKind, DyePalette } from "../dye.js";
+import { readSlots, countItem, slotFreshness, exchangeItems, hasBrushInHotbar } from "../inventory.js";
 import { crafterIdFor } from "../economy/provenance.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { pieceCost, pieceUnlocked } from "../building/place.js";
@@ -78,6 +80,34 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
       }
       break;
     }
+    // Task 25: bot dye goal — purpose-gated and bounded (the Task 16 loop cannot return through this path). Each bot
+    // has one deterministic hair colour per (bot, day): fnv1a(bot PlayerId, day) over the hair palette. While the
+    // bot's hair is not today's colour it wants exactly one dye (need = 1, only while it carries none) — the dye
+    // recipe (3 berries, hand) then becomes selectable through the same `hand` filter below, sorted after the goal
+    // tools (goalOf 99) and behind the same room gate, so it never displaces a goal craft and never stockpiles.
+    // Once the bot dyes (or already wears today's colour) the need clears until tomorrow. The bot must hold a paint
+    // brush in its hotbar (the same rule as players) and have a hair style equipped; without a brush it never wants
+    // dye, and dye is never junk-dropped while it holds a brush (see fillPlanSensors).
+    const dyeId = defs.itemId("dye");
+    const cat = world.getResource(Customization)?.catalog;
+    const hairLen = cat?.hairColors.length ?? 0;
+    const hairSlot = slotIndex("hair");
+    // Task 25: getAppearance throws when the entity has no Appearance (World.get) — animal agent views hit this
+    // path, so guard it; no appearance means no hair to dye.
+    const app = world.isRegistered(Appearance) && world.has(self, Appearance) ? getAppearance(world, self) : undefined;
+    const hairId = app?.parts[hairSlot] ?? 0;
+    let dyeTarget: number | undefined;
+    if (dyeId && cat && hairLen > 0 && hairId !== 0 && hasBrushInHotbar(world, self)) {
+      const pid = world.isRegistered(PlayerId) && world.has(self, PlayerId) ? (world.getField(self, PlayerId, "id") ?? 0) : 0;
+      let h = 2166136261; const s = `${pid}:${timeOfDay(world).day}`;
+      for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+      const idx = (h >>> 0) % hairLen;
+      if ((app?.primary[hairSlot] ?? -1) !== idx) dyeTarget = idx;
+    }
+    if (dyeTarget !== undefined) {
+      if (countItem(world, self, dyeId) > 0) view.dye = { kind: DyeKind.Hair, slot: hairSlot, palette: DyePalette.Hair, index: dyeTarget };
+      else { delete view.dye; need.set(dyeId, 1); }
+    } else delete view.dye;
     const hand = dc.hand.filter((r) => { const n = need.get(r.output.item); return n !== undefined && countItem(world, self, r.output.item) < n; });
     const goalOf = (r: (typeof hand)[number]): number => { const k = defs.items.get(r.output.item)?.key ?? ""; const i = (GOAL_CRAFTS as readonly string[]).indexOf(k); return i < 0 ? 99 : i; };
     // other hand recipes may only spend what the next unowned goal tool does not need (reserve = its ingredients)

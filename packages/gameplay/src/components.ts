@@ -383,6 +383,14 @@ export const PetStatusComp = defineComponent("PetStatus", { status: "u8" }, { ne
  */
 export const RoomHeat = defineComponent("RoomHeat", { heat: "f32" }, { networked: true });
 /**
+ * Task 25: dye colour of the item in each inventory slot (held tools / weapons). Packed 0xRRGGBB, 0 = undyed
+ * (no palette colour is 0x000000, so 0 is unambiguous). Networked (every peer sees the dyed held item) and
+ * persistent (the dye survives save/reconnect). Only the main-hand held sprite is tinted in the renderer; the
+ * colour is also shown on the item's inventory icon. Hair / worn clothing are dyed through the appearance
+ * slots (primary colour), not here — see dye.ts.
+ */
+export const SlotDye = defineComponent("SlotDye", { colors: { type: "u32", length: INVENTORY_SLOTS } }, { networked: true, persistent: true });
+/**
  * Task 14: a joined player's load-in state (networked, NOT persistent — re-added on every join).
  * The server adds it with ready=0 when a client joins; the client sends gameplay.ready when its second
  * loading screen dismisses (connected + player spawned + chunks streamed), and the server flips ready=1.
@@ -433,4 +441,5 @@ export const GAMEPLAY_COMPONENTS = [
   AnimalSkills, // append-only (Task 15: per-animal skill points + spent-node bitmask)
   Worker, // append-only (Task 22: AI-human recruitment — wanted item / owner / job / hire anchor)
   RoomHeat, // append-only (Task 24: smoothed flame heat of the enclosed room an entity stands in)
+  SlotDye, // append-only (Task 25: per-inventory-slot dye colour for held tools/weapons — packed 0xRRGGBB, 0 = undyed)
 ] as const;

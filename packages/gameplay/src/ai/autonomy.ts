@@ -201,6 +201,9 @@ export function instantChores(c: Ctx, o: { actions: string[] }): void {
   const w = c.world, t = c.self.tick; c.bb.set("hungerSeen", c.self.hunger);
   if (w.equipSlot !== undefined && t - c.bb.num("equipAt", -1e9) >= 100) { o.actions.push(`equip:${w.equipSlot}`); c.bb.set("equipAt", t); }
   if (w.craftRecipe !== undefined && t - c.bb.num("craftedAt", -1e9) >= Math.max(100, w.craftTicks ?? 0)) { const n = w.craftCount ?? 1; o.actions.push(n > 1 ? `craft:${w.craftRecipe}:${n}` : `craft:${w.craftRecipe}`); c.bb.set("craftedAt", t); if (w.plan) armCraft(c); }
+  // Task 25: dye it (the sensor only sets view.dye while the bot holds a dye + brush and still wants today's colour;
+  // the command re-validates brush + dye server-side, so a stale sensor can never spend a dye the bot no longer has).
+  if (w.dye !== undefined && t - c.bb.num("dyedAt", -1e9) >= 200) { o.actions.push(`dye:${w.dye.kind}:${w.dye.slot}:${w.dye.palette}:${w.dye.index}`); c.bb.set("dyedAt", t); }
   if (w.junk && t - c.bb.num("dropAt", -1e9) >= 30) { o.actions.push(`drop:${w.junk.item}:${w.junk.count}`); c.bb.set("dropAt", t); } // ADR-252: a full bag drops what no goal uses
   if (w.food !== undefined && c.self.hunger < 0.5 && t - c.bb.num("ateAt", -1e9) >= 40) { o.actions.push(`eat:${w.food}`); c.bb.set("ateAt", t); }
   if (w.water !== undefined && c.self.thirst < 0.5 && t - c.bb.num("drankAt", -1e9) >= 40) { o.actions.push(`drink:${w.water}`); c.bb.set("drankAt", t); }

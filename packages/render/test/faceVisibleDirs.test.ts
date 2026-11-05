@@ -35,8 +35,9 @@ describe("face over hair facings (hair must not cover eyes on a facing that show
  * defect reproduced — composites across styles/facings/bodies are correct, the face tintmask marks only brows +
  * beard rows, and the lift above puts face/eyes over hair on every face-visible facing. These tests pin the
  * contract so a regression cannot silently reintroduce it: each slot carries its own palette index, so changing
- * the hair colour changes ONLY the hair layer's tint. The one deliberate exception lives in the creator's
- * stepLook (beard follows hair colour) and is pinned in apps/client/test/creator_tints.test.ts, not here.
+ * the hair colour changes ONLY the hair layer's tint. The one deliberate exception used to live in the creator's
+ * stepLook (beard follows hair colour); Task 25 removed it (see apps/client/test/creator_tints.test.ts) after a
+ * live screenshot showed a bald survivor's whole face in the hair colour.
  */
 describe("hair colour vs face tint (Task 24)", () => {
   const stubWear = (id: number, key: string, slot: WearableDef["slot"], layer: number, tintChannels: 0 | 1 | 2): WearableDef =>
@@ -67,5 +68,44 @@ describe("hair colour vs face tint (Task 24)", () => {
     expect(layer(after, "body").tintR).toBe(layer(before, "body").tintR); // skin untouched
     // and the face still draws over the hair on a face-visible facing (the lift, not the tint, decides depth)
     expect(liftFaceOverHair(after, Math.PI / 4).map((l) => l.slot)).toEqual(["body", "hair", "face", "eyes"]);
+  });
+});
+
+/**
+ * Task 25: the screenshot case — a survivor with NO hair style selected (hair part 0) but a hair colour set
+ * (teal) rendered with the whole face/head in the hair colour. Reproduce exactly that case: no hair layer is
+ * emitted at all, and neither the face nor the body layer may carry the hair colour — the face keeps its own
+ * slot colour and the body keeps the skin tone, on every facing and both bodies. (The composites prove the
+ * resolver is correct here; this pins it so a later change to resolveLayers cannot reintroduce the bleed.)
+ */
+describe("bald + hair colour set: no hair layer, face and body stay skin (Task 25)", () => {
+  const stubWear = (id: number, key: string, slot: WearableDef["slot"], layer: number, tintChannels: 0 | 1 | 2): WearableDef =>
+    ({ id, key, slot, bodies: { male: { sprite: 1, anim: "idle" }, female: { sprite: 1, anim: "idle" } }, hidesSlots: [], hatHair: false, unlockTags: [], layer, z: 0, tintChannels }) as unknown as WearableDef;
+  const faceW = stubWear(2, "face_smile", "face", 32, 1);
+  const eyesW = stubWear(3, "eyes_round", "eyes", 34, 1);
+  const TEAL = 0x3AA6A0; const BROWN = 0x5A3A22; const SKIN = 0xC98D64;
+  const baldCat: CosmeticCatalogLike = {
+    wearable: (id) => [faceW, eyesW].find((w) => w.id === id),
+    bodySprite: () => ({ sprite: 1, anim: "idle" }),
+    skinTones: [{ index: 0, key: "tan", color: SKIN }],
+    hairColors: [{ index: 0, key: "brown", color: BROWN }, { index: 1, key: "teal", color: TEAL }],
+    clothingColors: [{ index: 0, key: "blue", color: 0x3A5AC8 }],
+  };
+  const baldLook = (bodyType: number): AppearanceValue => {
+    const parts = new Array(9).fill(0); parts[slotIndex("face")] = 2; parts[slotIndex("eyes")] = 3; // hair part 0: none
+    const primary = new Array(9).fill(0); primary[slotIndex("hair")] = 1; // teal hair colour, no hair style
+    return { bodyType, skinTone: 0, parts, primary, secondary: new Array(9).fill(0) };
+  };
+  it("no hair layer; face keeps its own colour, body keeps skin — all facings, both bodies", () => {
+    for (const bodyType of [0, 1]) for (let d = 0; d < 8; d++) {
+      const layers = resolveLayers(baldCat, baldLook(bodyType), (d * Math.PI) / 4);
+      expect(layers.some((l) => l.slot === "hair"), `body ${bodyType} dir ${d}: hair layer emitted`).toBe(false);
+      const face = layers.find((l) => l.slot === "face")!; expect(face, `body ${bodyType} dir ${d}: face layer`).toBeDefined();
+      expect(face.tintR, `body ${bodyType} dir ${d}: face tint`).toBe(BROWN); // its own slot colour, not teal
+      expect(face.tintR).not.toBe(TEAL);
+      const body = layers.find((l) => l.slot === "body")!; expect(body, `body ${bodyType} dir ${d}: body layer`).toBeDefined();
+      expect(body.tintR, `body ${bodyType} dir ${d}: body tint`).toBe(SKIN); // skin, not teal
+      expect(body.tintR).not.toBe(TEAL);
+    }
   });
 });

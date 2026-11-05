@@ -93,7 +93,9 @@ export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.ra
   v.skinTone = pick(p.skin); const hairCol = pick(p.hair);
   for (const s of CREATOR_SLOTS) { const opts = o[s]; const i = slotIndex(s); if (!opts.length) continue;
     const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
-    v.primary[i] = isHairish(s) ? hairCol : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing); }
+    // Task 25: the face (beard/brows) rolls its own hair-palette colour — it no longer inherits the hair colour
+    // (the old shared hairCol put the hair tint on the face slot for every random look, bald or not).
+    v.primary[i] = s === "hair" ? hairCol : s === "face" ? pick(p.hair) : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing); }
   return v;
 }
 /** Deterministic PRNG (mulberry32) for the screenshot preset. */
@@ -128,7 +130,9 @@ export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: Cr
   if (field.endsWith(":color2")) { const s = field.slice(0, -7) as WearableSlot; const i = slotIndex(s); const m = isHairish(s) ? p.hair : p.clothing; n.secondary[i] = wrap((v.secondary[i] ?? 0) + d, m); return n; }
   if (field.endsWith(":color")) { const s = field.slice(0, -6) as WearableSlot; const i = slotIndex(s); const ch = colorChoices(cat, s); const k = ch.indexOf(v.primary[i] ?? 0);
     n.primary[i] = ch[wrap((k < 0 ? (d > 0 ? -1 : 0) : k) + d, ch.length)] ?? 0;
-    if (s === "hair") n.primary[slotIndex("face")] = n.primary[i]!; return n; } // beard follows hair colour
+    return n; } // Task 25: the beard/face colour is independent — stepping hair:color no longer rewrites the face
+  // slot (the old beard-follows-hair sync put the hair colour on the face even for a bald survivor, whose face
+  // layer then carried the hair tint; the resolver is per-slot, so independence is safe here).
   const s = field as WearableSlot; const i = slotIndex(s); const ids = [...(OPTIONAL.has(s) ? [0] : []), ...creatorOptions(cat, v.bodyType)[s].map((w) => w.id)];
   if (ids.length) n.parts[i] = ids[wrap(ids.indexOf(v.parts[i] ?? 0) + d, ids.length)] ?? 0; return n;
 }
@@ -285,7 +289,8 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
   const rot = doc.createElement("div"); rot.style.cssText = "display:flex;gap:6px";
   const rl = mk("⟲", "rotate-left", () => { auto = false; turn(-1); }), rr = mk("⟳", "rotate-right", () => { auto = false; turn(1); });
-  const rnd = mk("🎲", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } });
+  // Task 25: the 🎲 fallback text is plain "Random" now — iconInto swaps in the atlas ic_randomize art when it exists.
+  const rnd = mk("Random", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } });
   iconInto(rl, o.artBase, "ic_rotate_left", "Rotate left"); iconInto(rr, o.artBase, "ic_rotate_right", "Rotate right"); iconInto(rnd, o.artBase, "ic_randomize", "Randomize");
   rot.append(rl, rnd, rr); left.append(host, rot);
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname"); nameIn.setAttribute("enterkeyhint", "done"); nameIn.id = "creator-name-input";

@@ -16,6 +16,7 @@ import { compassOf, placeMapMarkerIntent, removeMapMarkerIntent, visibleMarkers,
 import { TILE_COLORS } from "@engine/render";
 import { createIdleTracker, idleCompass } from "./compass-hud.js";
 import type { TileMap } from "@engine/world";
+import { iconImg } from "./game-icons.js";
 
 export interface WorldMapSource {
   world(): World | undefined;
@@ -80,7 +81,8 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
     const all = visibleMarkers(w, p);
     const key = all.map((m) => `${m.entity}:${m.label}:${m.visibility}`).join("|"); if (key === listKey) return; listKey = key; list.replaceChildren();
     for (const m of all) { const row = doc.createElement("div"); row.style.cssText = "display:flex;gap:6px;align-items:center;font-size:13px";
-      const dot = doc.createElement("span"); dot.textContent = "📍"; dot.style.color = markerPinColor(m.visibility); row.append(dot);
+      // Task 25: custom pin icon (was 📍 emoji); the visibility is also spelled out in the label text.
+      const dot = doc.createElement("span"); dot.append(iconImg("ic_pin.png", 14, "Marker")); row.append(dot);
       const t = doc.createElement("span"); t.textContent = `${m.label || "Marker"} (${MARKER_VISIBILITY_LABELS[m.visibility] ?? "Private"})`; row.append(t);
       const rm = doc.createElement("button"); rm.type = "button"; rm.className = "alt"; rm.textContent = "Remove"; rm.dataset["marker"] = String(m.entity);
       rm.addEventListener("click", () => { const ok = src.send(removeMapMarkerIntent(m.entity)); note.textContent = ok ? "Marker removed." : "Could not remove marker (only the owner can remove it)."; src.status?.(note.textContent); });

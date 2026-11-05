@@ -12,6 +12,7 @@ import { revealAboveFooter } from "./back-history.js";
 import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
+import { iconImg } from "./game-icons.js";
 import { installSlotDrag, slotRef, type SlotDrag, type SlotKind, type SlotRef } from "./slot-drag.js";
 import { iconForItem, ROADS, clanTintIndex,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
@@ -23,7 +24,7 @@ import { iconForItem, ROADS, clanTintIndex,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
-  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView,
+  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent,
 } from "@engine/gameplay";
 import { formatTemp, loadTempUnit } from "./hud-temp.js";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
@@ -42,6 +43,8 @@ export interface GameplaySource {
   startPlacing?(s: BuildSelection): void;
   /** ADR-229: clan palette primary (0xRRGGBB) for a BuildPiece tint index (registry.clanPaletteForTint); tints the white cloth icons. */
   clanTint?(tint: number): number | undefined;
+  /** Task 25: clan palette secondary (0xRRGGBB) for a BuildPiece tint index — the tint swatch's second half. */
+  clanTint2?(tint: number): number | undefined;
   /** ADR-122 road / sign tools (world-tools.ts): Build panel buttons so gamepad and touch reach them. */
   worldTools?: { road(surface: number): void; roadSurface(): number; placeSign(): boolean; editNearestSign(): boolean; surfaces: readonly string[] };
   /** Stall the trade panel shows (set by interacting with a stall); falls back to the nearest stall. */
@@ -360,7 +363,9 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // the sides, feet below), so equipped pieces are seen on the body, not as a list of large slots. Equipped
         // pieces no longer appear as items in the pack grid above: they live here until unequipped.
         const eq = el("section", { "data-role": "equipment", "aria-label": "Equipment" });
-        const doll = el("div", { "data-role": "doll", "aria-hidden": "true" }, "🧍");
+        const doll = el("div", { "data-role": "doll", "aria-hidden": "true" });
+  // Task 25: the 🧍 emoji placeholder is a custom pixel-art silhouette now.
+  doll.append(iconImg("ic_doll.png", 64, "Character"));
         eq.append(doll);
         for (const q of eqv) {
           const ref = slotRef("e", q.slot);
@@ -568,9 +573,24 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // ADR-221: locked tier / station — the requirement stays visible in the pane (no hover tooltip to clip)
         if (t.locked) { const lp = document.createElement("p"); lp.dataset["role"] = "build-locked"; lp.textContent = `🔒 ${t.requirement ?? "Locked"} — open the Skills panel to learn it.`; d.append(lp); }
         else { const hp = document.createElement("p"); hp.dataset["role"] = "build-hint"; hp.textContent = t.affordable ? "Choose to place · aim, rotate, confirm · Back returns here" : "Not enough materials"; d.append(hp); }
-        if (sel.variants.length > 1) { const vg = grid(); vg.dataset["role"] = "build-variants"; sel.variants.forEach((n, i) => vg.append(btn(n, `variant-${i}`, () => { buildSel.variant = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.variant, alt: i !== buildSel.variant }))); d.append(vg); }
-        if (sel.paintable) { const pg = grid(); pg.dataset["role"] = "build-tints"; for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint }));
-          const tgt = paintTarget(c); pg.append(btn("Paint nearest", "paint-apply", () => { if (tgt !== undefined) send(paintIntent(tgt, buildSel.paint), "Painted."); }, { disabled: tgt === undefined })); d.append(pg); }
+        // Task 25: the variants grid is always mounted (hidden when the piece has no variants) so the tint row
+        // below it keeps a stable position — morph reconciles children positionally, and a variants grid that
+        // appears/disappears above the tint row used to replace the focused tint-0 button with a variant button.
+        const vg = grid(); vg.dataset["role"] = "build-variants"; if (sel.variants.length <= 1) vg.style.display = "none";
+        sel.variants.forEach((n, i) => vg.append(btn(n, `variant-${i}`, () => { buildSel.variant = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.variant, alt: i !== buildSel.variant }))); d.append(vg);
+        // Task 25: tint row for paintable AND tiered pieces (tiers.length > 1 ⟺ p.tiered, which the server paints);
+        // all clan palettes, probed until the registry runs out (16 today), with real primary/secondary swatches.
+        if (sel.paintable || sel.tiers.length > 1) { const pg = grid(); pg.dataset["role"] = "build-tints";
+          pg.append(btn("Clan / none", "tint-0", () => { buildSel.paint = 0; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: buildSel.paint === 0, alt: buildSel.paint !== 0 }));
+          for (let i = 1; i <= 32; i++) { const c1 = src.clanTint?.(i); if (c1 === undefined) break; const c2 = src.clanTint2?.(i);
+            const b = btn(`Tint ${i}`, `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: buildSel.paint === i, alt: buildSel.paint !== i, data: { swatch: hex6(c1) } });
+            b.style.setProperty("--cz-sw", hex6(c1)); b.style.setProperty("--cz-sw2", c2 !== undefined ? hex6(c2) : "#F6EAD2"); pg.append(b); }
+          const tgt = paintTarget(c); const dv = dyeView(c);
+          // Task 25: painting costs one dye and needs a paint brush in the hotbar (clearing to Clan/none is free).
+          const canPaint = tgt !== undefined && (buildSel.paint === 0 || (dv.brush && dv.dye > 0));
+          const paintHint = tgt === undefined ? "No paintable piece nearby" : buildSel.paint === 0 ? "Clearing paint is free" : !dv.brush ? "Needs a paint brush in your hotbar" : dv.dye <= 0 ? "Needs dye — craft from 3 berries" : "";
+          pg.append(btn("Paint nearest", "paint-apply", () => { if (tgt !== undefined) send(paintIntent(tgt, buildSel.paint), "Painted."); }, { disabled: !canPaint, ...(paintHint ? { title: paintHint } : {}) })); d.append(pg);
+          if (paintHint) { const pp = document.createElement("p"); pp.dataset["role"] = "build-paint-hint"; pp.textContent = paintHint; d.append(pp); } }
         out.push(d);
       }
       return out;
@@ -617,6 +637,31 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < v.palettes.skin; i++) { const t = c.catalog?.skinTones[i]; const sw = swatchColor(t); // ADR-245: tone name + ramp.base swatch
         const sb = btn(t ? t.key.replace(/_/g, " ") : `Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: v.bodyType, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit, pressed: v.skinTone === i, ...(sw !== undefined ? { data: { swatch: `#${(sw & 0xffffff).toString(16).padStart(6, "0")}` } } : {}) });
         if (sw !== undefined) sb.style.setProperty("--cz-sw", sb.dataset["swatch"]!); kg.append(sb); } out.push(heading("Skin tone"), kg); }
+      out.push(heading("Dye"));
+      const dv = dyeView(c);
+      const dstatus = kit.para(dv.brush ? (dv.dye > 0 ? `Paint brush ready · ${dv.dye} dye` : "Paint brush ready · no dye — craft dye from 3 berries") : "You need a paint brush in your hotbar to dye anything.");
+      dstatus.dataset["role"] = "dye-status"; out.push(dstatus);
+      const dyeGrid = (pal: { index: number; key: string; color: number }[], kind: number, slot: number, palette: number, cur: number | undefined, can: boolean): HTMLElement => {
+        const g = grid();
+        pal.forEach((pc, i) => { const b = btn(`Dye ${i + 1}`, `dye-${kind}-${slot}-${i}`, () => send(dyeIntent(kind, slot, palette, i), "Dyed."), { disabled: !can, pressed: cur === i, data: { swatch: `#${(pc.color & 0xffffff).toString(16).padStart(6, "0")}` } }); b.style.setProperty("--cz-sw", b.dataset["swatch"]!); g.append(b); });
+        return g;
+      };
+      const canDye = dv.brush && dv.dye > 0;
+      if (dv.hair) {
+        out.push(heading("Hair dye"));
+        if (!dv.hair.equipped) out.push(kit.para("Equip a hairstyle first."));
+        else out.push(dyeGrid(dv.hairPalette, dv.hair.kind, dv.hair.slot, dv.hair.palette, dv.hair.primary, canDye));
+      }
+      for (const t of dv.worn) {
+        out.push(heading(`${t.key} dye`));
+        out.push(dyeGrid(t.palette === 0 ? dv.hairPalette : dv.clothingPalette, t.kind, t.slot, t.palette, t.primary, canDye));
+      }
+      if (dv.held) {
+        out.push(heading(`Held: ${dv.held.name} dye`));
+        const hg = grid();
+        dv.clothingPalette.forEach((pc, i) => { const b = btn(`Dye ${i + 1}`, `dye-2-${dv.held!.slot}-${i}`, () => send(dyeIntent(2, dv.held!.slot, 1, i), "Dyed."), { disabled: !canDye, pressed: dv.held!.color !== 0 && dv.held!.color === pc.color, data: { swatch: `#${(pc.color & 0xffffff).toString(16).padStart(6, "0")}` } }); b.style.setProperty("--cz-sw", b.dataset["swatch"]!); hg.append(b); });
+        out.push(hg);
+      } else out.push(kit.para("Hold a tool or weapon to dye it."));
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
       for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
       out.push(ug);

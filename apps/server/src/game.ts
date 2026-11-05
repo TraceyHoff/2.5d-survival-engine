@@ -1,7 +1,7 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
 import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
-import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts, installAnimalSkillCommands, installWorkerCommands, WorkerEvent } from "@engine/gameplay";
+import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts, installAnimalSkillCommands, installWorkerCommands, installDyeCommands, WorkerEvent } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -242,6 +242,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installPetCommands(world, handlers); // gameplay.petOffer / petCommand / petRename / dropItem (ADR-145)
   installAnimalSkillCommands(world, handlers); // gameplay.animalSkill (Task 15)
   installWorkerCommands(world, handlers); // gameplay.hireWorker / setWorkerJob / dismissWorker (Task 22)
+  installDyeCommands(world, handlers); // gameplay.dye — hair / worn / held (Task 25)
   installReadyCommands(world, handlers); // Task 14: gameplay.ready — client finished loading
   installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)

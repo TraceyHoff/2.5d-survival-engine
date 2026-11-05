@@ -26,6 +26,8 @@ export const enum BuildFail {
   CornerSlot = 21,
   /** ADR-221: the station piece or building tier needs a skill-tree unlock. */
   SkillLocked = 22,
+  /** Task 25: painting / dyeing needs a paint brush in the hotbar. */
+  NoBrush = 23,
 }
 export const enum DestroyCause { Damage = 1, Collapse = 2, Demolish = 3 }
 

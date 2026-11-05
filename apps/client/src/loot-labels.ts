@@ -16,7 +16,7 @@ export interface LootLabelDeps {
   device(): PromptDevice; key(): string;
 }
 /** Prompt line for the nearest bag in reach. */
-export const lootPrompt = (device: PromptDevice, key: string): string => (device === "touch" ? "Tap ✋ to open" : key ? `[${key}] Open` : "Open");
+export const lootPrompt = (device: PromptDevice, key: string): string => (device === "touch" ? "Tap to open" : key ? `[${key}] Open` : "Open");
 
 /** Pure: label points (css px) for the bags around the player. Exported for tests / QA. */
 export function lootLabelPoints(w: World, p: Entity, cam: CameraLike): (LabelPoint & { gx: number; gy: number })[] {

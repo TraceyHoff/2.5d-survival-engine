@@ -302,5 +302,6 @@
     ,{"key": "honey_tea", "station": "campfire", "seconds": 3, "ingredients": [{"item": "honey", "count": 1}, {"item": "herbs", "count": 1}], "output": {"item": "honey_tea", "count": 1}}
     ,{"key": "cooling_brew", "station": "campfire", "seconds": 3, "ingredients": [{"item": "salt", "count": 1}, {"item": "honey", "count": 1}], "output": {"item": "cooling_brew", "count": 1}}
     ,{"key": "medicated_bandage", "station": "workbench", "seconds": 3, "ingredients": [{"item": "bandage", "count": 1}, {"item": "antiseptic", "count": 1}], "output": {"item": "medicated_bandage", "count": 1}}
+    ,{"key": "paint_brush", "station": "none", "seconds": 2, "ingredients": [{"item": "wood", "count": 1}, {"item": "fiber", "count": 2}], "output": {"item": "paint_brush", "count": 1}}
   ]
 }

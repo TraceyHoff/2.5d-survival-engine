@@ -35,24 +35,24 @@ describe("creator eye / hair colour rows (no clothing rows, no shared secondary 
     const m = new Map<string, string>(); saveCharacter("singleplayer", "t", { v: 1, name: "T", appearance: v }, { getItem: (k) => m.get(k) ?? null, setItem: (k, x) => void m.set(k, x), removeItem: () => undefined });
     expect(loadCharacter("singleplayer", "t", { getItem: (k) => m.get(k) ?? null, setItem: () => undefined, removeItem: () => undefined })?.appearance).toEqual(v);
   });
-  it("hair:color steps the hair slot only — except the deliberate beard-follows-hair sync (Task 24)", () => {
+  it("hair:color steps the hair slot only — the beard/face colour is independent (Task 25)", () => {
     let v = randomLook(cat, () => 0.3);
     const hair0 = v.primary[slotIndex("hair")]!; const face0 = v.primary[slotIndex("face")]!;
     const eyes0 = v.primary[slotIndex("eyes")]!; const skin0 = v.skinTone;
     v = stepLook(cat, v, "hair:color", 1);
     expect(v.primary[slotIndex("hair")]).not.toBe(hair0); // the hair colour really changed
-    // Task 24: this is the ONE place hair colour reaches the face, and it is deliberate — the beard/brows
-    // (the face layer's tintmask) follow the hair colour so a red-haired survivor has a red beard. The
-    // resolver itself is per-slot (see render faceVisibleDirs.test.ts), so if the user wants the beard
-    // independent, this line in stepLook is the switch — not the shader, the lift, or the tintmask.
-    expect(v.primary[slotIndex("face")]).toBe(v.primary[slotIndex("hair")]);
-    expect(v.primary[slotIndex("face")]).not.toBe(face0); // the sync is visible on the face value
+    // Task 25: the old beard-follows-hair sync is gone — the hair colour no longer reaches the face slot.
+    // A live screenshot showed a bald survivor's whole face in the hair colour (teal); the resolver itself
+    // is per-slot (see render faceVisibleDirs.test.ts), and this sync was the one code path that wrote the
+    // hair colour into the face slot, so it is removed: the beard/brows keep their own colour.
+    expect(v.primary[slotIndex("face")]).toBe(face0); // untouched by the hair step
     expect(v.primary[slotIndex("eyes")]).toBe(eyes0); // eyes keep their own colour
     expect(v.skinTone).toBe(skin0);
-    // …and the sync is one-way: stepping the face colour alone does NOT move the hair
+    // …and the sync is gone both ways: stepping the face colour alone does NOT move the hair
     const hair1 = v.primary[slotIndex("hair")]!;
     v = stepLook(cat, v, "face:color", 1);
     expect(v.primary[slotIndex("hair")]).toBe(hair1);
+    expect(v.primary[slotIndex("face")]).not.toBe(face0);
   });
   it("dialog rows work with mouse/touch buttons, keyboard arrows and a gamepad", async () => {
     let pad: Gamepad | null = null; const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [pad] });

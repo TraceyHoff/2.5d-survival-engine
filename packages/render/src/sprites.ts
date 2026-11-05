@@ -136,9 +136,11 @@ export interface GameplayBindings {
   /** gameplay Burning {lit, intensity 0-255, startTick} on build pieces: fire/ember/smoke VFX (see burning.ts). */
   burning?: ComponentDef<{ lit: "u8"; intensity: "u8"; startTick: "u32" }>;
   /** gameplay Equipment {mainHandItem u16 (0 = empty)}: the item is drawn at the character frame's hand anchor (frameMeta handR via AssetRegistry.anchorPoint; legacy hands.json fallback). */
-  equipment?: ComponentDef<{ mainHandItem: "u16" }>;
+  equipment?: ComponentDef<{ mainHandItem: "u16"; mainHandSlot: { type: "u8"; default: number } }>;
   /** Item id -> held sprite id (`held_<item key>` in the `held` atlas); undefined = draw nothing. */
   heldSprite?: (itemId: number) => number | undefined;
+  /** Task 25: per-entity dye colour (packed 0xRRGGBB) of the item in an inventory slot; undefined = undyed. The main-hand held sprite is multiplied by it (whole-sprite tint — held sprites have no tintmask). */
+  heldDye?: (entity: number, slot: number) => number | undefined;
   /** ADR-135 replicated off-hand worn slot {offHandItem u16 (0 = empty)}: drawn at the frame's handL anchor (handR mirrored while Art lacks handL). */
   offHand?: ComponentDef<{ offHandItem: "u16" }>;
   /** Item id -> off-hand sprite id (`offhand_<key>`, falling back to `held_<key>`; see character/offhand.ts); undefined = draw nothing. */
@@ -646,7 +648,7 @@ export class SpriteBatch {
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
    */
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
-    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false, animT = 0, socket?: string): void {
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false, animT = 0, socket?: string, tint = 0): void {
     if (!item) return; const hid = heldOf(item); if (hid === undefined) return; const st = off ? this.offHandStats : this.heldStats; st[0]++;
     let h: HandAnchor | undefined; let behind: boolean;
     if (socket) { h = atlas.handOf(body, socket); if (!h) return; behind = h.behind; }
@@ -656,7 +658,8 @@ export class SpriteBatch {
     const r = this.heldRes; const hfa = atlas.fireAnim(hid); if (!atlas.resolve(hid, hfa >= 0 ? hfa : 0, facing, hfa >= 0 ? animT : 0, 0, r)) return; st[2]++; // ADR-218: held torches flicker (render clock)
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
-    const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline | (atlas.isCrisp(r.atlas) ? CRISP : 0), 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+    // Task 25: dye tint is packed 0xRRGGBB; writeOne wants (r<<24)|(g<<16)|(b<<8). 0 = no tint.
+    const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline | (atlas.isCrisp(r.atlas) ? CRISP : 0), 0, fade, -OPEN, OPEN, tint ? (tint << 8) >>> 0 : 0, 0, 0, 0, 0, 0);
     // anchor (pivot) height above the body pivot keeps the item's depth on the body's column
     o[15] = (body.ay - h.y) * scale + lift; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
     this.pushOcc(o, 0, occT, mode);
@@ -962,7 +965,7 @@ export class SpriteBatch {
       }
       // ADR-249: no held / carried / off-hand items while sleeping (sleep, sleep_lie, sleep_lie_under): hands are empty in bed
       const asleep = res.anim.startsWith("sleep");
-      if (eq && heldOf && !asleep) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i)); }
+      if (eq && heldOf && !asleep) { const s2 = eq.slot(i); if (s2 >= 0) { const hs = eq.data.mainHandSlot[s2]!; const dye = hs !== 255 ? (cx.bindings.heldDye?.(e, hs) ?? 0) : 0; this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i), undefined, dye); } }
       const cs = cx.bindings.carriedSprite?.(e); // ADR-241 carry socket
       if (cs !== undefined && bodyL && !asleep) this.emitHeld(atlas, carriedId, cs + 1, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, o0[15]!, false, 0, CARRY_SOCKET);
       if (oh && offOf && !asleep) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true, fireAnimTime(cx.now, i)); }

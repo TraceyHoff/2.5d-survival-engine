@@ -9,13 +9,15 @@ import { Weather, Transform, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
 import { activeDiseases, Diseases, Exposure, Health, RoomHeat, Survival } from "@engine/gameplay";
 import { seasonAtDays } from "@engine/core";
-import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_GLYPH, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
+import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
 export const WEATHER_LABEL = ["Clear", "Rain", "Storm", "Snow", "Fog", "Overcast", "Heat", "Blizzard", "Windy"];
 const STATS = [
-  { key: "hp", label: "❤", color: "#E8475F" }, { key: "hunger", label: "🍖", color: "#F4A74A" },
-  { key: "thirst", label: "💧", color: "#5CC6DC" }, { key: "stamina", label: "⚡", color: "#FFD45A" },
+  { key: "hp", color: "#E8475F", icon: "ic_health.png" }, { key: "hunger", color: "#F4A74A", icon: "ic_hunger.png" },
+  { key: "thirst", color: "#5CC6DC", icon: "ic_thirst.png" }, { key: "stamina", color: "#FFD45A", icon: "ic_stamina.png" },
 ] as const;
+/** Task 25: custom pixel-art icons (apps/client/public/icons/) for the season glyph — the atlas has no season frames. */
+const SEASON_ICON = ["ic_sun.png", "ic_leaf.png", "ic_snowflake.png"] as const;
 
 export interface HudOverrides { hours?: number; weather?: number; /** ADR-239 ?season= (0 summer, 1 fall, 2 winter) */ season?: number; /** tests: unit instead of Settings */ unit?: TempUnit }
 type Frame = { frame: { x: number; y: number; w: number; h: number }; nineSlice?: { l: number; t: number; r: number; b: number } };
@@ -72,19 +74,24 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
   const clockText = document.createElement("span"); clockText.dataset["hud"] = "clock";
   const weatherText = document.createElement("span"); weatherText.dataset["hud"] = "weather";
   const seasonText = document.createElement("span"); seasonText.dataset["hud"] = "season";
+  // Task 25: the season glyph is a custom icon (the text emoji is gone); the img is swapped per season in update().
+  const seasonIcon = document.createElement("img"); seasonIcon.className = "ic"; seasonIcon.alt = ""; seasonText.append(seasonIcon);
   const left = document.createElement("span"); left.className = "l"; left.append(clockIcon, clockText, seasonText); clock.append(left, weatherText);
   const icons: HTMLImageElement[] = [];
   let ui: Awaited<ReturnType<typeof uiSprites>> | undefined;
   const fills = STATS.map((s) => {
     const row = document.createElement("div"); row.className = "row"; row.dataset["stat"] = s.key;
-    const l = document.createElement("span"); l.className = "lab"; l.textContent = s.label; const ic = document.createElement("img"); ic.className = "ic"; ic.alt = s.key; ic.style.display = "none"; icons.push(ic); l.prepend(ic); const bar = document.createElement("div"); bar.className = "bar";
+    const l = document.createElement("span"); l.className = "lab"; const ic = document.createElement("img"); ic.className = "ic"; ic.alt = s.key; ic.style.display = "none"; icons.push(ic); l.prepend(ic); const bar = document.createElement("div"); bar.className = "bar";
     const f = document.createElement("div"); f.className = "fill"; f.style.background = s.color; bar.append(f); row.append(l, bar); root.append(row); return f;
   });
   // ADR-239 temperature gauge: air-temperature marker on a cold→hot gradient, felt-temperature caret, "24°C" readout
   const tRow = document.createElement("div"); tRow.className = "row"; tRow.dataset["stat"] = "temp";
-  const tLab = document.createElement("span"); tLab.className = "lab"; tLab.textContent = "🌡"; const tIc = document.createElement("img"); tIc.className = "ic"; tIc.alt = "temp"; tIc.style.display = "none"; tLab.prepend(tIc);
+  const tLab = document.createElement("span"); tLab.className = "lab"; const tIc = document.createElement("img"); tIc.className = "ic"; tIc.alt = "temp"; tIc.style.display = "none"; tLab.prepend(tIc);
   const tBar = document.createElement("div"); tBar.className = "bar"; const tAir = document.createElement("i"); tAir.className = "air"; const tFelt = document.createElement("i"); tFelt.className = "felt"; const tGrad = document.createElement("i"); tGrad.className = "grad"; tBar.append(tGrad, tAir, tFelt); // gradient as a child so the bar_track nine-slice frame (fill) stays around it
-  const tVal = document.createElement("span"); tVal.className = "tv"; tVal.dataset["hud"] = "temp"; tRow.append(tLab, tBar, tVal); root.append(tRow);
+  const tVal = document.createElement("span"); tVal.className = "tv"; tVal.dataset["hud"] = "temp";
+  // Task 25: the indoors marker is a custom house icon (was the 🏠 emoji prefix on the temp text).
+  const houseIcon = document.createElement("img"); houseIcon.className = "ic"; houseIcon.alt = "indoors"; houseIcon.src = `${base}icons/ic_house.png`; houseIcon.style.display = "none";
+  tRow.append(tLab, tBar, houseIcon, tVal); root.append(tRow);
   // Task 13: one chip per active disease on the local player (replicated Diseases component); chips vanish on cure
   const chips = document.createElement("div"); chips.dataset["role"] = "disease-chips"; root.append(chips);
   let unit: TempUnit = ov.unit ?? loadTempUnit(), unitAt = 0, tempIcon = "", hudBottom = -1;
@@ -104,10 +111,12 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     nine("#hud", "panel_hud", "border-radius:0;box-shadow:none;color:#FFFAF0;padding:2px 4px;text-shadow:0 1px 0 #3B2433");
     nine("#hud .bar", "bar_track", "border-radius:0;height:5px");
     SPRITE_KEYS.forEach((k, i) => nine(`#hud .row[data-stat="${STATS[i]!.key}"] .fill`, `bar_fill_${k}`, "border-radius:0;height:0;margin:-1px 0;box-sizing:border-box;min-width:7px"));
-    css.push("#hud .clock{color:#FFE7A8}#hud .ic{width:13px;height:13px;vertical-align:middle;image-rendering:auto}#hud .l{display:flex;align-items:center;gap:3px}#hud .lab{display:flex;width:14px}");
+    css.push("#hud .clock{color:#FFE7A8}#hud .ic{width:13px;height:13px;vertical-align:middle;image-rendering:pixelated}#hud .l{display:flex;align-items:center;gap:3px}#hud .lab{display:flex;width:14px}");
     const st = document.createElement("style"); st.textContent = css.join("\n"); style.after(st);
-    icons.forEach((ic, i) => { const url = u.url(`vital_${SPRITE_KEYS[i]}`); if (url) { ic.src = url; ic.style.display = ""; ic.nextSibling?.remove(); } });
-    if (u.url("icon_temp")) { tIc.style.display = ""; tIc.nextSibling?.remove(); } // Art's thermometer (icon_temp[_hot|_cold]) once it lands in the UI atlas
+    icons.forEach((ic, i) => { const url = u.url(`vital_${SPRITE_KEYS[i]}`) ?? `${base}icons/${STATS[i]!.icon}`; ic.src = url; ic.style.display = ""; ic.nextSibling?.remove(); });
+    // Task 25: the thermometer falls back to the custom icon when the atlas has no icon_temp frame.
+    if (u.url("icon_temp")) { tIc.style.display = ""; tIc.nextSibling?.remove(); }
+    else { tIc.src = `${base}icons/ic_temp.png`; tIc.style.display = ""; tIc.nextSibling?.remove(); tempIcon = "custom"; }
     update();
   });
   const update = (): void => {
@@ -122,7 +131,9 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     } catch { setText("clock", clockText, ""); setText("weather", weatherText, ""); }
     try { // ADR-239 season + temperature
       const days = dayCount(), si = ov.season !== undefined ? Math.floor(((ov.season % 3) + 3) % 3) : seasonAtDays(w, days).index;
-      setText("season", seasonText, SEASON_GLYPH[si] ?? ""); setAttr("seasonTitle", seasonText, "title", `${SEASON_LABEL[si] ?? ""}${ov.season !== undefined ? " (view override ?season=)" : ""}`);
+      // Task 25: season is a custom icon (was the ☀/🍂/❄ text emoji).
+      if (seasonIcon.dataset["k"] !== String(si)) { seasonIcon.dataset["k"] = String(si); seasonIcon.src = `${base}icons/${SEASON_ICON[si] ?? "ic_sun.png"}`; }
+      setAttr("seasonTitle", seasonText, "title", `${SEASON_LABEL[si] ?? ""}${ov.season !== undefined ? " (view override ?season=)" : ""}`);
       const now = Date.now(); if (!ov.unit && now - unitAt > 1000) { unitAt = now; unit = loadTempUnit(); }
       const ovr = ov.season !== undefined || ov.hours !== undefined || ov.weather !== undefined;
       const air = hudAirTemp(w, ovr ? overrideDays(w, days, ov) : days, ov.weather);
@@ -138,7 +149,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       const indoors = indoor !== undefined && indoor.sheltered && Math.abs(indoor.temp - air) >= 1;
       const shown = indoors ? indoor!.temp : air;
       const band = tempBand(felt ?? shown); setAttr("band", tRow, "band", band);
-      setStyle("airLeft", tAir, "left", `${(gaugeFrac(shown) * 100).toFixed(1)}%`); setText("tempVal", tVal, `${indoors ? "🏠 " : ""}${formatTemp(shown, unit)}`);
+      setStyle("airLeft", tAir, "left", `${(gaugeFrac(shown) * 100).toFixed(1)}%`); setText("tempVal", tVal, `${formatTemp(shown, unit)}`); setStyle("houseDisp", houseIcon, "display", indoors ? "" : "none");
       if (felt !== undefined && Math.abs(felt - shown) >= 1) { setStyle("feltDisp", tFelt, "display", ""); setStyle("feltLeft", tFelt, "left", `${(gaugeFrac(felt) * 100).toFixed(1)}%`); } else setStyle("feltDisp", tFelt, "display", "none");
       setAttr("rowTitle", tRow, "title", `Air ${formatTemp(air, unit)}${indoors ? ` · ${indoor!.enclosed ? "indoors" : "sheltered"} ${formatTemp(indoor!.temp, unit)}` : ""}${felt !== undefined ? ` · feels like ${formatTemp(felt, unit)}` : ""}`);
       if (ui) { const k = band === "mild" ? "icon_temp" : `icon_temp_${band}`; const url = ui.url(k) ?? ui.url("icon_temp"); if (url && tempIcon !== k) { tIc.src = url; tempIcon = k; } }

@@ -37,6 +37,9 @@ export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors
   skillPick?: number;
   /** Task 22: hired-worker sensors (fillHireSensors; absent for unhired bots and humans). */
   hire?: { job: number; owner: number; ax: number; ay: number };
+  /** Task 25: dye this (hair / worn / held) — set by fillAgentSensors when the bot holds a dye, a paint brush in its
+   *  hotbar, and a dye target; instantChores turns it into a `dye:<kind>:<slot>:<palette>:<index>` command. */
+  dye?: { kind: number; slot: number; palette: number; index: number };
   /** Task 22: nearest farm target near the owner's base (mature crop node to harvest, or a crop to tend). */
   farm?: { harvest?: { id: number; x: number; y: number }; tend?: { id: number; x: number; y: number; kind: "water" | "plant"; slot: number };
     /** Task 23: nearest tillable tile near the owner's base (hoe Use in front of it; lack = hoe to withdraw from base storage first). */

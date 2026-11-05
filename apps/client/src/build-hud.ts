@@ -4,6 +4,7 @@
  * Also wires touch placement: tap the world to position the ghost, drag to adjust (ghost lifted above the finger).
  */
 import type { BuildDevice, BuildMode } from "./build-mode.js";
+import { iconUrl } from "./game-icons.js";
 
 export interface BuildHudOptions {
   buildMode: BuildMode; device(): BuildDevice;
@@ -29,6 +30,7 @@ export const BUILD_FAIL_TEXT: Readonly<Record<number, string>> = {
   1: "Unknown piece", 2: "Tier not allowed", 3: "Too far away", 4: "Too high", 5: "Not your land", 6: "Area full", 7: "Bad ground",
   8: "Spot taken", 9: "Blocked", 10: "Needs a socket", 11: "Needs support", 12: "Not enough materials",
   22: "Locked: learn it in the skill tree", // ADR-221 BuildFail.SkillLocked
+  23: "Needs a paint brush in the hotbar", // Task 25 BuildFail.NoBrush
 };
 export const buildFailText = (reason: number | undefined): string => (reason && BUILD_FAIL_TEXT[reason]) || "Can't place here";
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -36,6 +38,9 @@ const label = (k: string): string => k.replace(/_/g, " ").replace(/^\w/, (m) => 
 
 const TOOL_HINT: Record<BuildDevice, { road: string; sign: string }> = { keyboardMouse: { road: "T", sign: "N" }, gamepad: { road: "LT+X", sign: "LT+Y" }, touch: { road: "", sign: "" } };
 const SNAP_HINT: Record<BuildDevice, string> = { keyboardMouse: "G", gamepad: "R3", touch: "" };
+/** Task 25: inline icon img for the build-HUD tool buttons (was 🛣 / 🪧 emoji in the template string). */
+const bhIcon = (f: string): string => `<img src="${iconUrl(f)}" alt="" style="width:18px;height:18px;vertical-align:-4px;image-rendering:pixelated">`;
+
 export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
   const s = bm.selection; if (!s) return "";
   const p = bm.preview; const ctx = bm.context;
@@ -50,7 +55,7 @@ export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
     + `</div>` : "";
   // ADR-171: road + sign tools while building (touch / pad / mouse), with the device's shortcut
   const th = TOOL_HINT[device]; const tools = bm.hasTools ? `<div class="bh-tools" role="toolbar" aria-label="Road and sign tools">`
-    + `<button data-bh="road" aria-label="Road tool">🛣 Road${th.road ? ` <kbd>${th.road}</kbd>` : ""}</button><button data-bh="sign" aria-label="Place or edit a sign">🪧 Sign${th.sign ? ` <kbd>${th.sign}</kbd>` : ""}</button></div>` : "";
+    + `<button data-bh="road" aria-label="Road tool">${bhIcon("ic_road.png")} Road${th.road ? ` <kbd>${th.road}</kbd>` : ""}</button><button data-bh="sign" aria-label="Place or edit a sign">${bhIcon("ic_sign.png")} Sign${th.sign ? ` <kbd>${th.sign}</kbd>` : ""}</button></div>` : "";
   const hint = device === "touch" && !bm.touchPoint ? `<div class="bh-hint">Tap to position · drag to adjust · ✓ to place</div>` : "";
   return chip + tools + strip + hint + (bm.toast ? `<div class="bh-toast" role="status">${esc(bm.toast)}</div>` : "");
 }

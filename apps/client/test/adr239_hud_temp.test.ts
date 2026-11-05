@@ -34,7 +34,8 @@ describe("ADR-239 HUD temperature gauge", () => {
       expect(rows).toEqual(["hp", "hunger", "thirst", "stamina", "temp"]);
       const t = Number(document.querySelector("#hud [data-hud=temp]")!.textContent!.replace("−", "-").replace("°C", "")); temps.push(t);
       expect(t).toBeGreaterThanOrEqual(lo); expect(t).toBeLessThanOrEqual(hi);
-      expect(document.querySelector("#hud [data-hud=season]")!.textContent).toBe(["☀", "🍂", "❄"][season]);
+      // Task 25: the season is a custom icon now (was the ☀/🍂/❄ text glyph); assert the icon file per season.
+      expect(document.querySelector<HTMLImageElement>("#hud [data-hud=season] img")!.getAttribute("src")).toContain(["ic_sun.png", "ic_leaf.png", "ic_snowflake.png"][season]);
       const air = document.querySelector<HTMLElement>("#hud .row[data-stat=temp] .air")!; expect(parseFloat(air.style.left)).toBeGreaterThan(0);
     }
     expect(temps[0]!).toBeGreaterThan(temps[1]!); expect(temps[1]!).toBeGreaterThan(temps[2]!);

@@ -30,7 +30,7 @@ import { Vehicle as GVehicle, VehicleSeats, VehicleState, Hitch, vehicleDefOf, l
 import { netIdOf } from "@engine/net";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
-import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
+import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, SlotDye, INVENTORY_SLOTS, wornCosmetics } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, STATION_LIGHT_RADIUS, StationKind, Crop, cropSpriteKey, clutterForChunk, resolveSprite, despawnFadeAlpha, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -41,8 +41,10 @@ const VTemp = defineComponent("ViewBodyTemp", { cold: "u8", heat: "u8", shiverin
 const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
 /** ADR-242: replicated Burning on pieces -> BurningFx (raid fire / embers / smoke). */
 const VBurn = defineComponent("ViewBurning", { lit: "u8", intensity: "u8", startTick: "u32" });
-/** ADR-135: replicated main-hand item (held sprite at the hand anchor). */
-const VEquip = defineComponent("ViewEquipment", { mainHandItem: "u16" });
+/** ADR-135: replicated main-hand item (held sprite at the hand anchor). Task 25: mainHandSlot (255 = none) rides along so the renderer can look up the held slot's dye colour. */
+const VEquip = defineComponent("ViewEquipment", { mainHandItem: "u16", mainHandSlot: { type: "u8", default: 255 } });
+/** Task 25: replicated SlotDye colours (packed 0xRRGGBB per inventory slot) — the held sprite is tinted by them. */
+const VSlotDye = defineComponent("ViewSlotDye", { colors: { type: "u32", length: INVENTORY_SLOTS } });
 /** ADR-135: replicated off-hand worn slot (Worn.item[WearSlot.OffHand]) -> offhand_<key> / held_<key> at handL. */
 const VOffHand = defineComponent("ViewOffHand", { offHandItem: "u16" });
 const OFFHAND_SLOT = 6; /* WearSlot.OffHand */
@@ -187,7 +189,7 @@ export class IsoView {
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
-    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand, VBurn]) this.view.register(c);
+    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand, VBurn, VSlotDye]) this.view.register(c);
     useRaidBurning(renderer.burning, registry); // ADR-242: pvp_clan raid flames when served
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
@@ -196,7 +198,7 @@ export class IsoView {
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       animChain: (e, st, elapsed) => ((st === 3 || st >= 13) && this.characters.has(e) ? animChainFor(st, this.animCtx(e, elapsed)) : undefined), // ADR-241
-      equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
+      equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), heldDye: (e, slot) => { const a = this.view.getArray(e as Entity, VSlotDye, "colors"); const c = a?.[slot] ?? 0; return c !== 0 ? c : undefined; }, offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
       ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => { const g = this.gearOf.get(ve) ?? null; return this.charArtOn(ve) ? { salt: (g?.salt ?? 0) + 7919, parts: g?.parts ?? [] } : g; }, mapLayers: <L extends { sprite: number; slot: string; layerName?: string }>(ve: number, ls: readonly L[]): L[] => this.charArtLayers(ve, ls) } } : {}) });
   }
   /** ADR-240: `charArt` setting (?charArt= / localStorage): v1 (default), v2s = local player only, v2s-all = every character. */
@@ -496,8 +498,8 @@ export class IsoView {
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
       if (net.isRegistered(Equipment) && net.has(e, Equipment)) { // ADR-135 held item + worn gear
-        this.netRef = net; const eq = net.get(e, Equipment); const mh = eq?.mainHandItem ?? 0;
-        if (eq && !v.has(ve, VEquip)) v.add(ve, VEquip, { mainHandItem: mh }); else if (v.has(ve, VEquip) && v.getField(ve, VEquip, "mainHandItem") !== mh) v.set(ve, VEquip, { mainHandItem: mh });
+        this.netRef = net; const eq = net.get(e, Equipment); const mh = eq?.mainHandItem ?? 0; const ms = eq?.mainHandSlot ?? 255;
+        if (eq && !v.has(ve, VEquip)) v.add(ve, VEquip, { mainHandItem: mh, mainHandSlot: ms }); else if (v.has(ve, VEquip) && (v.getField(ve, VEquip, "mainHandItem") !== mh || v.getField(ve, VEquip, "mainHandSlot") !== ms)) v.set(ve, VEquip, { mainHandItem: mh, mainHandSlot: ms });
         const cat = this.registry.cosmetics; const gear = cat ? wornCosmetics(net, e, (k) => cat.byKey(k) !== undefined) : [];
         if (gear.length && cat) { let salt = 7; const parts: Array<[number, number]> = []; for (const [s, k] of gear) { const id = cat.byKey(k)?.id; if (id === undefined) continue; parts.push([slotIndex(s as WearableSlot), id]); salt = (salt * 31 + id * 8 + slotIndex(s as WearableSlot)) % 32749; }
           if (parts.length) this.gearOf.set(ve, { salt: salt + 1, parts }); else this.gearOf.delete(ve); }
@@ -507,6 +509,13 @@ export class IsoView {
         const oh = net.has(e, Worn) ? (net.get(e, Worn)?.item[OFFHAND_SLOT] ?? 0) : 0;
         if (oh) { this.netRef = net; if (!v.has(ve, VOffHand)) v.add(ve, VOffHand, { offHandItem: oh }); else if (v.getField(ve, VOffHand, "offHandItem") !== oh) v.set(ve, VOffHand, { offHandItem: oh }); }
         else if (v.has(ve, VOffHand)) v.remove(ve, VOffHand);
+      }
+      if (net.isRegistered(SlotDye)) { // Task 25: dyed inventory slots (held-item tint)
+        const sd = net.get(e, SlotDye);
+        if (sd) { const colors = [...sd.colors]; const cur = v.has(ve, VSlotDye) ? v.getArray(ve, VSlotDye, "colors") : undefined;
+          const same = cur !== undefined && cur.length === colors.length && colors.every((c, i) => c === cur[i]);
+          if (!same) { if (v.has(ve, VSlotDye)) v.set(ve, VSlotDye, { colors }); else v.add(ve, VSlotDye, { colors }); } }
+        else if (v.has(ve, VSlotDye)) v.remove(ve, VSlotDye);
       }
       if (v.has(ve, VAnim)) this.syncHeldLight(net, e, ve); // ADR-216: a held torch/lantern/candle lights the area around its bearer
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }

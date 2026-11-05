@@ -15,7 +15,7 @@ const deathBag = (w: World, p: Entity): Entity => { const ev = collect(w, G.Deat
 
 describe("ADR-238 ground loot despawn", () => {
   it("balance data: dropped ~10 min, death bags ~30 min, emptied 10-15 s, fade 30 s, death bags safe from the cap for 5 min", () => {
-    expect(DESPAWN.droppedSeconds).toBe(600); expect(DESPAWN.deathBagSeconds).toBe(1800); expect(DESPAWN.fadeSeconds).toBe(30);
+    expect(DESPAWN.droppedSeconds).toBe(180); expect(DESPAWN.deathBagSeconds).toBe(1800); expect(DESPAWN.fadeSeconds).toBe(30);
     expect(DESPAWN.emptiedSeconds).toBeGreaterThanOrEqual(10); expect(DESPAWN.emptiedSeconds).toBeLessThanOrEqual(15);
     expect(DESPAWN.deathBagMinAgeSeconds).toBe(300); expect(DESPAWN.maxGroundBags).toBeGreaterThan(50);
   });

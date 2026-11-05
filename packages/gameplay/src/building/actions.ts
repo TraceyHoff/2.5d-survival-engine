@@ -13,7 +13,7 @@ import { secondsToTicks } from "../defs.js";
 import {
   BuildFail, BuildFailed, ContainerClosed, ContainerOpened, DestroyCause, DoorToggled, emit, PiecePainted, PieceRepaired, PieceUpgraded,
 } from "../events.js";
-import { addItem, countItem, exchangeItems, listSlots, transferItem } from "../inventory.js";
+import { addItem, countItem, exchangeItems, hasBrushInHotbar, listSlots, transferItem } from "../inventory.js";
 import { makeNoise } from "../systems/noise.js";
 import { clearBreach, DOOR_BREACHED } from "../combat/pvp_pieces.js";
 import { distance } from "../systems/fuel.js";
@@ -81,6 +81,8 @@ export function buildActionSystem(world: World, dt: number): void {
       case IntentAction.Paint: {
         if (!def.paintable && !def.tiered) { fail(BuildFail.NotPaintable); continue; }
         const paint = it.data.paint[s]!; const dye = defs.itemId("dye");
+        // Task 25: dyeing a piece needs the paint brush in the hotbar (clearing paint back to 0 is free).
+        if (paint !== 0 && !hasBrushInHotbar(world, e)) { fail(BuildFail.NoBrush); continue; }
         if (paint !== 0 && !exchangeItems(world, e, [{ item: dye, count: 1 }], [])) { fail(BuildFail.CannotAfford); continue; }
         world.setField(p, BuildPiece, "paint", paint); emit(world, PiecePainted, { piece: p, paint });
         break;

@@ -473,7 +473,8 @@
     "honey_tea": 471,
     "medicated_bandage": 472,
     "salt_brew": 473,
-    "waterskin": 474
+    "waterskin": 474,
+    "paint_brush": 475
   },
   "resources": {
     "fallen_branches": 1,
@@ -934,7 +935,8 @@
     "honey_tea": 370,
     "medicated_bandage": 371,
     "salt_brew": 372,
-    "waterskin": 373
+    "waterskin": 373,
+    "paint_brush": 374
   },
   "pieces": {
     "anvil": 1,

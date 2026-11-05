@@ -14,7 +14,7 @@ import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
-import { readSlots, slotFreshness } from "../inventory.js";
+import { hasBrushInHotbar, readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { StationKind, type GameDefs } from "../defs.js";
 import { animalDefs } from "../population.js";
@@ -107,7 +107,11 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
   { let free = 0; for (let i = 0; i < slots.items.length; i++) if (!slots.items[i] || !slots.counts[i]) free++;
     const stages = spoilStages(defs);
     for (let i = 0; i < slots.items.length && !view.junk; i++) { const it = slots.items[i]!; if (it && slots.counts[i] && defs.items.get(it)?.food && stages[spoilStageIndex(slotFreshness(world, self, i), stages)]?.sick) view.junk = { item: it, count: slots.counts[i]! }; }
-    if (free <= 2 && !view.junk) for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it) || isSeedItem(defs, it)) continue; view.junk = { item: it, count: slots.counts[i]! }; break; } }
+    if (free <= 2 && !view.junk) for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it) || isSeedItem(defs, it)) continue;
+      // Task 25: dye is purposeful material while the bot holds a paint brush (it will be consumed by the dye action,
+      // never junk-dropped in a loop); a brush-less bot keeps the Task 16 behaviour (dye is junk).
+      if (it === ix.item.get("dye")?.id && hasBrushInHotbar(world, self)) continue;
+      view.junk = { item: it, count: slots.counts[i]! }; break; } }
   // stash: bag items the plan does not need (never tools / weapons / worn / food stock / fire wood)
   if (bs?.storage && bs.storage.free > 0) {
     const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);

@@ -26,7 +26,7 @@ describe("ADR-114 character creator", () => {
     let v = randomLook(cat, () => 0.99); v = { ...v, bodyType: 1 }; v.parts[slotIndex("hair")] = 2;
     const m = stepLook(cat, v, "body", 1); expect(m.bodyType).toBe(0); expect(m.parts[slotIndex("hair")]).not.toBe(2);
     const h0 = stepLook(cat, { ...m, parts: m.parts.map((p, i) => (i === slotIndex("hair") ? 0 : p)) }, "hair", 1); expect(h0.parts[slotIndex("hair")]).toBe(1);
-    const c = stepLook(cat, h0, "hair:color", -1); expect(c.primary[slotIndex("hair")]).toBe(((h0.primary[slotIndex("hair")]! - 1) % 5 + 5) % 5); expect(c.primary[slotIndex("face")]).toBe(c.primary[slotIndex("hair")]);
+    const c = stepLook(cat, h0, "hair:color", -1); expect(c.primary[slotIndex("hair")]).toBe(((h0.primary[slotIndex("hair")]! - 1) % 5 + 5) % 5); expect(c.primary[slotIndex("face")]).toBe(h0.primary[slotIndex("face")]); // Task 25: the beard-follows-hair sync is gone — changing hair colour leaves the face alone.
   });
   it("names are cleaned; stored per save", () => {
     expect(cleanName("  <b>Ann\u0007ie   Z  ")).toBe("bAnnie Z"); expect(cleanName("x".repeat(40))).toHaveLength(20);

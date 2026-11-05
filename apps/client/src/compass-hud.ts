@@ -9,7 +9,12 @@ import { mountUi } from "./ui-root.js";
 
 const CSS = `#compass-hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(43,28,36,.82);color:#FFFAF0;font:700 13px Fredoka,system-ui,sans-serif;pointer-events:none;white-space:nowrap}
 #compass-hud .needle{display:inline-block;color:#ff6b5e;transition:transform .15s linear}
-#compass-hud[hidden]{display:none}`;
+#compass-hud[hidden]{display:none}
+/* Task 25: on narrow portrait phones the top-right menu bar (4 x 44px buttons, folded behind More) reaches left
+ * past the centred pill, so the leftmost ("...") button overlapped the pill. Drop the pill below the bar row
+ * (bar: top 6px + 44px tall) instead of fighting it for the same strip. Wide landscape keeps the top-centre spot:
+ * the bar sits far right there and the pill never reaches it. */
+@media (max-width:700px){#compass-hud{top:calc(56px + env(safe-area-inset-top))}}`;
 export function mountCompassHud(o: { heading(): { heading: number; dir: string } | undefined }, doc: Document = document): { el: HTMLElement; update(visible: boolean): void; destroy(): void } {
   const style = doc.createElement("style"); style.textContent = CSS; doc.head.append(style);
   const el = mountUi(doc.createElement("div"), doc); el.id = "compass-hud"; el.hidden = true;

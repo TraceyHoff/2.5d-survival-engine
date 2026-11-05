@@ -4,20 +4,31 @@
  * Hooks: `#touch-overlay`, `[data-touch=<element id>]` with `data-pressed`. Hidden while a modal is open.
  */
 import type { ElementGeometry } from "@engine/input";
+import { iconImg, iconUrl, isIconFile } from "./game-icons.js";
 
 /** Icon + short caption per control (ADR-133): every visible control says what it does. */
 export const TOUCH_LABELS: Record<string, { icon: string; text: string }> = {
-  attack: { icon: "⚔", text: "Hit" }, context: { icon: "✋", text: "Use" }, sprint: { icon: "»", text: "Run" }, reload: { icon: "↻", text: "Reload" },
+  attack: { icon: "ic_sword.png", text: "Hit" }, context: { icon: "ic_hand.png", text: "Use" }, sprint: { icon: "»", text: "Run" }, reload: { icon: "↻", text: "Reload" },
   hotbar: { icon: "◎", text: "Slot" }, confirm: { icon: "✓", text: "Place" }, cancel: { icon: "✕", text: "Cancel" }, rotate: { icon: "⟳", text: "Rotate" },
-  engine: { icon: "🔑", text: "Engine" }, lights: { icon: "💡", text: "Lights" }, // ADR-170: only in the driving layout
-  secondary: { icon: "🛡", text: "Block" }, crouch: { icon: "⤓", text: "Crouch" }, carry: { icon: "⇪", text: "Carry" }, sleep: { icon: "☾", text: "Sleep" }, // ADR-244
+  engine: { icon: "ic_key.png", text: "Engine" }, lights: { icon: "ic_bulb.png", text: "Lights" }, // ADR-170: only in the driving layout
+  secondary: { icon: "ic_shield.png", text: "Block" }, crouch: { icon: "⤓", text: "Crouch" }, carry: { icon: "⇪", text: "Carry" }, sleep: { icon: "☾", text: "Sleep" }, // ADR-244
+};
+/** The icon node for a control: a custom icon <img> for icon files, a text span for typographic glyphs. */
+const iconNode = (icon: string): HTMLElement => { if (isIconFile(icon)) return iconImg(icon, 22); const s = document.createElement("span"); s.textContent = icon; return s; };
+/** Swap a control's icon in place (the live caption path); replaces the node when the kind changes (text glyph ↔ icon file). */
+const setIcon = (node: ChildNode, icon: string): void => {
+  const wantImg = isIconFile(icon);
+  if (wantImg && !(node instanceof HTMLImageElement)) { node.replaceWith(iconNode(icon)); return; }
+  if (!wantImg && node instanceof HTMLImageElement) { node.replaceWith(iconNode(icon)); return; }
+  if (node instanceof HTMLImageElement) { const u = iconUrl(icon); if (node.src !== u) node.src = u; }
+  else node.textContent = icon;
 };
 /** ADR-244 touch context: which contextual stance buttons apply now and their live captions. */
 export interface TouchCtx { reload: boolean; carry?: boolean; carrying?: boolean; sleep?: boolean; sleeping?: boolean; aim?: boolean }
 /** Live caption for a control (Carry↔Drop, Sleep↔Wake, Block↔Aim); falls back to TOUCH_LABELS. */
 export function touchLabel(id: string, ctx: TouchCtx): { icon: string; text: string } | undefined {
   if (id === "carry" && ctx.carrying) return { icon: "⇩", text: "Drop" };
-  if (id === "sleep" && ctx.sleeping) return { icon: "☀", text: "Wake" };
+  if (id === "sleep" && ctx.sleeping) return { icon: "ic_sun.png", text: "Wake" };
   if (id === "secondary" && ctx.aim) return { icon: "◎", text: "Aim" };
   return TOUCH_LABELS[id];
 }
@@ -36,11 +47,11 @@ export function mountTouchOverlay(root: HTMLElement, geometry: () => ElementGeom
       if (!d) {
         d = document.createElement("div"); d.dataset["touch"] = g.id;
         d.style.cssText = "position:absolute;border-radius:50%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;color:#FFFAF0;font:700 17px system-ui,sans-serif;text-shadow:0 1px 2px #000;border:2px solid rgba(255,250,240,.45);opacity:.85";
-        const lab = label(g.id); if (lab) { const i = document.createElement("span"); i.textContent = lab.icon; const t = document.createElement("span"); t.textContent = lab.text; t.style.cssText = "font:600 9px system-ui,sans-serif;margin-top:1px"; d.append(i, t); d.setAttribute("aria-label", lab.text); } layer.append(d); els.set(g.id, d);
+        const lab = label(g.id); if (lab) { const i = iconNode(lab.icon); const t = document.createElement("span"); t.textContent = lab.text; t.style.cssText = "font:600 9px system-ui,sans-serif;margin-top:1px"; d.append(i, t); d.setAttribute("aria-label", lab.text); } layer.append(d); els.set(g.id, d);
         if (g.kind === "joystick") { const k = document.createElement("div"); k.style.cssText = "position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,250,240,.6)"; layer.append(k); knobs.set(g.id, k); }
       }
       d.style.display = g.visible ? "flex" : "none";
-      const cur = label(g.id); if (cur && d.childNodes.length >= 2 && d.lastChild!.textContent !== cur.text) { d.firstChild!.textContent = cur.icon; d.lastChild!.textContent = cur.text; d.setAttribute("aria-label", cur.text); }
+      const cur = label(g.id); if (cur && d.childNodes.length >= 2 && d.lastChild!.textContent !== cur.text) { setIcon(d.firstChild!, cur.icon); d.lastChild!.textContent = cur.text; d.setAttribute("aria-label", cur.text); }
       d.style.left = `${g.x - g.r}px`; d.style.top = `${g.y - g.r}px`; d.style.width = d.style.height = `${g.r * 2}px`;
       d.dataset["pressed"] = String(g.pressed); d.style.background = BG(g);
       const k = knobs.get(g.id); if (k) { k.style.display = g.knob ? "" : "none"; if (g.knob) { k.style.left = `${g.knob.x}px`; k.style.top = `${g.knob.y}px`; } }

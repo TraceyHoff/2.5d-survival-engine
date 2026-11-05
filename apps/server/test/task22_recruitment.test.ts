@@ -19,8 +19,10 @@ describe("Task 22: AI-human recruitment (server)", () => {
     expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.HireWorkerCmd)!.net.entityFields).toEqual(["target"]);
     expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.SetWorkerJobCmd)!.net.entityFields).toEqual(["worker"]);
     expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.DismissWorkerCmd)!.net.entityFields).toEqual(["worker"]);
-    // worker commands are the tail of the bridged list (append-only, wire indices stable)
-    expect(GAMEPLAY_NET_COMMANDS.slice(-G.WORKER_COMMANDS.length).map((x) => x.core)).toEqual([...G.WORKER_COMMANDS]);
+    // worker commands sit just before the dye commands at the tail (append-only, wire indices stable);
+    // Task 25 appended DyeCmd after them, so the tail is worker + dye, in that order.
+    const tail = GAMEPLAY_NET_COMMANDS.slice(-(G.WORKER_COMMANDS.length + G.DYE_COMMANDS.length));
+    expect(tail.map((x) => x.core)).toEqual([...G.WORKER_COMMANDS, ...G.DYE_COMMANDS]);
   });
   it("gameModeConfig: human bots in singleplayer, and in multiplayer only when AI humans are on", () => {
     expect(gameModeConfig("singleplayer", true, true).humanBots).toBe(true);

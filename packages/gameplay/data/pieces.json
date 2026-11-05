@@ -212,6 +212,7 @@
     },
     {
       "key": "door_wood",
+      "paintable": true,
       "placement": "opening",
       "fits": "door",
       "tier": 1,
@@ -231,6 +232,7 @@
     },
     {
       "key": "door_metal",
+      "paintable": true,
       "placement": "opening",
       "fits": "door",
       "tier": 3,
@@ -250,6 +252,7 @@
     },
     {
       "key": "hatch_wood",
+      "paintable": true,
       "placement": "opening",
       "fits": "hatch",
       "tier": 1,
@@ -268,6 +271,7 @@
     },
     {
       "key": "window_shutters",
+      "paintable": true,
       "placement": "opening",
       "fits": "window",
       "tier": 1,
@@ -282,6 +286,7 @@
     },
     {
       "key": "window_glass",
+      "paintable": true,
       "placement": "opening",
       "fits": "window",
       "tier": 2,
@@ -299,6 +304,7 @@
     },
     {
       "key": "window_bars",
+      "paintable": true,
       "placement": "opening",
       "fits": "window",
       "tier": 3,
@@ -316,6 +322,7 @@
     },
     {
       "key": "campfire",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -341,6 +348,7 @@
     },
     {
       "key": "workbench",
+      "paintable": true,
       "surface": { "height": 0.85 },
       "placement": "free",
       "layer": 2,
@@ -365,6 +373,7 @@
     },
     {
       "key": "furnace",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -390,6 +399,7 @@
     },
     {
       "key": "anvil",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -409,6 +419,7 @@
     },
     {
       "key": "storage_box",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -425,6 +436,7 @@
     },
     {
       "key": "basic_storage_box",
+      "paintable": true,
       "$comment": "ADR-250: starter storage. Never skill-gated (starter), hand-built from gatherable sticks/fiber/wood, 12 slots, picked up for a full refund (pickup); contents spill into a loot bag when it is picked up or destroyed.",
       "placement": "free",
       "layer": 2,
@@ -452,6 +464,7 @@
     },
     {
       "key": "large_chest",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -475,6 +488,7 @@
     },
     {
       "key": "bed",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -497,6 +511,7 @@
     },
     {
       "key": "chair",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -511,6 +526,7 @@
     },
     {
       "key": "table",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -525,6 +541,7 @@
     },
     {
       "key": "torch_stand",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -589,6 +606,7 @@
     },
     {
       "key": "potted_plant",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -635,6 +653,7 @@
     },
     {
       "key": "lantern",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -678,6 +697,7 @@
     },
     {
       "key": "painting",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -701,6 +721,7 @@
     },
     {
       "key": "trophy_skull",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -720,6 +741,7 @@
     },
     {
       "key": "stall_blanket",
+      "paintable": true,
       "placement": "free",
       "ground": true,
       "layer": 2,
@@ -752,6 +774,7 @@
     },
     {
       "key": "stall_cart",
+      "paintable": true,
       "placement": "free",
       "ground": true,
       "layer": 2,
@@ -784,6 +807,7 @@
     },
     {
       "key": "stall_booth",
+      "paintable": true,
       "placement": "free",
       "ground": true,
       "layer": 2,
@@ -820,6 +844,7 @@
     },
     {
       "key": "clan_pavilion",
+      "paintable": true,
       "placement": "free",
       "ground": true,
       "layer": 2,
@@ -851,6 +876,7 @@
     },
     {
       "key": "market_counter",
+      "paintable": true,
       "surface": { "height": 0.9 },
       "placement": "free",
       "ground": true,
@@ -883,6 +909,7 @@
     },
     {
       "key": "fireplace",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -912,6 +939,7 @@
     },
     {
       "key": "wood_stove",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -938,6 +966,7 @@
     },
     {
       "key": "windsock",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -981,6 +1010,7 @@
     },
     {
       "key": "barricade_spiked",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -1012,6 +1042,7 @@
     },
     {
       "key": "raid_bell",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1040,6 +1071,7 @@
     },
     {
       "key": "gate_clan",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 3,
@@ -1071,6 +1103,7 @@
     },
     {
       "key": "clan_hall_door",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 3,
@@ -1101,6 +1134,7 @@
     },
     {
       "key": "watchtower",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 2,
@@ -1131,6 +1165,7 @@
     },
     {
       "key": "mirror",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -1156,6 +1191,7 @@
     },
     {
       "key": "garage",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -1473,6 +1509,7 @@
     },
     {
       "key": "barbed_wire",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -1500,6 +1537,7 @@
     },
     {
       "key": "spike_trap",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -1527,6 +1565,7 @@
     },
     {
       "key": "bear_trap",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 2,
@@ -1558,6 +1597,7 @@
     },
     {
       "key": "arrow_turret",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1593,6 +1633,7 @@
     },
     {
       "key": "bolt_turret",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -1631,6 +1672,7 @@
     },
     {
       "key": "flame_turret",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -1670,6 +1712,7 @@
     },
     {
       "key": "chair_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -1695,6 +1738,7 @@
     },
     {
       "key": "chair_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1724,6 +1768,7 @@
     },
     {
       "key": "chair_luxury",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -1757,6 +1802,7 @@
     },
     {
       "key": "stool_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -1780,6 +1826,7 @@
     },
     {
       "key": "stool_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1807,6 +1854,7 @@
     },
     {
       "key": "bench_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -1835,6 +1883,7 @@
     },
     {
       "key": "bench_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1867,6 +1916,7 @@
     },
     {
       "key": "sofa_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1899,6 +1949,7 @@
     },
     {
       "key": "sofa_luxury",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -1935,6 +1986,7 @@
     },
     {
       "key": "bed_double_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -1964,6 +2016,7 @@
     },
     {
       "key": "bed_double_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -1997,6 +2050,7 @@
     },
     {
       "key": "bed_double_luxury",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -2034,6 +2088,7 @@
     },
     {
       "key": "bunk_bed",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2066,6 +2121,7 @@
     },
     {
       "key": "table_dining_rustic",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -2095,6 +2151,7 @@
     },
     {
       "key": "table_dining_fine",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -2128,6 +2185,7 @@
     },
     {
       "key": "table_dining_luxury",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -2165,6 +2223,7 @@
     },
     {
       "key": "table_coffee_rustic",
+      "paintable": true,
       "surface": { "height": 0.45 },
       "placement": "free",
       "layer": 2,
@@ -2189,6 +2248,7 @@
     },
     {
       "key": "table_coffee_fine",
+      "paintable": true,
       "surface": { "height": 0.45 },
       "placement": "free",
       "layer": 2,
@@ -2217,6 +2277,7 @@
     },
     {
       "key": "table_side_rustic",
+      "paintable": true,
       "surface": { "height": 0.6 },
       "placement": "free",
       "layer": 2,
@@ -2241,6 +2302,7 @@
     },
     {
       "key": "table_side_fine",
+      "paintable": true,
       "surface": { "height": 0.6 },
       "placement": "free",
       "layer": 2,
@@ -2269,6 +2331,7 @@
     },
     {
       "key": "desk_rustic",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -2298,6 +2361,7 @@
     },
     {
       "key": "desk_fine",
+      "paintable": true,
       "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
@@ -2331,6 +2395,7 @@
     },
     {
       "key": "shelf_rustic",
+      "paintable": true,
       "surface": { "height": 1.2 },
       "placement": "free",
       "layer": 2,
@@ -2357,6 +2422,7 @@
     },
     {
       "key": "shelf_fine",
+      "paintable": true,
       "surface": { "height": 1.2 },
       "placement": "free",
       "layer": 2,
@@ -2387,6 +2453,7 @@
     },
     {
       "key": "bookcase_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2413,6 +2480,7 @@
     },
     {
       "key": "bookcase_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2503,6 +2571,7 @@
     },
     {
       "key": "wardrobe_rustic",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2535,6 +2604,7 @@
     },
     {
       "key": "wardrobe_fine",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2571,6 +2641,7 @@
     },
     {
       "key": "wardrobe_luxury",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -2611,6 +2682,7 @@
     },
     {
       "key": "dresser_rustic",
+      "paintable": true,
       "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
@@ -2641,6 +2713,7 @@
     },
     {
       "key": "dresser_fine",
+      "paintable": true,
       "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
@@ -2675,6 +2748,7 @@
     },
     {
       "key": "counter_rustic",
+      "paintable": true,
       "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
@@ -2701,6 +2775,7 @@
     },
     {
       "key": "counter_fine",
+      "paintable": true,
       "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
@@ -2731,6 +2806,7 @@
     },
     {
       "key": "kitchen_sink",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2788,6 +2864,7 @@
     },
     {
       "key": "pantry",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2817,6 +2894,7 @@
     },
     {
       "key": "tool_bench",
+      "paintable": true,
       "surface": { "height": 0.85 },
       "placement": "free",
       "layer": 2,
@@ -2850,6 +2928,7 @@
     },
     {
       "key": "stove_iron",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -2886,6 +2965,7 @@
     },
     {
       "key": "cook_range",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -2925,6 +3005,7 @@
     },
     {
       "key": "clay_oven",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2959,6 +3040,7 @@
     },
     {
       "key": "candle",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -2992,6 +3074,7 @@
     },
     {
       "key": "candelabra",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3024,6 +3107,7 @@
     },
     {
       "key": "floor_lamp",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,
@@ -3059,6 +3143,7 @@
     },
     {
       "key": "table_lamp",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3090,6 +3175,7 @@
     },
     {
       "key": "chandelier",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 3,
@@ -3130,6 +3216,7 @@
     },
     {
       "key": "lantern_hanging",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,
@@ -3165,6 +3252,7 @@
     },
     {
       "key": "wall_sconce",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -3199,6 +3287,7 @@
     },
     {
       "key": "lamp_post",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -3234,6 +3323,7 @@
     },
     {
       "key": "statue",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -3265,6 +3355,7 @@
     },
     {
       "key": "statue_large",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -3323,6 +3414,7 @@
     },
     {
       "key": "crate_decor",
+      "paintable": true,
       "surface": { "height": 0.7 },
       "placement": "free",
       "layer": 2,
@@ -3348,6 +3440,7 @@
     },
     {
       "key": "barrel_decor",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -3375,6 +3468,7 @@
     },
     {
       "key": "barrel_storage",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -3403,6 +3497,7 @@
     },
     {
       "key": "trophy_mount",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -3477,6 +3572,7 @@
     },
     {
       "key": "sign",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3506,6 +3602,7 @@
     },
     {
       "key": "sign_wall",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -3563,6 +3660,7 @@
     },
     {
       "key": "clock",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -3594,6 +3692,7 @@
     },
     {
       "key": "clock_wall",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 3,
@@ -3623,6 +3722,7 @@
     },
     {
       "key": "mirror_standing",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -3653,6 +3753,7 @@
     },
     {
       "key": "mirror_wall",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 2,
@@ -3709,6 +3810,7 @@
     },
     {
       "key": "books",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3737,6 +3839,7 @@
     },
     {
       "key": "dishes",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3762,6 +3865,7 @@
     },
     {
       "key": "basket",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3787,6 +3891,7 @@
     },
     {
       "key": "plant_floor",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3816,6 +3921,7 @@
     },
     {
       "key": "fern",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3842,6 +3948,7 @@
     },
     {
       "key": "cactus",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3871,6 +3978,7 @@
     },
     {
       "key": "flowers_pot",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3905,6 +4013,7 @@
     },
     {
       "key": "hanging_plant",
+      "paintable": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3936,6 +4045,7 @@
     },
     {
       "key": "bonsai",
+      "paintable": true,
       "small": true,
       "placement": "free",
       "layer": 3,
@@ -3963,6 +4073,7 @@
     },
     {
       "key": "herb_planter",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -3993,6 +4104,7 @@
     },
     {
       "key": "window_planter",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4023,6 +4135,7 @@
     },
     {
       "key": "painting_wall",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4062,6 +4175,7 @@
     },
     {
       "key": "poster",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4127,6 +4241,7 @@
     },
     {
       "key": "weapon_rack",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4159,6 +4274,7 @@
     },
     {
       "key": "wall_shelf",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4191,6 +4307,7 @@
     },
     {
       "key": "shield_mount",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4222,6 +4339,7 @@
     },
     {
       "key": "map_board",
+      "paintable": true,
       "placement": "edge",
       "layer": 3,
       "tier": 1,
@@ -4509,6 +4627,7 @@
     },
     {
       "key": "fence_rail",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4537,6 +4656,7 @@
     },
     {
       "key": "fence_iron",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 3,
@@ -4561,6 +4681,7 @@
     },
     {
       "key": "garden_gate",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4591,6 +4712,7 @@
     },
     {
       "key": "feeding_trough",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4624,6 +4746,7 @@
     },
     {
       "key": "bench_park",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4656,6 +4779,7 @@
     },
     {
       "key": "planter_box",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4686,6 +4810,7 @@
     },
     {
       "key": "garden_bed",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4715,6 +4840,7 @@
     },
     {
       "key": "fountain",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -4750,6 +4876,7 @@
     },
     {
       "key": "well",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -4784,6 +4911,7 @@
     },
     {
       "key": "scarecrow",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4815,6 +4943,7 @@
     },
     {
       "key": "path_stone",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4840,6 +4969,7 @@
     },
     {
       "key": "stepping_stone",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4862,6 +4992,7 @@
     },
     {
       "key": "hedge",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4890,6 +5021,7 @@
     },
     {
       "key": "flower_bed",
+      "paintable": true,
       "placement": "free",
       "layer": 1,
       "tier": 1,
@@ -4918,6 +5050,7 @@
     },
     {
       "key": "birdbath",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -4940,6 +5073,7 @@
     },
     {
       "key": "sundial",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -4966,6 +5100,7 @@
     },
     {
       "key": "pet_trough",
+      "paintable": true,
       "placement": "free",
       "layer": 2,
       "tier": 1,

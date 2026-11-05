@@ -143,6 +143,24 @@ export function rebaseCreated(created: number, now: number, fromMul: number, toM
 
 // ---- world-level API ---------------------------------------------------------------------------
 
+/**
+ * Task 25: the paint brush must sit in the hotbar (slots PACK_SLOTS..PACK_SLOTS+7), not just anywhere in the
+ * pack — dyeing and painting are hotbar-tool actions, like equipping a tool. A brush in the pack does not count.
+ * Pure (reads only), so the client UI can gate the Paint / Dye buttons on the same rule the server enforces.
+ */
+export function hasBrushInHotbar(world: World, e: Entity): boolean {
+  let brush = 0; try { brush = gameplayDefs(world).itemId("paint_brush"); } catch { return false; }
+  if (!brush) return false;
+  for (let s = PACK_SLOTS; s < PACK_SLOTS + 8; s++) { try { if (slotItem(world, e, s).item === brush) return true; } catch { return false; } }
+  return false;
+}
+/** Task 25: does the entity carry at least one dye (any slot)? */
+export function hasDye(world: World, e: Entity): boolean {
+  let dye = 0; try { dye = gameplayDefs(world).itemId("dye"); } catch { return false; }
+  if (!dye) return false;
+  try { return countItem(world, e, dye) > 0; } catch { return false; }
+}
+
 export function countItem(world: World, e: Entity, item: number): number {
   const L = liveSlotCount(world, e); if (!L) throw new Error("entity has no Inventory or Container");
   const st = world.store(L.def); let c = 0; for (let i = 0; i < L.n; i++) if (st.readElement(L.idx, "items", i) === item) c += st.readElement(L.idx, "counts", i) ?? 0; return c; // ADR-212: no copy

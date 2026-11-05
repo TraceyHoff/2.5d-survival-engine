@@ -194,7 +194,7 @@ function maybeStartTutorial(): void {
 function startMenus(): void {
   if (menus) return;
   maybeStartTutorial();
-  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, fx: { get: () => fxLayer.settings(), set: (v) => { saveFx(v); fxLayer.apply(v); }, click: () => audio.ui("ui.click") }, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, clanTint: (t) => iso?.registry.clanPaletteForTint(t)?.primary, startPlacing: (sel) => buildMode.start(sel, { fromMenu: true }), worldTools: worldToolsApi, renamePet },
+  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, fx: { get: () => fxLayer.settings(), set: (v) => { saveFx(v); fxLayer.apply(v); }, click: () => audio.ui("ui.click") }, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, clanTint: (t) => iso?.registry.clanPaletteForTint(t)?.primary, clanTint2: (t) => iso?.registry.clanPaletteForTint(t)?.secondary, startPlacing: (sel) => buildMode.start(sel, { fromMenu: true }), worldTools: worldToolsApi, renamePet },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); },
     mapBody: () => { const m = createWorldMap({ world: () => world, player: () => session.player, tiles: () => session.client?.tiles.tiles, send: sendIntent }); return [m.el]; } });
 }
@@ -343,7 +343,7 @@ function lootAutoOpen(): void {
 const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;
 export const MENU_REFRESH_MS = LOW_END ? 500 : 250;
 let menuRefreshAt = 0;
-/** ADR-172: a party / clan invite used to show only inside its panel. Now a toast plus a badge on 👥 / clan when one arrives; the badge clears when the invite is answered or expires. */
+/** ADR-172: a party / clan invite used to show only inside its panel. Now a toast plus a badge on Party / clan when one arrives; the badge clears when the invite is answered or expires. */
 let inviteSeen = { party: 0, clan: 0 }; let inviteCheckAt = 0;
 function inviteNotices(): void {
   const now = performance.now(); if (now < inviteCheckAt || !menus) return; inviteCheckAt = now + 400;
@@ -351,7 +351,7 @@ function inviteNotices(): void {
   let pi: ReturnType<typeof partyView>["invite"]; let ci: ReturnType<typeof clanView>["invite"];
   try { pi = partyView(c).invite; ci = clanView(c).invite; } catch { return; }
   const pk = pi?.party ?? 0, ck = ci?.clan ?? 0;
-  if (pk !== inviteSeen.party) { if (pi) farm?.toast(`${pi.fromName} invited you to a party: open 👥 Party`); menus.setBadge("party", pi ? 1 : 0); }
+  if (pk !== inviteSeen.party) { if (pi) farm?.toast(`${pi.fromName} invited you to a party: open Party`); menus.setBadge("party", pi ? 1 : 0); }
   if (ck !== inviteSeen.clan) { if (ci) farm?.toast(`${ci.fromName} invited you to a clan: open Clan`); menus.setBadge("clan", ci ? 1 : 0); }
   inviteSeen = { party: pk, clan: ck };
 }

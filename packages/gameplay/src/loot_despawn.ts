@@ -2,7 +2,8 @@
  * ADR-238 ground-item despawn. Every LootBag (dropped stacks, death bags, thrown weapons, creature loot, stall
  * returns) stores its ABSOLUTE spawn tick + kind, and the authority derives the expiry from them, so timers survive
  * save/load and server restarts (world.tick persists in WorldMeta). Rules (values: pvp.json "despawn"):
- *  - lifetime by kind: dropped 10 min, death bag 30 min (thrown 5 min, creature loot 2 min, stall returns 10 min);
+ *  - lifetime by kind: dropped 3 min (Task 25: was 10 min — loose player-dropped stacks go fast), death bag 30 min
+ *    (thrown 5 min, creature loot 2 min, stall returns 10 min); an unlooted loot bag keeps its own kind's lifetime;
  *  - opening / partially looting a bag never resets anything; a bag looted down to EMPTY gets `emptiedTick` and
  *    goes `emptiedSeconds` later (refilled before that: the grace is cancelled);
  *  - safety cap `maxGroundBags`: past it the OLDEST non-permanent bags are scheduled out first (they get the normal last-`fadeSeconds` fade), but a

@@ -15,6 +15,7 @@ import { morph } from "./ui-diff.js";
 import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
 import { fxSettingsRows, type FxControls } from "./fx/settings-ui.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, pageSkillCategory, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
+import { iconImg, isIconFile } from "./game-icons.js";
 import { closeContainerIntent, onlineTargets, openContainerIntent, openStallIntent, isPetOwner, Pet, Viewing } from "@engine/gameplay";
 import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
 
@@ -24,20 +25,20 @@ export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 
 export const CONTEXT_ONLY_MENUS: ReadonlySet<string> = new Set(["station", "camper"]);
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
-  { id: "inventory", title: "Inventory", icon: "🎒", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
-  { id: "crafting", title: "Crafting", icon: "🔨", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft by hand. More recipes at stations." },
-  { id: "station", title: "Crafting Station", icon: "🛠", hotkeys: [], text: "Recipes made at this station." },
-  { id: "build", title: "Build", icon: "🏗", hotkeys: ["KeyB"], bar: true, text: "Pick a piece to place." },
-  { id: "character", title: "Character", icon: "👕", hotkeys: ["KeyK"], text: "Wardrobe and character creator." },
-  { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
-  { id: "clan", title: "Clan", icon: "🛡", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
-  { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
-  { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
-  { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
-  { id: "pet", title: "Pets", icon: "🐾", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
-  { id: "worker", title: "AI Humans", icon: "🧑‍🌾", hotkeys: [], text: "Hire AI humans to work for you (Task 22)." },
-  { id: "map", title: "World Map", icon: "🗺", hotkeys: ["KeyM"], bar: true, text: "Your location, facing and markers. Tap a spot to place a marker." },
-  { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
+  { id: "inventory", title: "Inventory", icon: "ic_backpack.png", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
+  { id: "crafting", title: "Crafting", icon: "ic_hammer.png", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft by hand. More recipes at stations." },
+  { id: "station", title: "Crafting Station", icon: "ic_anvil.png", hotkeys: [], text: "Recipes made at this station." },
+  { id: "build", title: "Build", icon: "ic_build.png", hotkeys: ["KeyB"], bar: true, text: "Pick a piece to place." },
+  { id: "character", title: "Character", icon: "ic_shirt.png", hotkeys: ["KeyK"], text: "Wardrobe and character creator." },
+  { id: "party", title: "Party", icon: "ic_people.png", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
+  { id: "clan", title: "Clan", icon: "ic_shield.png", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
+  { id: "trade", title: "Trade stalls", icon: "ic_scales.png", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
+  { id: "skills", title: "Skills", icon: "ic_star.png", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
+  { id: "camper", title: "Camper Station", icon: "ic_camper.png", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
+  { id: "pet", title: "Pets", icon: "ic_paw.png", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
+  { id: "worker", title: "AI Humans", icon: "ic_farmer.png", hotkeys: [], text: "Hire AI humans to work for you (Task 22)." },
+  { id: "map", title: "World Map", icon: "ic_map.png", hotkeys: ["KeyM"], bar: true, text: "Your location, facing and markers. Tap a spot to place a marker." },
+  { id: "chat", title: "Chat", icon: "ic_chat.png", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
 ];
 const CSS = `.gm-modal{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,8,6,.55);
@@ -112,7 +113,7 @@ export class GameMenus {
     this.nav = new UINav({ root: o.root, onPause: () => this.pause(), onPage: (d, kind) => { if (this.nav.top === "inventory" && pageContainer(d)) this.refresh(); else if (this.nav.top === "skills") { pageSkillCategory(d); this.refresh(); } else cycleTabs(this.nav, d, kind ?? "tab"); }, ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
     if (o.showMenuBar !== false) {
       const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
-      const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
+      const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); if (isIconFile(icon)) b.append(iconImg(icon, 24, title)); else b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
       for (const m of GAME_MENUS) if (m.bar) { add(m.id, m.icon, m.title, () => { bar.dataset["expanded"] = "false"; this.toggle(m.id); }); if (!PRIMARY_BAR_MENUS.has(m.id)) bar.lastElementChild!.classList.add("gm-secondary"); }
       add("more", "⋯", "More menus", () => { const on = bar.dataset["expanded"] !== "true"; bar.dataset["expanded"] = String(on); (bar.querySelector('[data-open="more"]') as HTMLElement).setAttribute("aria-expanded", String(on)); });
       const more = bar.lastElementChild as HTMLElement; more.classList.add("gm-more"); more.setAttribute("aria-expanded", "false"); bar.insertBefore(more, bar.firstChild);
@@ -146,7 +147,7 @@ export class GameMenus {
     const status = this.para(`${entries.length} entr${entries.length === 1 ? "y" : "ies"} · build ${entries[0]?.build ?? ""}`); status.dataset["role"] = "status";
     const copy = (): void => { const t = log.text(); const done = (ok: boolean): void => { status.textContent = ok ? "Copied — paste it into your bug report." : "Copy blocked — select the text above and copy it."; };
       try { void navigator.clipboard.writeText(t).then(() => done(true), () => done(false)); } catch { done(false); } };
-    return this.panel("error-log", "Error log", [status, pre], [["📋 Copy", copy], ["Clear", () => { log.clear(); this.nav.close(); }, "alt"], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("error-log", "Error log", [status, pre], [["Copy", copy], ["Clear", () => { log.clear(); this.nav.close(); }, "alt"], ["Back", () => this.nav.close(), "alt"]]);
   }
   private para(t: string): HTMLElement { const p = document.createElement("p"); p.textContent = t; return p; }
 
@@ -245,10 +246,10 @@ export class GameMenus {
   private pausePanel(): HTMLElement {
     const items: [string, () => void, string?][] = [["Resume", () => this.nav.close()]];
     if (this.o.session?.()) items.push(["Session", () => this.open("session")]); // ADR-236: multiplayer status / room code / leave live here, not over the game
-    for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]); // station / camper open by walking up to one
+    for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([m.title, () => this.open(m.id)]); // station / camper open by walking up to one
     const tut = this.o.tutorial;
-    if (tut?.active()) items.push(["📖 Guide: next tip", () => { this.nav.closeAll(); tut.next(); }], ["📖 Skip the guide", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
-    else if (tut) items.push(["📖 Play the guide again", () => { this.nav.closeAll(); tut.replay(); }]);
+    if (tut?.active()) items.push(["Guide: next tip", () => { this.nav.closeAll(); tut.next(); }], ["Skip the guide", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
+    else if (tut) items.push(["Play the guide again", () => { this.nav.closeAll(); tut.replay(); }]);
     items.push(["Quit to main menu", () => { this.nav.closeAll(); this.o.onQuit(); }, "alt"]);
     return this.panel("pause", "Paused", [], items);
   }
