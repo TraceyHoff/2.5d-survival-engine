@@ -244,8 +244,11 @@ export type AtlasTier = "hot" | "cold";
 /** Always hot: terrain, bodies/characters, common props, UI and fonts. */
 export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|ies)|base|resources|decor|items|animals|equipment|held|buildings?|openings|furniture|fog|ui|fonts?|sdf)([_@/-]|$)/i;
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
-/** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
-export const CRISP_ATLAS_RE = /^(animals|pets|nature_critters)_/;
+/** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified.
+ * Task 17: zombie sheets join them in the idle-demotion exclusion below (fitBudget's
+ * `idle` filter): zombies were the one fidelity-pinned creature family that could be
+ * demoted to the cold tier (x0.125) while off-screen, unlike animals / pets / critters. */
+export const CRISP_ATLAS_RE = /^(animals|pets|nature_critters|zombies)(_|$)/;
 /** Crisp sampling for all world art (not just creatures): the style guide's art is "crisp at 1x (close to
  *  pixel-art clarity)", but on a DPR 2-3 phone a 1x frame is magnified ~3x, so plain LINEAR magnification smears
  *  ground, characters and buildings into the blur in the screenshot -- on every preset, not just Full. Only soft
@@ -276,7 +279,7 @@ export const VISIBLE_PIN_RE = /^(gt_|furniture(_|$)|buildings?(_|$)|openings(_|$
 export const FIDELITY_ATLAS_RE = /^(animals|pets|nature_critters|characters|zombies|v2s?)(_|$)/;
 /** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
 export const PET_SHEET_RE = /^pets_/;
-export const COLD_ATLAS_RE = /(^brand_|lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
+export const COLD_ATLAS_RE = /(^brand_|lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i; // Task 17: zombie variants (brute/mummy/pumpkin/runner) are core enemies, not rare variants — they no longer default to the cold tier
 /** Default tier: HOT_ATLAS_RE wins; atlases holding body sprites are hot; COLD_ATLAS_RE or mostly-wearable atlases are cold. */
 export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShare?: number } = {}): AtlasTier {
   if (opts.bodies || HOT_ATLAS_RE.test(key)) return "hot";
@@ -566,18 +569,35 @@ export class AtlasManager {
   }
 
   private readonly retiered = new Set<string>();
+  /** Task 17: effective scale each atlas was left at by its last re-tier (see needsRetier).
+   * Entries are only written by retier() after a successful rebuild; a key in
+   * `retiered` with no entry here was added by another path (or a test) and keeps
+   * the old one-shot behaviour. */
+  private readonly retierScale = new Map<string, number>();
   private tierBudgetMB = 0; private prevTier: AtlasManager["atlasTier"] | undefined; private retierAt = -Infinity;
   /** Undo forceLowTier (fallback ladder stepping back up once memory freed): default tiers + the original budget. */
   async restoreTier(): Promise<void> {
     if (!this.tierBudgetMB) return; if (this.prevTier) this.atlasTier = this.prevTier; else delete this.atlasTier; this.prevTier = undefined; this.textureBudgetMB = this.tierBudgetMB; this.tierBudgetMB = 0;
     if (this.registry) await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
   }
+  /** Effective stored scale of one resident atlas under the current fit (1 = pinned full res). */
+  private scaleOf(a: { key: string; cold?: boolean }): number { return a.cold ? this.coldDownscale : this.pinnedKeys.has(a.key) ? 1 : this.downscale; }
+  /** Task 17: an atlas may ask for a re-tier when it never had one, OR when its stored
+   * scale has FALLEN since its last re-tier (crisp once, demoted later — the stuck-blurry
+   * case: a zombie atlas demoted after its one re-tier never recovered). An atlas that
+   * still sits at its re-tier scale never re-asks, so a budget that cannot hold it at
+   * full res still cannot loop rebuilds (and a re-tier can only raise scales, never
+   * lower them, so a re-trigger always needs a fresh demotion first). */
+  private retierOpen(a: { key: string; cold?: boolean }): boolean {
+    if (!this.retiered.has(a.key)) return true;
+    const at = this.retierScale.get(a.key); return at !== undefined && this.scaleOf(a) < at;
+  }
   /** True when an atlas drawn near the camera is stored downscaled (cold tier): a re-tier would make it crisp again. */
   get needsRetier(): boolean {
     const own = this.tailPools().find((p) => p.own)?.own; if (own && own.levels < this.ownLevelsFor(this.tailPools())) return true; // zoomed out past the sampled mip range (more levels needed; fewer is never worth a rebuild)
     const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k < this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy && this.poolOfA(a)?.cls === "wear")).includes(this.wearScale())) return true; // zoomed in: wear needs a crisper scale (a smaller one never triggers a rebuild)
     if (this.coldDownscale >= 1 && this.downscale >= 1) return false;
-    return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.pinnedKeys.has(a.key) ? 1 : this.downscale) < 1);
+    return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && this.retierOpen(a) && this.scaleOf(a) < 1);
   }
   /** Rebuild so recently drawn atlases move to the hot (full-res) tier; at most once per `minGap` frames. */
   async retier(frame: number, minGap = RETIER_MIN_GAP_FRAMES): Promise<boolean> {
@@ -587,8 +607,12 @@ export class AtlasManager {
     if (!this.needsRetier) { this.retierWant = 0; return false; }
     if (++this.retierWant < RETIER_CONFIRM || frame - this.retierAt < minGap) return false;
     this.retierWant = 0; this.retierAt = frame; this.retierBusy = true;
-    try { for (const k of this.recentlyUsed) this.retiered.add(k); // each atlas triggers at most one re-tier (no rebuild loop when the budget cannot hold it at full res)
+    try { for (const k of this.recentlyUsed) this.retiered.add(k);
     await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
+    // record POST-rebuild scales (rebuild replaced this.atlases and refit the tiers):
+    // a later demotion below the scale the re-tier left the atlas at re-opens the
+    // re-tier; an atlas the rebuild could not lift keeps its scale and never re-asks
+    for (const k of this.recentlyUsed) { const a = this.atlases.find((x) => x.key === k); if (a) this.retierScale.set(k, this.scaleOf(a)); }
     } finally { this.retierBusy = false; }
     return true;
   }

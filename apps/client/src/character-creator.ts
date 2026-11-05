@@ -239,9 +239,17 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const rnd = mk("🎲", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } });
   iconInto(rl, o.artBase, "ic_rotate_left", "Rotate left"); iconInto(rr, o.artBase, "ic_rotate_right", "Rotate right"); iconInto(rnd, o.artBase, "ic_randomize", "Randomize");
   rot.append(rl, rnd, rr); left.append(host, rot);
-  const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname");
+  const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname"); nameIn.setAttribute("enterkeyhint", "done"); nameIn.id = "creator-name-input";
   nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
-  const nl = doc.createElement("label"); nl.textContent = "Name"; right.append(nl, nameIn);
+  const nl = doc.createElement("label"); nl.textContent = "Name"; nl.htmlFor = nameIn.id;
+  // Task 17: the creator opens asynchronously (after art/catalog loads), so the
+  // focus() on open runs outside any tap gesture and mobile browsers will not
+  // open the virtual keyboard for it. Tapping the label focuses the input inside
+  // the tap handler (a real gesture), which reliably summons the keyboard; the
+  // htmlFor association covers browsers with native label behaviour, and this
+  // handler covers the rest. The input itself is unchanged for desktop/gamepad.
+  nl.addEventListener("click", () => { nameIn.focus(); });
+  right.append(nl, nameIn);
   const vals = new Map<string, HTMLElement>();
   const row = (label: string, field: Parameters<typeof stepLook>[2]): void => {
     const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center;min-width:0";

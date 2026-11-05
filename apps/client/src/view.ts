@@ -113,6 +113,22 @@ export const CAM_Z_TAU = 0.15, CAM_Z_SNAP = 4;
  * jitter, collision slide and reconciliation remnant moved the whole screen. Easing x/y like z (tau 0.08 s, ~0.2-tile
  * lag at walk speed) smooths that out; large jumps (teleport / respawn) still snap, like z. */
 export const CAM_XY_TAU = 0.08, CAM_XY_SNAP = 4;
+/** Task 17: camera-easing dt cap — one sim tick. A hitch frame (menu-close DOM
+ * teardown, atlas upload) used to ease with dt up to 0.25 s, nearly snapping the
+ * camera to the target in a single frame (k≈0.96) so the whole screen jumped;
+ * normal frames (16–33 ms) are below the cap and behave exactly as before. */
+export const CAM_DT_CAP_S = 0.05;
+/** Task 17: one camera-follow step (x/y). Snap only past CAM_XY_SNAP (teleports);
+ * otherwise exponential ease with tau CAM_XY_TAU. Pure so the hitch behaviour is
+ * testable: with dt capped by the caller, a long frame can never snap the camera
+ * most of the way to a moving target (the visible carrier of menu-close judder —
+ * every entity on screen moves with the camera). Mutates `cur` on ease (the old
+ * allocation behaviour); allocates only on snap / first frame. */
+export function stepCameraXY(cur: { x: number; y: number } | undefined, want: { x: number; y: number }, dt: number): { x: number; y: number } {
+  if (cur === undefined || Math.hypot(want.x - cur.x, want.y - cur.y) > CAM_XY_SNAP) return { x: want.x, y: want.y };
+  const k = 1 - Math.exp(-dt / CAM_XY_TAU);
+  cur.x += (want.x - cur.x) * k; cur.y += (want.y - cur.y) * k; return cur;
+}
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
@@ -514,11 +530,10 @@ export class IsoView {
     // (camera speed 3.8x). Ease only the camera's z (tau CAM_Z_TAU s); x/y stay exact, sprites stay on their steps.
     // Camera x/y follow is eased the same way (tau CAM_XY_TAU s): exact follow passed every tick jitter straight
     // to the screen. Sprites themselves still sit on their interpolated steps; only the camera lags slightly.
-    if (want) { const now = performance.now(), dt = this.camZAt ? Math.min(0.25, (now - this.camZAt) / 1000) : 0; this.camZAt = now;
+    if (want) { const now = performance.now(), dt = this.camZAt ? Math.min(CAM_DT_CAP_S, (now - this.camZAt) / 1000) : 0; this.camZAt = now;
       if (this.camZ === undefined || Math.abs(want.z - this.camZ) > CAM_Z_SNAP) this.camZ = want.z; else this.camZ += (want.z - this.camZ) * (1 - Math.exp(-dt / CAM_Z_TAU));
       want.z = this.camZ;
-      if (this.camXY === undefined || Math.hypot(want.x - this.camXY.x, want.y - this.camXY.y) > CAM_XY_SNAP) this.camXY = { x: want.x, y: want.y };
-      else { const k = 1 - Math.exp(-dt / CAM_XY_TAU); this.camXY.x += (want.x - this.camXY.x) * k; this.camXY.y += (want.y - this.camXY.y) * k; }
+      this.camXY = stepCameraXY(this.camXY, want, dt);
       want.x = this.camXY.x; want.y = this.camXY.y; }
     const hadErr = this.camGuard.error; const tgt = this.camGuard.resolve(want, camE !== player ? "follow" : "player", why);
     if (this.camGuard.error && !hadErr) console.warn(`[render] ${this.camGuard.error}`);
