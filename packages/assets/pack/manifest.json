@@ -292,6 +292,22 @@
       "ktx2": "atlases/gt_winter_p1.ktx2"
     },
     {
+      "key": "gt_grazed",
+      "image": "atlases/gt_grazed.png",
+      "frameW": 68,
+      "frameH": 52,
+      "columns": 3,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/gt_grazed@2x.png",
+          "ktx2": "atlases/gt_grazed@2x.ktx2"
+        }
+      ],
+      "ktx2": "atlases/gt_grazed.ktx2"
+    },
+    {
       "key": "resources_tall",
       "image": "atlases/resources_tall.png",
       "frameW": 96,
@@ -19358,6 +19374,60 @@
         }
       },
       "placeholder": "gt_grass_edge_240"
+    },
+    {
+      "key": "gt_grass_grazed",
+      "category": "tile",
+      "atlas": "gt_grazed",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass"
+    },
+    {
+      "key": "gt_grass_grazed_fall",
+      "category": "tile",
+      "atlas": "gt_grazed",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_fall"
+    },
+    {
+      "key": "gt_grass_grazed_winter",
+      "category": "tile",
+      "atlas": "gt_grazed",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_winter"
     },
     {
       "key": "gt_snow_edge_1",

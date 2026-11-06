@@ -164,7 +164,7 @@ This is the inventory for the art/assets bot: everything new that still needs de
 
 ### Creatures with dedicated art already (do not redo unless improving)
 - **Bee** (`animal_bee`) and **owl** (`animal_owl`) — unique runtime-painted pixels, idle + walk, 8 directions × 4 frames (`apps/client/src/task34-art.ts`; keys `pets_bee`, `pets_owl`). Verified numerically, not yet eyeballed live — the user is the judge of "beautiful".
-- **Apiary** (`decor_apiary`) — unique runtime-painted stacked-hive art, 2 rotations × 4 damage stages. Its build-menu icon (`build_apiary`) still borrows the salt barrel's atlas tile (items manifest frame 224) and needs a real icon.
+- **Apiary** (`decor_apiary`) — unique runtime-painted stacked-hive art, 2 rotations × 4 damage stages. Its build-menu icon (`build_apiary`) is a dedicated stacked-hive tile on `items_build` frame 286 (no longer shares the salt barrel's frame 224).
 
 ### Creatures still reusing other animals' sheets (need dedicated sprites + animations)
 | Creature | Currently drawn as | Task added |
@@ -193,11 +193,11 @@ All of the above need the standard animation frame structure the real sheets hav
 ### Crops & plants (need dedicated sprites + growth stages)
 - **Lettuce, pepper, beetroot, rice** (Task 32, kinds 37–40, 4 growth stages each) — crop sprites derive from the plant sprite scaled per stage; beetroot currently falls back to `wild_beetroot` → `carrot_patch` / wild herbs / bush (tint `#d080a0`). Lettuce/pepper/rice wild seed nodes likewise need their own wild-plant art. All other crops (wheat, corn, potato, carrot, tomato, pumpkin, squash, beans, cabbage, onion, garlic, cotton, flax, hemp, herbs, mushroom, yarrow, ginseng, aloe, berry bushes, trees, fruit trees) share the same fallback pattern — seed icons fall back to `wild_grain`, produce icons to generic fruit/vegetable art (see `sprite_fallbacks.json` `icons`).
 - **Hay** (Task 28) — its sprite reuses the wheat sheaf art (nature manifest frames 64 / 8 for hay / hay_seeds); its icon falls back to `wild_grain`. Needs its own hay bale / seed art.
-- **Grazed bare grass — ART BOT: make a dedicated asset specifically for this.** No visual yet (Task 28 honest cut): a grazed tile looks identical to ungrazed grass for 180s until it regrows. Make a specific bare/grazed-grass tile — short, eaten-down grass, visibly distinct from ungrazed grass at game scale — that the game shows on a grazed tile until it regrows (see the grazing logic in `packages/gameplay/src/skills/husbandry.ts` for the 180s regrow timing).
+- **Grazed bare grass** — dedicated short, eaten-down grass tiles ship as `gt_grass_grazed`, `gt_grass_grazed_fall`, and `gt_grass_grazed_winter` (resident atlas `gt_grazed`). Visibly distinct from ungrazed `gt_grass` (shorter stubs, soil showing, no flowers). Engine still needs to draw these keys when a `GrazedTile` is present; there is no render lookup yet, so packing the sprites does not auto-bind. See grazing logic in `packages/gameplay/src/skills/husbandry.ts` (about 180s regrow).
 
 ### Building pieces (need dedicated sprites)
 - **Salt barrel** (tier 1, wood), **curing box** (tier 2, stone), **cold store** (tier 3, metal) — Task 28 salt storage. All three share atlas cells with other storage (`barrel_storage` / `storage_box` / `large_chest`); each needs its own sprite.
-- **Apiary — ART BOT: make a dedicated build-menu icon specifically for the Apiary.** The Apiary itself has dedicated runtime-painted art (above), but its build-menu icon (`build_apiary`) still borrows the salt barrel's atlas tile (items manifest frame 224). Make a new icon that reads as a beehive at menu size — do not reuse the salt barrel tile.
+- **Apiary build-menu icon** — shipped: `build_apiary` now uses a dedicated stacked-hive icon on `items_build` frame 286. Frame 224 (salt barrel / barrel storage) is unchanged. In-world `decor_apiary` runtime art was left alone.
 - **Salt-flat deposits** (Task 28, salt source on sand near water) — no dedicated deposit art listed; check `salt_flat` in the pieces data.
 
 ### New items & icons (need dedicated icons)

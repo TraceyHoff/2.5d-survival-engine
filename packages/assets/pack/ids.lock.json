@@ -4835,7 +4835,10 @@
     "animal_bee": 4833,
     "animal_owl": 4834,
     "dec_apiary": 4835,
-    "build_apiary": 4836
+    "build_apiary": 4836,
+    "gt_grass_grazed": 4837,
+    "gt_grass_grazed_fall": 4838,
+    "gt_grass_grazed_winter": 4839
   },
   "sounds": {
     "amb_rain": 1,
