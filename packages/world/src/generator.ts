@@ -32,6 +32,23 @@ export function valueNoise(seed: number, x: number, y: number, scale: number): n
   return a + (b - a) * s(tx) + (c - a) * s(ty) + (a - b - c + d) * s(tx) * s(ty);
 }
 
+/**
+ * ADR-254: pick a fresh world seed for a new playthrough. Prefer crypto.getRandomValues; fall back to `random`.
+ * Never returns 0 (0 collides with "unset" in a few call sites). Deterministic only when `random` is seeded.
+ */
+export function randomWorldSeed(random: () => number = Math.random): number {
+  try {
+    const c = (globalThis as { crypto?: { getRandomValues?: (a: Uint32Array) => Uint32Array } }).crypto;
+    if (c?.getRandomValues) { const b = new Uint32Array(1); c.getRandomValues(b); const n = b[0]! >>> 0; if (n) return n; }
+  } catch { /* ignore */ }
+  const n = (Math.floor(random() * 0xffffffff) >>> 0); return n || 1;
+}
+
+/** ADR-254: terrain height levels. Biome noise still drives tile bands; a separate height field adds hills, plateaus and ledges. */
+export const HEIGHT_MAX = 12;
+const HEIGHT_SALT = 0x6834; // "h4"
+const TERRACE_SALT = 0x7465; // "te"
+
 export interface ProceduralOptions {
   seed: number;
   /** Tile ids by biome band (low -> high noise). Default: water, sand, grass, forest, rock. */
@@ -41,9 +58,11 @@ export interface ProceduralOptions {
   /** ADR-246: wet lowland mud (tile 9) on the grass/dirt band just above the shore band where a moisture field is high.
    *  false = off. Defaults: MUD_DEFAULTS. */
   mud?: false | { tile?: number; band?: number; moisture?: number; scale?: number };
-  /** ADR-249: ground cover on the existing bands (heights, climate and node placement unchanged). false = off.
+  /** ADR-249: ground cover on the existing bands (tile ids / node placement; height is ADR-254). false = off.
    *  Defaults: COVER_DEFAULTS (shallow water ring at shores, forest floor in the woods' interior, snow on cold peaks). */
   cover?: false | Partial<typeof COVER_DEFAULTS>;
+  /** ADR-254: cap on generated height levels (default HEIGHT_MAX). Tests may lower it. */
+  heightMax?: number;
 }
 /** ADR-249 ground cover. shallow: water (1) within `shallowBand` noise of the shore -> 8. forest: forest-band dirt (4)
  *  at least `forestMargin` noise inside the band where a canopy field > `canopy` -> 7 (edges stay dirt / farmable).
@@ -68,6 +87,23 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
   private noiseAt(tx: number, ty: number): number {
     const seed = this.opts.seed >>> 0;
     return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
+  }
+  /**
+   * ADR-254: continuous height in [0, heightMax]. Biome noise keeps shores low and peaks high; an independent
+   * multi-octave field adds hills and ridges; a terrace field snaps some areas into plateaus so neighbouring tiles
+   * form clear ledges (drops of 2+ levels) that the cliff / gt_side passes can draw.
+   */
+    heightAt(tx: number, ty: number): number {
+    const seed = this.opts.seed >>> 0; const H = this.opts.heightMax ?? HEIGHT_MAX;
+    const biome = this.noiseAt(tx, ty);
+    const field = 0.55 * valueNoise(seed ^ HEIGHT_SALT, tx, ty, 48)
+      + 0.30 * valueNoise(seed ^ HEIGHT_SALT ^ 0x111, tx, ty, 18)
+      + 0.15 * valueNoise(seed ^ HEIGHT_SALT ^ 0x222, tx, ty, 8);
+    // Plateau bands (0..3) × 3 levels → neighbouring bands differ by 3, which gt_side / cliff faces draw as a clear ledge.
+    // Detail + a little biome keep rolling variation on top of each plateau so the ground is not a flat shelf.
+    const plateau = Math.floor(valueNoise(seed ^ TERRACE_SALT, tx, ty, 28) * 4); // 0..3
+    const detail = Math.floor(field * 2) + Math.floor(biome * 2); // 0..3
+    return Math.max(0, Math.min(H, plateau * 3 + detail));
   }
   /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). */
   tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return this.surface(tx, ty, n, this.bandOf(n)); }
@@ -102,7 +138,7 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     const n = this.noiseAt(tx, ty); const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;
     const amp = this.opts.climateAmplitude ?? 8, scale = this.opts.climateScale ?? 512;
     const large = (valueNoise((this.opts.seed ^ 0x5151) >>> 0, tx, ty, scale) - 0.5) * 2 * amp;
-    return { temperature: (band.temp ?? 15) + large, humidity: band.humidity ?? 0.5, altitude: Math.floor(n * 4) };
+    return { temperature: (band.temp ?? 15) + large, humidity: band.humidity ?? 0.5, altitude: this.heightAt(tx, ty) };
   }
   /** Mean base climate of a chunk (sampled on a 4x4 grid). */
   chunkClimate(cx: number, cy: number): BaseClimate {
@@ -117,7 +153,7 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
       const n = this.noiseAt(tx, ty);
       const band = this.bandOf(n);
-      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.surface(tx, ty, n, band); c.height[i] = Math.floor(n * 4);
+      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.surface(tx, ty, n, band); c.height[i] = this.heightAt(tx, ty);
       if (band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) });
     }
     c.dirty = false; return { chunk: c, nodes };

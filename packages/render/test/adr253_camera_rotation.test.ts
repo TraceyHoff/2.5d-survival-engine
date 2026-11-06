@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DEFAULT_ISO, CHUNK_SIZE, toView, fromView, viewRect, worldToScreen, screenToWorld, isoDepth, type IsoConfig } from "@engine/world";
 import { IsoCamera } from "../src/camera.js";
-import { cliffShade, CLIFF_PX, CLIFF_PY, CLIFF_NX, CLIFF_NY } from "../src/tilemap.js";
+import { cliffShade, CLIFF_PX, CLIFF_PY, CLIFF_NX, CLIFF_NY, CLIFF_HIDDEN_SHADE } from "../src/tilemap.js";
 import { viewCellToTile } from "../src/terrainTiles.js";
 import { visibleChunkKeys } from "../src/sprites.js";
 import { rotSideMask, SIDE_PX, SIDE_PY, SIDE_NX, SIDE_NY } from "../src/building/deckFaces.js";
@@ -58,9 +58,14 @@ describe("ADR-253 camera", () => {
 describe("ADR-253 tiles, decks, attach points", () => {
   it("cliff faces shade by their view normal: exactly two visible faces per quarter", () => {
     expect(cliffShade(CLIFF_PX, 0)).toBe(0.62); expect(cliffShade(CLIFF_PY, 0)).toBe(0.8);
-    expect(cliffShade(CLIFF_NX, 0)).toBe(0); expect(cliffShade(CLIFF_NY, 0)).toBe(0);
+    // ADR-254: far faces keep CLIFF_HIDDEN_SHADE (were 0 / collapsed) so ledges stay visible
+    expect(cliffShade(CLIFF_NX, 0)).toBe(CLIFF_HIDDEN_SHADE); expect(cliffShade(CLIFF_NY, 0)).toBe(CLIFF_HIDDEN_SHADE);
     expect(cliffShade(CLIFF_NY, 1)).toBe(0.62); expect(cliffShade(CLIFF_PX, 1)).toBe(0.8);
-    for (let q = 0; q < 4; q++) expect([CLIFF_PX, CLIFF_PY, CLIFF_NX, CLIFF_NY].filter((f) => cliffShade(f, q) > 0).length).toBe(2);
+    for (let q = 0; q < 4; q++) {
+      const shades = [CLIFF_PX, CLIFF_PY, CLIFF_NX, CLIFF_NY].map((f) => cliffShade(f, q));
+      expect(shades.filter((s) => s >= 0.62).length).toBe(2);
+      expect(shades.filter((s) => s === CLIFF_HIDDEN_SHADE).length).toBe(2);
+    }
   });
   it("deck side masks rotate with the view", () => {
     expect(rotSideMask(SIDE_PX, 1)).toBe(SIDE_PY); expect(rotSideMask(SIDE_PY, 1)).toBe(SIDE_NX);

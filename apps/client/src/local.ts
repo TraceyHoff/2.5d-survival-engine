@@ -13,6 +13,7 @@ import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWor
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
 import { MEMORY_BUDGETS } from "./memory-budget.js";
 import { createGameServer, giveBotAppearance, type GameMode, type GameServer } from "@engine/server/game";
+import { randomWorldSeed } from "@engine/world";
 import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
 /** Device-scaled default bot cap (ADR-105): phones get far fewer bots than desktops. */
@@ -119,7 +120,9 @@ export function aiHumansOn(o: Pick<LocalServerOptions, "mode" | "worldRules" | "
   return saved !== undefined ? saved === 1 : (o.worldRules?.aiHumans ?? true);
 }
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
-  const seed = o.seed ?? 1234; const mode: GameMode = o.mode ?? "singleplayer";
+  // ADR-254: every new playthrough gets a random seed (map / resources / animals differ). A save keeps its own
+  // seed via store meta; an explicit o.seed (?seed= / tests) wins. createGameServer still prefers meta.seed.
+  const seed = o.seed ?? o.store?.readMeta()?.seed ?? randomWorldSeed(); const mode: GameMode = o.mode ?? "singleplayer";
   const network = new LoopbackNetwork(seed);
   const transport = network.createServer();
   const serverTransport: ServerTransport = o.extraTransports?.length ? new MultiServerTransport([transport, ...o.extraTransports]) : transport;

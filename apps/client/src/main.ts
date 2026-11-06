@@ -272,7 +272,7 @@ let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 installFullscreenRestore();
 const diag = startDiag({ renderer: () => iso?.renderer, entities: () => world.entityCount, tick: () => world.tick, player: () => session.player,
   snapshot: () => session.client ? { received: session.client.latestTick >= 0, latestTick: session.client.latestTick, snapshots: session.client.stats.snapshots } : undefined,
-  // local/hosted worlds use the default seed 1234 (createGameServer); ?seed= overrides for a remote server's seed
+  // ADR-254: ?seed= pins the preview (and a remote join); otherwise 1234 until the local server reports its seed.
   spawnPoints: (() => { let c: { seed: number; points: { x: number; y: number }[] } | undefined; return () => (c ??= (() => { const seed = Number(params.get("seed") ?? 1234); return { seed, points: computeSpawnPoints(new ProceduralGenerator({ seed })) }; })()); })() });
 // Ground: replicated tiles from the server (net TileClient, `session.client.tiles.tiles`) once connected;
 // a placeholder ground is drawn only while offline.
@@ -455,12 +455,14 @@ async function startSingleplayer(): Promise<void> {
     // ADR-105: run the server sim + bots in a Web Worker (keeps the main thread for render/input, big win on phones);
     // ?worker=0, no Worker support, or a worker that fails/stalls on startup falls back to the in-tab server.
     const { startWorkerServer } = await import("./local-bridge.js");
+    // ADR-254: ?seed=N forces a reproducible world; otherwise createLocalServer picks a random seed for a new save.
+    const seedParam = params.get("seed"); const seedOpt = seedParam != null && seedParam !== "" && Number.isFinite(Number(seedParam)) ? { seed: Number(seedParam) } : {};
     let local: import("./local-bridge.js").LocalServerHandle | undefined = params.get("worker") === "0" ? undefined
-      : await startWorkerServer({ dbName, bots, devSandbox, worldRules: newWorldRules(settings), catalog, status: localStatus, log, timeoutMs: 15000 });
+      : await startWorkerServer({ dbName, bots, devSandbox, worldRules: newWorldRules(settings), catalog, status: localStatus, log, timeoutMs: 15000, ...seedOpt });
     if (!local) {
       const store = await openBrowserStore(dbName);
       localStatus.state = "starting";
-      const inTab = await createLocalServer({ store, bots, devSandbox, worldRules: newWorldRules(settings), ...(catalog ? { catalog } : {}), log });
+      const inTab = await createLocalServer({ store, bots, devSandbox, worldRules: newWorldRules(settings), ...seedOpt, ...(catalog ? { catalog } : {}), log });
       pumpLocal = inTab.pump; if (devSandbox) (window as { __qaServer?: unknown }).__qaServer = inTab.game; // ADR-145 QA: in-tab server (?worker=0)
       local = { inWorker: false, createTransport: () => inTab.createTransport(), save: async () => { await inTab.game.persist?.saveAll(); }, stop: () => inTab.stop() };
     }

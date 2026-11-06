@@ -27,12 +27,19 @@ const PALETTE: Record<number, [number, number, number]> = {
 const SHALLOW_RGB = [0x41, 0xb5, 0xcc] as const, DEEP_RGB = [0x18, 0x46, 0x90] as const; // ADR-184: turquoise shore -> deep blue (ADR-253: shallow #41b5cc, same as Canvas2D C2D_SHALLOW)
 /** ADR-253 cliff face flags (aColor.a): face normal +x, +y, -x, -y. */
 export const CLIFF_PX = 2, CLIFF_PY = 3, CLIFF_NX = 4, CLIFF_NY = 5;
-/** Cliff face shade by its normal in view space: +u (screen lower-right) 0.62, +v (screen lower-left) 0.8, else hidden (0). */
+/** ADR-254: dim shade for cliff faces turned away from the camera (was 0 / collapsed). Keeps far-side ledges readable. */
+export const CLIFF_HIDDEN_SHADE = 0.28;
+/** Cliff face shade by its normal in view space: +u (screen lower-right) 0.62, +v (screen lower-left) 0.8,
+ *  else ADR-254 CLIFF_HIDDEN_SHADE (far-side silhouette instead of collapsing the face). */
 export function cliffShade(flag: number, view: number): number {
   const n = [[1, 0], [0, 1], [-1, 0], [0, -1]][flag - CLIFF_PX]; if (!n) return 0;
   const k = view & 3, c = VIEW_COS[k]!, s = VIEW_SIN[k]!; const u = c * n[0]! - s * n[1]!, v = s * n[0]! + c * n[1]!;
-  return u > 0.5 ? 0.62 : v > 0.5 ? 0.8 : 0;
+  return u > 0.5 ? 0.62 : v > 0.5 ? 0.8 : CLIFF_HIDDEN_SHADE;
 }
+/** ADR-254: top-face vertex multiplier when that corner sits on a height drop (>= 1 level). Darker lip marks ledges
+ *  the camera angle would otherwise hide behind the plateau. */
+export const LEDGE_LIP_SHADE = 0.72;
+export function ledgeLipShade(drop: boolean): number { return drop ? LEDGE_LIP_SHADE : 1; }
 const SIDE: Record<number, [number, number, number]> = {
   [TileId.Grass]: [112, 84, 56], [TileId.Sand]: [168, 140, 92], [TileId.Water]: [38, 92, 140],
 };
@@ -57,11 +64,10 @@ void main() {
   vec2 iso = vec2((w.x - w.y) * uIso.x, (w.x + w.y) * uIso.y - aPos.z * uIso.z);
   float key = w.x + w.y + aPos.z * uZFactor;
   int fl = int(aColor.a * 255.0 + 0.5); vColor = aColor.rgb; vWorld = aPos.xy;
-  if (fl >= 2) { // ADR-253 cliff face: shade by its view-space normal; faces turned away collapse to a point (no fragments)
+  if (fl >= 2) { // ADR-253/254 cliff face: shade by view-space normal; far faces keep a dim silhouette (no collapse)
     vec2 n = fl == 2 ? vec2(1, 0) : fl == 3 ? vec2(0, 1) : fl == 4 ? vec2(-1, 0) : vec2(0, -1);
     vec2 nv = vec2(uRot.x * n.x - uRot.y * n.y, uRot.y * n.x + uRot.x * n.y);
-    float sh = nv.x > 0.5 ? 0.62 : nv.y > 0.5 ? 0.8 : 0.0;
-    if (sh == 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vColor = vec3(0.0); vFlags = 2; return; }
+    float sh = nv.x > 0.5 ? 0.62 : nv.y > 0.5 ? 0.8 : 0.28; // 0.28 = CLIFF_HIDDEN_SHADE
     vColor *= sh; fl = 2;
   }
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
@@ -156,9 +162,26 @@ export class TilemapRenderer {
           cols.push(...([0, 1, 2] as const).map((j) => DEEP_RGB[j] + (SHALLOW_RGB[j] - DEEP_RGB[j]) * k), water); // ADR-246: no per-tile brightness jitter on water (a visible diamond grid)
         }
         idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
-      } else quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);
-      // Cliff faces on every side whose neighbour is lower (ADR-253): base side colour, the vertex shader shades the two
-      // facing the current view (+u 0.62 / +v 0.8, as the fixed +x / +y faces before) and collapses the other two.
+      } else {
+        // ADR-254: per-corner ledge lip — darken top-face vertices that sit on a height drop so far-side ledges stay readable
+        const low0 = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h < 0 ? -1 : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
+        const drop = (nx: number, ny: number): boolean => low0(nx, ny) <= zt - 1;
+        const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
+        // corner (x,y) touches -x/-y; (x+1,y) +x/-y; (x+1,y+1) +x/+y; (x,y+1) -x/+y
+        const lips = [
+          drop(x - 1, y) || drop(x, y - 1),
+          drop(x + 1, y) || drop(x, y - 1),
+          drop(x + 1, y) || drop(x, y + 1),
+          drop(x - 1, y) || drop(x, y + 1),
+        ];
+        const base = verts.length / 3;
+        for (let ci = 0; ci < 4; ci++) {
+          const lip = ledgeLipShade(lips[ci]!); verts.push(corners[ci]![0], corners[ci]![1], zt);
+          cols.push(pal[0] * v * lip, pal[1] * v * lip, pal[2] * v * lip, water);
+        }
+        idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      }
+      // Cliff faces on every side whose neighbour is lower (ADR-253/254): far faces keep a dim silhouette (CLIFF_HIDDEN_SHADE).
       const side = SIDE[id] ?? pal;
       const low = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h < 0 ? -1 : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
       const bx = low(x + 1, y), by = low(x, y + 1), bnx = low(x - 1, y), bny = low(x, y - 1);

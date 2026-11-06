@@ -2853,3 +2853,44 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - 2:1 dimetric plus the sim's 45° move map means screen diagonals aren't exactly 45° on screen. They behave identically in all four views, as at q0 before.
 - Snap only (no animated turn).
 - The rotation is local and not shared with spectators or replays.
+
+## ADR-254: Seeded world generation, varied terrain heights, visible ledges (Task 35)
+
+**Context.** Every new playthrough used the same default seed (`1234`), so the map layout, resource nodes and animal
+spawns were identical. Terrain height was `floor(biomeNoise * 4)` (only levels 0..3), so hills and cliffs were rare
+and short. Camera-facing cliff faces were shaded, but faces turned away from the camera collapsed to nothing
+(ADR-253), so a ledge on the far side of a plateau was easy to miss until you walked off it.
+
+**Decision.**
+
+- **Random seed per new playthrough.** `randomWorldSeed()` (`@engine/world`) picks a non-zero uint32 (crypto when
+  available). Browser local / worker hosts (`createLocalServer`) and the dedicated server (when there is no save meta
+  and `--seed` was not passed) use it for a new world. A save keeps its own seed via persist meta. Explicit
+  `o.seed` / `?seed=N` / `--seed N` still pin a reproducible world. Tests that pass an explicit seed are unchanged.
+- **Layout / resources / animals follow the seed.** `ProceduralGenerator` was already a pure function of
+  `(seed, cx, cy)` for tiles and resource nodes; spawn points (`computeSpawnPoints`) and population RNG streams
+  (`world.rngFor("pop:…")`) already keyed off `world.seed`. Different seeds therefore differ in map, nodes and
+  animal rolls; the same seed stays bit-identical.
+- **Safe zones unchanged (Task 33).** `SAFE_SPAWN_RADIUS = 20` around installed spawn points still blocks aggressive
+  creature spawns and targeting. Hordes remain exempt. Seeded spawn points still go through `setSpawnPoints` on the
+  authority, so the radius tracks whatever the seed produced.
+- **More varied terrain heights.** Height is a separate field from biome noise: coarse plateau bands (0..3 × 3 levels)
+  plus multi-octave detail and a little biome contribution, so neighbouring plateaus form multi-level ledges while
+  each shelf still rolls. Range is `0..HEIGHT_MAX` (12). `baseClimate.altitude` and chunk `height[]` both use
+  `heightAt`. Water still renders flat (ADR-182).
+- **Visible ledges (camera-hidden sides).** Cliff faces turned away from the camera keep a dim shade
+  (`CLIFF_HIDDEN_SHADE = 0.28`) instead of collapsing. Top-face vertices that sit on a height drop of ≥ 1 level are
+  darkened (`LEDGE_LIP_SHADE = 0.72`) so the ledge outline reads on the plateau itself. Camera-facing shades (0.62 /
+  0.8) and gt_side faces (ADR-251) are unchanged.
+
+**Tests.**
+- `packages/world/test/task35_worldgen.test.ts`: same seed deterministic; different seeds differ (tiles, heights,
+  nodes, spawn points); height range and multi-level drops; climate altitude matches chunk height; `randomWorldSeed`.
+- `packages/render/test/task35_ledge_visibility.test.ts` (+ ADR-253 cliff expectations): every face shaded in every
+  view; lip helper.
+- `packages/gameplay/test/task35_seed_safe_zone.test.ts`: radius 20; pop RNG differs by seed; horde exemption.
+
+**Limits.**
+- Canvas2D ground is still drawn flat (pre-existing); ledge lips / far-face silhouettes are WebGL (Full preset).
+- Dedicated servers that pass neither a save nor `--seed` now get a random world each launch (was always 1234).
+- Terrain editing / flowing water / underground bases are Task 36 — not this ADR.
