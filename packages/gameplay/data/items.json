@@ -3980,6 +3980,13 @@
       "weight": 0.05
     },
     {
+      "key": "hay",
+      "name": "Hay",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
       "key": "tomato",
       "name": "Tomato",
       "category": "food",
@@ -4223,6 +4230,13 @@
     {
       "key": "wheat_seeds",
       "name": "Wheat Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "hay_seeds",
+      "name": "Hay Seeds",
       "category": "resource",
       "maxStack": 50,
       "weight": 0.01

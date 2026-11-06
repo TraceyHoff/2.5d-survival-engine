@@ -1055,6 +1055,21 @@
       ],
       "tint": "#906040"
     },
+    "salt_barrel": {
+      "to": [
+        "barrel_storage"
+      ]
+    },
+    "curing_box": {
+      "to": [
+        "storage_box"
+      ]
+    },
+    "cold_store": {
+      "to": [
+        "large_chest"
+      ]
+    },
     "trophy_mount": {
       "to": [
         "trophy_skull"
@@ -1450,6 +1465,18 @@
         "sign"
       ],
       "scale": 0.8
+    },
+    "crop_hay": {
+      "to": [
+        "crop_wheat",
+        "wild_wheat"
+      ]
+    },
+    "wild_hay": {
+      "to": [
+        "wild_wheat",
+        "flax"
+      ]
     }
   },
   "stages": {
@@ -1624,7 +1651,9 @@
     "roasted_onion": "onion",
     "roasted_wild_onion": "onion",
     "canteen": "water_flask",
-    "water_bottle": "water_flask"
+    "water_bottle": "water_flask",
+    "hay": "wild_grain",
+    "hay_seeds": "wild_grain"
   },
   "categoryIcons": {
     "resource": "fiber",

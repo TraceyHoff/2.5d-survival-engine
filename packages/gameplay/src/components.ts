@@ -218,6 +218,10 @@ export const Worker = defineComponent("Worker", {
   homeX: "f32",
   homeY: "f32",
 }, { networked: true, persistent: true });
+/** Task 28: a bot's home anchor (server-side only, persistent) — set on hire relocation so the bot's planner
+ * re-anchors on the new base instead of rebuilding at the old site. Not networked: the agent layer reads it
+ * server-side only, so it costs nothing on the container-bandwidth budget. */
+export const BotHome = defineComponent("BotHome", { x: "f32", y: "f32" }, { networked: false, persistent: true });
 export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
 export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
 export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
@@ -382,6 +386,11 @@ export const PetStatusComp = defineComponent("PetStatus", { status: "u8" }, { ne
  * gauge and the character sheet; the value is per-entity (each occupant converges to the same room heat).
  */
 export const RoomHeat = defineComponent("RoomHeat", { heat: "f32" }, { networked: true });
+
+/** Task 28 grazing: a grass tile an animal depleted by grazing — bare until regrowTick (world tick), when the grass is back. */
+export const GrazedTile = defineComponent("GrazedTile", { tx: "i32", ty: "i32", regrowTick: "u32" }, { networked: true, persistent: true });
+/** Task 28 grazing: transient per-animal grazing progress (server-only) — the tile being grazed and the tick it feeds. */
+export const Grazing = defineComponent("Grazing", { tx: "i32", ty: "i32", doneTick: "u32" }, { networked: false, persistent: false });
 /**
  * Task 25: dye colour of the item in each inventory slot (held tools / weapons). Packed 0xRRGGBB, 0 = undyed
  * (no palette colour is 0x000000, so 0 is unambiguous). Networked (every peer sees the dyed held item) and
@@ -440,6 +449,8 @@ export const GAMEPLAY_COMPONENTS = [
   PlayerReady, // append-only (Task 14: second loading screen — joined players wait for their client to load in)
   AnimalSkills, // append-only (Task 15: per-animal skill points + spent-node bitmask)
   Worker, // append-only (Task 22: AI-human recruitment — wanted item / owner / job / hire anchor)
+  BotHome, // append-only (Task 28: a bot's home anchor after hire relocation — server-side only)
+  GrazedTile, Grazing, // append-only (Task 28: grazing — depleted-grass tiles + per-animal grazing progress)
   RoomHeat, // append-only (Task 24: smoothed flame heat of the enclosed room an entity stands in)
   SlotDye, // append-only (Task 25: per-inventory-slot dye colour for held tools/weapons — packed 0xRRGGBB, 0 = undyed)
 ] as const;

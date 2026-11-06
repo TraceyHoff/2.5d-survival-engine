@@ -3496,6 +3496,87 @@
       "$decor": true
     },
     {
+      "key": "salt_barrel",
+      "paintable": true,
+      "$comment": "Task 28: salt-preserved food storage, tier 1 (wood). Food inside spoils at 0.5x while the barrel holds salt (1 salt per 3 min); without salt it is ordinary storage.",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "ground": true,
+      "container": 12,
+      "spoilMul": 0.5,
+      "saltFuel": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        },
+        {
+          "resource": "salt",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "curing_box",
+      "paintable": true,
+      "$comment": "Task 28: salt-preserved food storage, tier 2 (stone). Food inside spoils at 0.33x while the box holds salt (1 salt per 3 min); without salt it is ordinary storage.",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 200,
+      "ground": true,
+      "container": 16,
+      "spoilMul": 0.33,
+      "saltFuel": true,
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 6
+        },
+        {
+          "resource": "mortar",
+          "amount": 2
+        },
+        {
+          "resource": "salt",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "cold_store",
+      "paintable": true,
+      "$comment": "Task 28: salt-preserved food storage, tier 3 (metal). Food inside spoils at 0.2x while the store holds salt (1 salt per 3 min); without salt it is ordinary storage.",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 300,
+      "ground": true,
+      "container": 24,
+      "spoilMul": 0.2,
+      "saltFuel": true,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 3
+        },
+        {
+          "resource": "nails",
+          "amount": 6
+        },
+        {
+          "resource": "salt",
+          "amount": 6
+        }
+      ]
+    },
+    {
       "key": "trophy_mount",
       "paintable": true,
       "placement": "edge",

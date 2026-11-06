@@ -16,6 +16,11 @@ import { pieceCost, pieceUnlocked } from "../building/place.js";
 import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
 import { FIRE_AFTER_GOALS, GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
 import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
+import { isDomesticAnimal } from "../skills/husbandry.js";
+import { UseCmd } from "../input.js";
+import { containerSeq } from "./base_behaviors.js";
+import { storageDepositActions } from "./storage_api.js";
+import type { AgentOutputWithCommands } from "./agent_output.js";
 
 export interface StallOffer { id: number; x: number; y: number; slot: number; item: number; qty: number; priceItem: number; priceCount: number; revision?: number }
 export interface AgentSensors { food?: number; water?: number; partyMates?: { id: number; x: number; y: number }[]; stall?: StallOffer; /** ADR-145: a wild pet-species animal nearby + the best treat in the bag (the bot has no pet yet) */ tame?: { id: number; x: number; y: number; item: number } }
@@ -160,6 +165,52 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
       if (bt && bc > 0) view.tame = bt;
     }
   }
+  // Task 28: tame farm animals for food (winter stores + self-sufficiency) — Use animal_feed next to a wild
+  // domestic animal (tameBase 0.35, needs husbandry 1), or feed an owned animal whose fedUntil has lapsed.
+  // Capped at 2 owned livestock so a bot does not hoard the whole field.
+  const feedId = defsCache(defs).itemByKey.get("animal_feed")?.id;
+  if (slots && feedId && countItem(world, self, feedId) > 0) {
+    const feedSlot = slots.items.findIndex((it, i) => it === feedId && slots.counts[i]);
+    if (feedSlot >= 0) {
+      let livestock = 0; let hungry: { id: number; x: number; y: number } | undefined, hd = Infinity;
+      for (const e of world.query([Animal, Transform, Tamed])) {
+        if (world.getField(e, Tamed, "owner") !== self) continue; livestock++;
+        const fed = world.getField(e, Tamed, "fedUntil") ?? 0;
+        if (fed <= world.tick) { const p = world.get(e, Transform)!; const dd = Math.hypot(p.x - t.x, p.y - t.y); if (dd < hd) { hd = dd; hungry = { id: e, x: p.x, y: p.y }; } }
+      }
+      if (livestock < 2 || hungry) {
+        let best: { id: number; x: number; y: number } | undefined; let bd = 14;
+        if (hungry) best = hungry; // feed first: a fed animal produces
+        else if (livestock < 2) for (const e of world.query([Animal, Transform], [Dead, Pet, Tamed])) {
+          if (!isDomesticAnimal(world, e)) continue;
+          const p = world.get(e, Transform)!; const dd = Math.hypot(p.x - t.x, p.y - t.y);
+          if (dd < bd) { bd = dd; best = { id: e, x: p.x, y: p.y }; }
+        }
+        if (best) view.tameLivestock = { ...best, slot: feedSlot };
+      }
+    }
+  }
+  // Task 28: fill the trough with hay for hungry owned livestock — the bot carries hay, a hungry owned animal
+  // exists, and a feeding_trough stands within 12 tiles. Deposits up to 4 hay per trip; the trough feeds the
+  // animal on its own (husbandrySystem hay pass), so the bot only tops it up. The server resolves copen/cdeposit
+  // from the trough piece to its storage attachment, so the piece id is the deposit target.
+  const hayId = defsCache(defs).itemByKey.get("hay")?.id;
+  if (slots && hayId && countItem(world, self, hayId) > 0) {
+    let hungry = false;
+    for (const e of world.query([Animal, Transform, Tamed])) {
+      if (world.getField(e, Tamed, "owner") !== self) continue;
+      if ((world.getField(e, Tamed, "fedUntil") ?? 0) <= world.tick) { hungry = true; break; }
+    }
+    if (hungry) {
+      const troughId = defsCache(defs).pieceByKey.get("feeding_trough")?.id;
+      if (troughId) for (const b of world.query([BuildPiece, Transform], [Dead])) {
+        if (world.get(b, BuildPiece)!.type !== troughId) continue;
+        const p = world.get(b, Transform)!; if (Math.hypot(p.x - t.x, p.y - t.y) > 12) continue;
+        view.feedTrough = { id: b, x: p.x, y: p.y, item: hayId, count: Math.min(4, countItem(world, self, hayId)) };
+        break;
+      }
+    }
+  }
 }
 
 const toward = (o: { moveX: number; moveY: number; aimX: number; aimY: number }, fx: number, fy: number, tx: number, ty: number, s = 1): number => {
@@ -219,6 +270,30 @@ export function survivalBehaviors(): GameBehavior[] {
         const a = c.world.tame; if (!a) return false;
         if (toward(o, c.self.x, c.self.y, a.x, a.y, 0.6) > 1.8) return;
         o.moveX = 0; o.moveY = 0; o.actions.push(`tame:${a.id}:${a.item}`); c.bb.set("tamedAt", c.self.tick); return false;
+      } },
+    { name: "tame_livestock", traits: { industriousness: 0.5 }, inertia: 0.3, considerations: [ // Task 28: food production
+        { name: "candidate", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.tameLivestock && cooled(c.self.tick, c.bb.num("livestockAt", -1e9), 60) ? 1 : 0) },
+        { name: "safe", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
+      run: (c, o) => { // walk to the animal and Use the feed slot (the same command a player sends; the server
+        // re-validates reach, husbandry skill and the tame chance — a failed roll is retried next sense tick).
+        const a = c.world.tameLivestock; if (!a) return false;
+        if (toward(o, c.self.x, c.self.y, a.x, a.y, 0.6) > 1.8) return;
+        o.moveX = 0; o.moveY = 0;
+        if (c.self.tick - c.bb.num("livestockAt", -1e9) >= 60) {
+          const oc = o as unknown as AgentOutputWithCommands;
+          (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: a.slot } });
+          c.bb.set("livestockAt", c.self.tick);
+        }
+        return false;
+      } },
+    { name: "feed_trough", traits: { industriousness: 0.5 }, inertia: 0.3, considerations: [ // Task 28: hay into the trough
+        { name: "candidate", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.feedTrough && cooled(c.self.tick, c.bb.num("fedTroughAt", -1e9), 120) ? 1 : 0) },
+        { name: "safe", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
+      run: (c, o) => { // walk to the trough and deposit hay (open -> deposit -> close, one action per think tick)
+        const f = c.world.feedTrough; if (!f) return false;
+        if (toward(o, c.self.x, c.self.y, f.x, f.y, 0.6) > 2.2) return;
+        o.moveX = 0; o.moveY = 0;
+        if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, f.item, f.count))) { c.bb.set("fedTroughAt", c.self.tick); return false; }
       } },
     { name: "party", traits: { sociability: 1 }, inertia: 0.2, considerations: [
         { name: "mateAway", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => { const m = nearestMate(c.world, c.self.x, c.self.y); return m ? Math.min(1, m.d / 12) : 0; } }],

@@ -5,7 +5,7 @@
  * ADR-247: a seed/sapling drops only from its OWN species (`wild` nodes, its `becomes` node, crop_<key>); see seedSourceIssues.
  * Authority-only and RNG-free; Crop is networked + persistent so fields survive restarts and replicate to clients.
  */
-import { DEFAULT_TICK_HZ, Transform, Weather, entityIndex, type Entity, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, SeasonId, Transform, Weather, entityIndex, seasonAt, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
 import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
@@ -17,6 +17,7 @@ import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
 import { populationTile } from "./population.js";
 import { nearWater } from "./systems/vitals.js";
+import { ambientTemperature } from "./systems/environment.js";
 import { isRaining } from "./realism.js";
 
 export type PlantType = "crop" | "bush" | "tree";
@@ -143,10 +144,48 @@ export function growthMul(world: World, c: { waterUntilTick: number; fertilized:
   return (wet ? FARMING.wateredMul : FARMING.unwateredMul) * (c.fertilized ? FARMING.fertilizerMul : 1);
 }
 export const CROP_EVERY = Math.round(FARMING.tickSeconds * DEFAULT_TICK_HZ);
+/** Task 28 seasonal crop death: growth pauses in the final LATE_FALL_DAYS days of fall, and all winter.
+ * Seasons are 3 in-game days (environment.json lengthDays), so N = 1: the last day of fall is the dormant
+ * warning day (N = 3 would make the whole of fall dormant and no fall crop would ever grow). */
+export const LATE_FALL_DAYS = 1;
+/** Task 28: below this ambient temperature (40°F) outdoor crops/plants die. */
+export const FROST_KILL_F = 40;
+export const FROST_KILL_C = (FROST_KILL_F - 32) * 5 / 9;
+/** True while crops are dormant: the final LATE_FALL_DAYS days of fall, and all of winter. */
+export function isCropDormant(world: World): boolean {
+  const s = seasonAt(world);
+  if (s.index === SeasonId.Winter) return true;
+  return s.index === SeasonId.Fall && s.into >= s.lengthDays - LATE_FALL_DAYS;
+}
+/** Task 28 frost exceptions: fruit trees die, ordinary trees and berry bushes survive, wild plants and crops die. */
+const FRUIT_TREES = new Set(["apple_tree", "pear_tree", "cherry_tree", "orange_tree", "peach_tree"]);
+const BERRY_BUSHES = new Set(["berry_bush", "blueberry_bush", "raspberry_bush", "blackberry_bush", "strawberry_bush"]);
+const FROST_EXTRA_DIES = new Set(["cotton_bush", "fiber_bush", "wild_garden"]);
+export function frostKillsNode(key: string): boolean {
+  if (key === "tree" || key.endsWith("_tree")) return FRUIT_TREES.has(key);
+  if (BERRY_BUSHES.has(key)) return false;
+  if (key.startsWith("wild_") || key.endsWith("_patch") || key.startsWith("crop_")) return true;
+  return FROST_EXTRA_DIES.has(key);
+}
 /** Every CROP_EVERY ticks: grow, advance stages, mature into the resource node. */
 export function cropGrowthSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const dt = CROP_EVERY / DEFAULT_TICK_HZ;
+  // Task 28: below 40°F ambient, outdoor crops/plants die (fruit trees die; ordinary trees and berry bushes survive).
+  // The kill pass runs even while dormant — a frost kills a field that stopped growing. A killed crop reverts to
+  // empty tilled soil (kind 0) so the player can replant; a killed wild node is depleted (amount 0, regrows later).
+  if (ambientTemperature(world) < FROST_KILL_C) {
+    const defs = gameplayDefs(world);
+    for (const e of [...world.query([Crop, Transform])].sort((a, b) => a - b)) {
+      const c = world.get(e, Crop)!; const p = plantableOf(c.kind);
+      if (p && p.type === "crop") world.set(e, Crop, { kind: 0, stage: 0, growth: 0 });
+    }
+    for (const e of [...world.query([ResourceNode])].sort((a, b) => a - b)) {
+      const n = world.get(e, ResourceNode)!; const key = defs.resources.get(n.kind)?.key ?? "";
+      if (frostKillsNode(key)) world.set(e, ResourceNode, { amount: 0 });
+    }
+  }
+  if (isCropDormant(world)) return;
   for (const e of [...world.query([Crop, Transform])].sort((a, b) => a - b)) {
     const c = world.get(e, Crop)!; const p = plantableOf(c.kind); if (!p) continue;
     const growth = Math.min(1, c.growth + (dt / p.growSeconds) * growthMul(world, c));

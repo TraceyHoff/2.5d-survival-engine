@@ -12,7 +12,7 @@ import { storageDepositActions, storageWithdrawActions } from "./storage_api.js"
 import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
+import { Animal, AttachKind, BotHome, BuildPiece, Container, Dead, Fuel, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
 import { hasBrushInHotbar, readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
@@ -23,6 +23,8 @@ import { plantableBySeed } from "../farming.js";
 export const isSeedItem = (defs: GameDefs, item: number): boolean => { const k = defs.items.get(item)?.key; return !!k && plantableBySeed(k) > 0; };
 import { isWinter, BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, claimBaseSite, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
 import { stuckOn } from "./autonomy.js";
+import { UpgradeCmd } from "../input.js";
+import type { AgentOutputWithCommands } from "./agent_output.js";
 
 export interface PlanSensors {
   plan?: Plan; base?: { x: number; y: number }; bs?: BaseState; craftCount?: number; craftTicks?: number;
@@ -42,6 +44,12 @@ const animalsCache = { defs: undefined as ReturnType<typeof animalDefs> | undefi
 /** Planner pass on a sense tick: base anchor, plan, needs (returned), craft / hunt / loot / stash sensors. */
 export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView, a: Agent, defs: GameDefs, slots: ReturnType<typeof readSlots>): Set<number> | undefined {
   const mem = aiMemoryOf(a); const tick = world.tick; const t = world.get(self, Transform); if (!t) return undefined;
+  // Task 28: a hired bot whose base moved (BotHome, set by hire relocation) follows the move instead of
+  // rebuilding at the old site — the planner re-anchors on the new home from the next sense tick.
+  const moved = world.get(self, BotHome);
+  if (moved && (!mem.base || Math.hypot(moved.x - mem.base.x, moved.y - mem.base.y) > 0.5)) {
+    mem.base = { x: moved.x, y: moved.y }; claimBaseSite(world, self, mem.base); markAiDirty(a, tick);
+  }
   if (!mem.base && tick - a.bb.num("sitePickAt", -1e9) >= 200) {
     a.bb.set("sitePickAt", tick); const s = pickBaseSite(world, self, view.home, hash(a.identity.id) + mem.stats.relocations * 0.37);
     if (s) { mem.base = s; markAiDirty(a, tick); }
@@ -193,6 +201,16 @@ export function baseBehaviors(): GameBehavior[] {
           if (st.fired && !st.lit) { const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (wood === undefined || !(c.world.woodTotal ?? 0)) return fail();
             if (containerSeq(c, o, st.id, depositAndLight(st.id, wood, Math.min(6, c.world.woodTotal!)))) mark(c, "refuels"); return; }
           o.actions.push(`craft:${s.recipe}:${s.count}`); c.bb.set("craftUntil", c.self.tick + s.ticks); armCraft(c); return; }
+        if (s.k === "upgrade") { // Task 28: walk to the piece (Upgrade reach is buildReach, 4 tiles) and send the same
+          // Upgrade command a player sends; the server re-validates skill, cost and privilege.
+          const wd = worldOf(c); const tp = wd?.get(s.piece as Entity, Transform);
+          if (!tp) return fail();
+          if (goTo(c, o, tp.x, tp.y) > 3.2) { if (stuckOn(c, tp.x, tp.y)) return fail(); return; }
+          stop(o);
+          if (!cooled(c, "upgradeAt", 30)) return;
+          const oc = o as unknown as AgentOutputWithCommands;
+          (oc.commands ??= []).push({ type: UpgradeCmd.name, payload: { target: s.piece, tier: s.tier } });
+          c.bb.set("upgradeAt", c.self.tick); return false; }
         // build
         const d = goTo(c, o, s.stand.x, s.stand.y, 0.8);
         if (d > 0.5 && !(d < 3 && stuckOn(c, s.stand.x, s.stand.y, 40))) { if (d >= 3 && stuckOn(c, s.stand.x, s.stand.y)) return fail(); return; }

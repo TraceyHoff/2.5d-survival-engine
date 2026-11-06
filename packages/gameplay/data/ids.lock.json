@@ -474,7 +474,9 @@
     "medicated_bandage": 472,
     "salt_brew": 473,
     "waterskin": 474,
-    "paint_brush": 475
+    "paint_brush": 475,
+    "hay_seeds": 476,
+    "hay": 477
   },
   "resources": {
     "fallen_branches": 1,
@@ -560,7 +562,9 @@
     "wild_tomato": 81,
     "wild_wheat": 82,
     "wild_yarrow": 83,
-    "willow_tree": 84
+    "willow_tree": 84,
+    "crop_hay": 85,
+    "wild_hay": 86
   },
   "recipes": {
     "stone_axe": 1,
@@ -1120,7 +1124,10 @@
     "window_planter": 179,
     "feeding_trough": 180,
     "pet_trough": 181,
-    "basic_storage_box": 182
+    "basic_storage_box": 182,
+    "salt_barrel": 183,
+    "curing_box": 184,
+    "cold_store": 185
   },
   "zombies": {
     "zombie_brute": 1,

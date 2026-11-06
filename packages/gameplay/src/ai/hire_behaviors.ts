@@ -19,7 +19,7 @@
  *    the missing materials from the owner's storage first. Only when the materials are carried or stored.
  *  - idle     — work_hold: a hired bot with no job target stays near the anchor instead of wandering off.
  */
-import { Transform, type AgentContext, type Entity, type World } from "@engine/core";
+import { Transform, type AgentContext, type AgentOutput, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { BuildPiece, Crop, Dead, ResourceNode, Worker, WorkerJob, Worn, Zombie } from "../components.js";
 import { GameplayConfig } from "../config.js";
@@ -80,10 +80,57 @@ function hireCraftPick(world: World, self: Entity, defs: GameDefs): number | und
  * base: home/base/bs become the owner's, the plan is dropped, and surplus is recomputed against the owner's
  * storage. A bot that is not hired (owner 0) is left exactly as the planner left it.
  */
+/** Task 28 (was the hired-Farm sensor; now shared): harvest / water / plant / till around `anchor`. Returns
+ * undefined when there is nothing to do. Unhired bots garden their own base with the same sensor. */
+export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, anchor: { x: number; y: number }, bs: ReturnType<typeof scanBase>): AgentWorldView["farm"] {
+  let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
+  const canSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && defs.items.get(it)?.key === FARM_TOOL.wateringCan) : -1;
+  const seedSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && plantableBySeed(defs.items.get(it)?.key ?? "") > 0) : -1;
+  const hoeId = [...defs.items.values()].find((d) => d.key === FARM_TOOL.hoe)?.id ?? 0;
+  const hoeSlot = hoeId && slots ? slots.items.findIndex((it, i) => it === hoeId && slots.counts[i]) : -1;
+  const seedItem = seedSlot >= 0 ? slots!.items[seedSlot]! : 0;
+  const seedCount = seedItem ? countItem(world, self, seedItem) : 0;
+  const cropKeys = new Set(FARMING.plantables.map((p) => p.becomes));
+  let harvest: { id: number; x: number; y: number } | undefined; let hd = Infinity;
+  let water: { id: number; x: number; y: number; slot: number; kind: "water" } | undefined; let wd = Infinity;
+  let soil: { id: number; x: number; y: number; slot: number; kind: "plant" } | undefined; let sd = Infinity;
+  let emptySoil = 0;
+  for (const e of installSpatialIndex(world).queryRadius(anchor.x, anchor.y, FARM_R)) {
+    const t = world.get(e, Transform); if (!t) continue; const d = (t.x - anchor.x) ** 2 + (t.y - anchor.y) ** 2;
+    if (world.has(e, ResourceNode) && (world.getField(e, ResourceNode, "amount") ?? 0) > 0) {
+      const key = defs.resources.get(world.getField(e, ResourceNode, "kind")!)?.key;
+      if (key && cropKeys.has(key) && d < hd) { hd = d; harvest = { id: e, x: t.x, y: t.y }; }
+    } else if (world.has(e, Crop)) {
+      const c = world.get(e, Crop)!;
+      if (c.kind === 0) { emptySoil++; if (seedSlot >= 0 && d < sd) { sd = d; soil = { id: e, x: t.x, y: t.y, slot: seedSlot, kind: "plant" }; } }
+      else if (c.kind > 0 && c.growth < 1 && c.waterUntilTick <= world.tick && canSlot >= 0 && d < wd) { wd = d; water = { id: e, x: t.x, y: t.y, slot: canSlot, kind: "water" }; }
+    }
+  }
+  // Task 23: till new soil when the worker has seeds — planting existing soil comes first, and only while every
+  // tilled plot can still be planted (empty soil < seeds carried), so the field never outgrows the seed stock.
+  let tillTarget: { x: number; y: number; slot: number; lack?: { item: number; count: number } } | undefined;
+  if (seedSlot >= 0 && !soil && emptySoil < seedCount && (hoeSlot >= 0 || (hoeId && (bs?.storage?.counts?.get(hoeId) ?? 0) > 0))) {
+    const spot = nearestTillSpot(world, self, anchor);
+    if (spot) {
+      if (hoeSlot >= 0) tillTarget = { ...spot, slot: hoeSlot };
+      else tillTarget = { ...spot, slot: -1, lack: { item: hoeId, count: 1 } }; // hoe is in base storage: fetch it first
+    }
+  }
+  if (harvest || water || soil || tillTarget) return { ...(harvest ? { harvest } : {}), ...(water ?? soil ? { tend: water ?? soil! } : {}), ...(tillTarget ? { till: tillTarget } : {}) };
+  return undefined;
+}
+
 export function fillHireSensors(world: World, self: Entity, view: AgentWorldView): void {
   if (!world.has(self, Worker)) return;
-  const w = world.get(self, Worker)!; if (w.owner === 0) return;
+  const w = world.get(self, Worker)!;
   const cfg = world.getResource(GameplayConfig); if (!cfg) return; const defs = cfg.defs;
+  if (w.owner === 0) {
+    // Task 28: unhired bots garden their own base (the same farm sensor as a hired Farm worker, anchored on
+    // their own base from fillPlanSensors) — till, plant, water and harvest for winter stores and themselves.
+    const base = view.base, bs = view.bs;
+    if (base && bs) { const f = computeFarmSensor(world, self, defs, base, bs); if (f) view.farm = f; else delete view.farm; }
+    return;
+  }
   const anchor = workerAnchor(world, self);
   view.hire = { job: w.job, owner: w.owner, ax: anchor.x, ay: anchor.y };
   view.home = anchor; view.base = anchor;
@@ -115,42 +162,7 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
     }
     if (best) view.defend = best;
   }
-  if (w.job === WorkerJob.Farm) {
-    let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
-    const canSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && defs.items.get(it)?.key === FARM_TOOL.wateringCan) : -1;
-    const seedSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && plantableBySeed(defs.items.get(it)?.key ?? "") > 0) : -1;
-    const hoeId = [...defs.items.values()].find((d) => d.key === FARM_TOOL.hoe)?.id ?? 0;
-    const hoeSlot = hoeId && slots ? slots.items.findIndex((it, i) => it === hoeId && slots.counts[i]) : -1;
-    const seedItem = seedSlot >= 0 ? slots!.items[seedSlot]! : 0;
-    const seedCount = seedItem ? countItem(world, self, seedItem) : 0;
-    const cropKeys = new Set(FARMING.plantables.map((p) => p.becomes));
-    let harvest: { id: number; x: number; y: number } | undefined; let hd = Infinity;
-    let water: { id: number; x: number; y: number; slot: number; kind: "water" } | undefined; let wd = Infinity;
-    let soil: { id: number; x: number; y: number; slot: number; kind: "plant" } | undefined; let sd = Infinity;
-    let emptySoil = 0;
-    for (const e of installSpatialIndex(world).queryRadius(anchor.x, anchor.y, FARM_R)) {
-      const t = world.get(e, Transform); if (!t) continue; const d = (t.x - anchor.x) ** 2 + (t.y - anchor.y) ** 2;
-      if (world.has(e, ResourceNode) && (world.getField(e, ResourceNode, "amount") ?? 0) > 0) {
-        const key = defs.resources.get(world.getField(e, ResourceNode, "kind")!)?.key;
-        if (key && cropKeys.has(key) && d < hd) { hd = d; harvest = { id: e, x: t.x, y: t.y }; }
-      } else if (world.has(e, Crop)) {
-        const c = world.get(e, Crop)!;
-        if (c.kind === 0) { emptySoil++; if (seedSlot >= 0 && d < sd) { sd = d; soil = { id: e, x: t.x, y: t.y, slot: seedSlot, kind: "plant" }; } }
-        else if (c.kind > 0 && c.growth < 1 && c.waterUntilTick <= world.tick && canSlot >= 0 && d < wd) { wd = d; water = { id: e, x: t.x, y: t.y, slot: canSlot, kind: "water" }; }
-      }
-    }
-    // Task 23: till new soil when the worker has seeds — planting existing soil comes first, and only while every
-    // tilled plot can still be planted (empty soil < seeds carried), so the field never outgrows the seed stock.
-    let tillTarget: { x: number; y: number; slot: number; lack?: { item: number; count: number } } | undefined;
-    if (seedSlot >= 0 && !soil && emptySoil < seedCount && (hoeSlot >= 0 || (hoeId && (bs?.storage?.counts?.get(hoeId) ?? 0) > 0))) {
-      const spot = nearestTillSpot(world, self, anchor);
-      if (spot) {
-        if (hoeSlot >= 0) tillTarget = { ...spot, slot: hoeSlot };
-        else tillTarget = { ...spot, slot: -1, lack: { item: hoeId, count: 1 } }; // hoe is in base storage: fetch it first
-      }
-    }
-    if (harvest || water || soil || tillTarget) view.farm = { ...(harvest ? { harvest } : {}), ...(water ?? soil ? { tend: water ?? soil! } : {}), ...(tillTarget ? { till: tillTarget } : {}) };
-  }
+  if (w.job === WorkerJob.Farm) { const f = computeFarmSensor(world, self, defs, anchor, bs); if (f) view.farm = f; else delete view.farm; }
   if (w.job === WorkerJob.Maintain) {
     const rep = bs?.repair;
     if (rep !== undefined) {
@@ -173,6 +185,25 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
 }
 
 /** Hired-worker behaviors (registered in survivorRegistry; unhired bots never see view.hire, so these score 0). */
+/** The farm run shared by hired Farm workers and unhired gardeners (Task 28): till (harvest / tending first),
+ * then harvest mature crop nodes or water / plant with the Use command on the slot's item. */
+function farmRun(c: Ctx, o: AgentOutput): boolean | void { const f = c.world.farm; if (!f) return false;
+  if (f.till && !f.harvest && !f.tend) { // till new soil (harvest / tending come first)
+    const t = f.till;
+    if (t.lack) { const sb = c.world.bs?.storage; if (!sb) return false; // fetch the hoe from base storage first
+      if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) return false; return; } stop(o);
+      if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, t.lack.item, t.lack.count))) return false; return; }
+    if (goTo(c, o, t.x, t.y) > 0.9) { if (stuckOn(c, t.x, t.y)) return false; return; } stop(o);
+    // Use the hoe on the tile in front (farmUseSystem tills it); the sensor plants a seed there next tick
+    if (cooled(c, "farmTillAt", 20)) { const oc = o as unknown as AgentOutputWithCommands; (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: t.slot } }); c.bb.set("farmTillAt", c.self.tick); }
+    return false; }
+  const target = f.harvest ?? f.tend; if (!target) return false;
+  if (goTo(c, o, target.x, target.y) > 1.2) { if (stuckOn(c, target.x, target.y)) return false; return; } stop(o);
+  if (f.harvest) { o.actions.push("gather"); return false; } // mature crop node: gather it like any node
+  const t = f.tend!; // water a thirsty crop / plant a seed on tilled soil (Use on the slot's item)
+  if (cooled(c, "farmUseAt", 20)) { const oc = o as unknown as AgentOutputWithCommands; (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: t.slot } }); c.bb.set("farmUseAt", c.self.tick); }
+  return false; }
+
 export function hireBehaviors(): GameBehavior[] {
   const hiredJob = (job: WorkerJob) => (c: Ctx): number => (c.world.hire?.job === job ? 1 : 0);
   return [
@@ -186,22 +217,16 @@ export function hireBehaviors(): GameBehavior[] {
     { name: "work_farm", inertia: 0.5, traits: { industriousness: 0.8 }, considerations: [
         { name: "job", curve: step01, input: hiredJob(WorkerJob.Farm) },
         { name: "target", curve: step01, input: (c) => (c.world.farm ? 1 : 0) }],
-      run: (c, o) => { const f = c.world.farm; if (!f) return false;
-        if (f.till && !f.harvest && !f.tend) { // till new soil (harvest / tending come first)
-          const t = f.till;
-          if (t.lack) { const sb = c.world.bs?.storage; if (!sb) return false; // fetch the hoe from base storage first
-            if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) return false; return; } stop(o);
-            if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, t.lack.item, t.lack.count))) return false; return; }
-          if (goTo(c, o, t.x, t.y) > 0.9) { if (stuckOn(c, t.x, t.y)) return false; return; } stop(o);
-          // Use the hoe on the tile in front (farmUseSystem tills it); the sensor plants a seed there next tick
-          if (cooled(c, "farmTillAt", 20)) { const oc = o as unknown as AgentOutputWithCommands; (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: t.slot } }); c.bb.set("farmTillAt", c.self.tick); }
-          return false; }
-        const target = f.harvest ?? f.tend; if (!target) return false;
-        if (goTo(c, o, target.x, target.y) > 1.2) { if (stuckOn(c, target.x, target.y)) return false; return; } stop(o);
-        if (f.harvest) { o.actions.push("gather"); return false; } // mature crop node: gather it like any node
-        const t = f.tend!; // water a thirsty crop / plant a seed on tilled soil (Use on the slot's item)
-        if (cooled(c, "farmUseAt", 20)) { const oc = o as unknown as AgentOutputWithCommands; (oc.commands ??= []).push({ type: UseCmd.name, payload: { slot: t.slot } }); c.bb.set("farmUseAt", c.self.tick); }
-        return false; } },
+      run: farmRun },
+    { name: "garden", inertia: 0.1, traits: { industriousness: 0.3 }, considerations: [
+        // Task 28: gardening is background work for an unhired bot — it never outranks the ladder. A wild
+        // berry bush near the base is a permanent harvest target (it regrows), so an ungated garden starves
+        // the home build: the bot harvests instead of gathering foundation materials or building. Garden
+        // only fills idle gaps (no plan step, no wanted gathering trip), e.g. blocked/snoozed goals or the
+        // endgame — the home comes first, the garden second.
+        { name: "plot", curve: step01, input: (c) => (c.world.farm && !c.world.hire && !c.world.plan?.step && !c.world.tripWanted ? 1 : 0) },
+        { name: "calm", curve: step01, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
+      run: farmRun },
     { name: "work_maintain", inertia: 0.5, traits: { industriousness: 0.8 }, considerations: [
         { name: "job", curve: step01, input: hiredJob(WorkerJob.Maintain) },
         { name: "repair", curve: step01, input: (c) => (c.world.repair ? 1 : 0) }],

@@ -44,6 +44,11 @@ export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors
   farm?: { harvest?: { id: number; x: number; y: number }; tend?: { id: number; x: number; y: number; kind: "water" | "plant"; slot: number };
     /** Task 23: nearest tillable tile near the owner's base (hoe Use in front of it; lack = hoe to withdraw from base storage first). */
     till?: { x: number; y: number; slot: number; lack?: { item: number; count: number } } };
+  /** Task 28: nearest farm animal to tame (wild) or feed (owned, hungry) with animal_feed in the bag — tame for
+   * food production (milk / eggs / wool at a feeding trough) for winter stores and for the bot itself. */
+  tameLivestock?: { id: number; x: number; y: number; slot: number };
+  /** Task 28: a feeding_trough to fill with hay for hungry owned livestock (id = trough piece; the server resolves copen/cdeposit to its storage attachment) */
+  feedTrough?: { id: number; x: number; y: number; item: number; count: number };
   /** Task 22: nearest zombie threatening the owner's base (Defend job). */
   defend?: { id: number; x: number; y: number };
   /** Task 22: damaged piece near the owner's base the worker can repair (lack = material to withdraw first). */

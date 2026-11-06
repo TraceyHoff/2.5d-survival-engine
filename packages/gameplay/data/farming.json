@@ -532,6 +532,21 @@
       "wild": [
         "berry_bush"
       ]
+    },
+    {
+      "seed": "hay_seeds",
+      "key": "hay",
+      "type": "crop",
+      "growSeconds": 300,
+      "stages": 4,
+      "becomes": "crop_hay",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "wild_hay"
+      ]
     }
   ]
 }

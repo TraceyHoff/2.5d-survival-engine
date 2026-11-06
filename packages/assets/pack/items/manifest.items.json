@@ -8866,6 +8866,23 @@
    }
   },
   {
+   "key": "build_curing_box",
+   "category": "ui",
+   "atlas": "items_build",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
    "key": "build_basic_storage_box",
    "category": "ui",
    "atlas": "items_build",
@@ -8884,6 +8901,23 @@
   },
   {
    "key": "build_large_chest",
+   "category": "ui",
+   "atlas": "items_build",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "build_cold_store",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11553,6 +11587,23 @@
   },
   {
    "key": "build_barrel_storage",
+   "category": "ui",
+   "atlas": "items_build",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      224
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "build_salt_barrel",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {

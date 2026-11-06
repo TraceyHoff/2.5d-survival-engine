@@ -22,12 +22,20 @@
  * toggle in the sense that it is on by default there too; the same setting covers both modes.
  */
 import { defineCommand, fnv1a, PlayerId, Transform, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
-import { Dead, PrivilegeZone, Tribe, Worker, WorkerJob, WorldRules } from "./components.js";
+import { AttachKind, BotHome, BuildPiece, Container, ContainerViewers, Dead, LootBag, PieceOwner, PrivilegeZone, Tribe, Worker, WorkerJob, WorldRules } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
-import { countItem, removeItem } from "./inventory.js";
-import { emit, ev } from "./events.js";
+import { addItem, countItem, readSlots, removeItem } from "./inventory.js";
+import { DestroyCause, emit, ev } from "./events.js";
 import { isAiHuman } from "./skills/xp.js";
-import { tribeOf } from "./building/place.js";
+import { pieceCost, placePiece, snapPlacement, tribeOf, validatePlacement } from "./building/place.js";
+import { destroyPiece } from "./building/integrity.js";
+import { resolveAttachment } from "./building/links.js";
+import { claimBaseSite, pickBaseSite } from "./ai/planner.js";
+import { structures } from "./building/structure.js";
+import { lootBagInit } from "./loot_despawn.js";
+import { LootSource } from "./loot_labels.js";
+import { indexEntity } from "./spawn.js";
+import type { PieceDef } from "./defs.js";
 import type { NameLookup } from "./economy/provenance.js";
 
 /** Local read of the WorldRules.aiHumans toggle (same value as hordes.ts worldRules().aiHumans, duplicated here
@@ -114,7 +122,7 @@ export function recruitmentSystem(world: World): void {
 // ---- hire / job / dismiss ---------------------------------------------------------------------------
 export const enum WorkerFail { None = 0, NotFound = 1, TooFar = 2, AlreadyHired = 3, NoItem = 4, AiHumansOff = 5, NotOwner = 6, BadJob = 7, NotWorker = 8 }
 export const WORKER_FAIL_REASONS = ["", "not_found", "too_far", "already_hired", "no_item", "ai_humans_off", "not_owner", "bad_job", "not_worker"] as const;
-export const enum WorkerResult { Hired = 1, JobSet = 2, Released = 3 }
+export const enum WorkerResult { Hired = 1, JobSet = 2, Released = 3, Relocated = 4 }
 export const WorkerEvent = ev<{ entity: Entity; worker: Entity; result: WorkerResult; value: number }>("gameplay.WorkerEvent");
 /** Toast copy for a WorkerEvent (client: main.ts). `value` is the wanted item id on hire, the job on JobSet. */
 export function workerEventText(world: World, worker: Entity, result: WorkerResult, value: number): string | undefined {
@@ -122,6 +130,7 @@ export function workerEventText(world: World, worker: Entity, result: WorkerResu
   if (result === WorkerResult.Hired) return `${name} hired! They will work for you now.`;
   if (result === WorkerResult.JobSet) return `${name} is now ${WORKER_JOB_LABELS[value]?.toLowerCase() ?? "working"}.`;
   if (result === WorkerResult.Released) return `${name} is no longer working for you.`;
+  if (result === WorkerResult.Relocated) return `${name} moved their home near yours — everything they owned came with them.`;
   return undefined;
 }
 
@@ -154,7 +163,119 @@ export function hireWorker(world: World, actor: Entity, target: Entity): WorkerF
   world.set(target, Worker, { owner: pidOf(world, actor), job: WorkerJob.Gather, homeX: me?.x ?? w.homeX, homeY: me?.y ?? w.homeY });
   if (tribe !== 0) { if (world.has(target, Tribe)) world.set(target, Tribe, { id: tribe }); else world.add(target, Tribe, { id: tribe }); }
   emit(world, WorkerEvent, { entity: actor, worker: target, result: WorkerResult.Hired, value: w.wantedItem });
+  // Task 28: a hired bot with its own base moves it near the player's home (never fails the hire: a relocation
+  // that cannot find a site, or throws, keeps the old base and the bot).
+  if (relocateWorkerBase(world, target, actor)) emit(world, WorkerEvent, { entity: actor, worker: target, result: WorkerResult.Relocated, value: 0 });
   return WorkerFail.None;
+}
+
+/**
+ * Task 28: hire relocation — demolish a hired bot's own base and rebuild it near the player's home, moving every
+ * stored resource with it. Server-authoritative; runs on the hire path after payment is taken; returns false
+ * (old base kept, hire unaffected) when the bot owns nothing or no new site is found, and never throws.
+ *
+ * What transfers: every item in every old storage container, plus a FULL (100%) salvage refund of every owned
+ * piece's tier cost — not the 50% demolish refund, because the player paid for the hire and the bot should not
+ * lose its home's materials. Placed furniture / stations / beds are rebuilt in the same layout when the new site
+ * fits; any piece that cannot be placed there (terrain, occupied slot, missing skill) is salvaged into the
+ * manifest instead, so its materials still arrive. What is deliberately lost: nothing of value — only the old
+ * base's position. Deposit order: each piece's stored contents back into a rebuilt piece of the same type
+ * (then any new storage); salvage into the bot's pack, then the owner's pack, then new storage; anything still
+ * left over lands in a Dropped loot bag at the new base (stall lifetime). Radius: the new site is 5-9 tiles
+ * from the player's claim centre (hire spot when the owner has no claim); pickBaseSite already refuses water
+ * and any BuildPiece within 9 tiles.
+ */
+export function relocateWorkerBase(world: World, worker: Entity, actor: Entity): boolean {
+  try {
+    const defs = gameplayDefs(world);
+    // 1. The bot's own pieces only (PieceOwner.player is the builder's PlayerId, not the entity) — never the
+    // player's or another player's.
+    const ownerPid = pidOf(world, worker);
+    const owned: { e: Entity; def: PieceDef; tier: number; x: number; y: number; level: number; rot: number; variant: number }[] = [];
+    const idx = structures(world);
+    for (const e of world.query([BuildPiece, PieceOwner])) {
+      if (world.getField(e, PieceOwner, "player") !== ownerPid) continue;
+      const t = world.get(e, Transform); const type = world.getField(e, BuildPiece, "type") ?? 0;
+      const def = defs.pieces.get(type); if (!def || !t) continue;
+      owned.push({ e, def, tier: world.getField(e, BuildPiece, "tier") ?? 0, x: t.x, y: t.y, level: idx.info.get(e)?.slot.z ?? 0, rot: world.getField(e, BuildPiece, "rot") ?? 0, variant: world.getField(e, BuildPiece, "variant") ?? 0 });
+    }
+    if (!owned.length) return false;
+    // 2. New site near the player's home (claim centre, else hire spot); three salts to try before giving up.
+    const anchor = workerAnchor(world, worker);
+    let site: { x: number; y: number } | undefined;
+    for (const salt of [0.37, 1.37, 2.37]) { site = pickBaseSite(world, worker, anchor, salt); if (site) break; }
+    if (!site) return false; // no room: keep the old base, keep the hire
+    // 3. Withdraw every stored item (kept per piece key, so it returns to a rebuilt piece of the same type) and
+    // the full salvage (100% of each piece's tier cost, not the 50% demolish refund) BEFORE demolishing
+    // anything, so a stability cascade while demolishing cannot lose materials (destroyPiece also spills
+    // storage — the containers are empty by then, so nothing spills twice).
+    const storedByKey = new Map<string, Map<number, number>>();
+    const salvage = new Map<number, number>();
+    const addTo = (m: Map<number, number>, item: number, n: number): void => { if (n > 0) m.set(item, (m.get(item) ?? 0) + n); };
+    for (const o of owned) {
+      const att = resolveAttachment(world, o.e, AttachKind.Storage);
+      if (att) { // withdraw first (all-or-nothing per item): destroyPiece spills whatever is left, so an
+        // item we fail to withdraw is not lost — it lands in a loot bag at the old site instead.
+        const slots = readSlots(world, att); const held = new Map<number, number>();
+        for (let i = 0; i < slots.items.length; i++) if (slots.items[i] && slots.counts[i]) held.set(slots.items[i]!, (held.get(slots.items[i]!) ?? 0) + slots.counts[i]!);
+        if (held.size) { const m = storedByKey.get(o.def.key) ?? new Map<number, number>(); storedByKey.set(o.def.key, m); for (const [item, n] of held) if (removeItem(world, att, item, n)) addTo(m, item, n); }
+      }
+      for (const c of pieceCost(defs, o.def, o.tier)) addTo(salvage, c.item, c.count);
+    }
+    // 4. Demolish top-down (upper levels, then roofs) so stability never cascades a piece we have not counted.
+    const demolishOrder = [...owned].sort((a, b) => b.level - a.level || (a.def.key.includes("roof") ? -1 : 0) - (b.def.key.includes("roof") ? -1 : 0));
+    for (const o of demolishOrder) if (world.isAlive(o.e)) destroyPiece(world, o.e, DestroyCause.Demolish);
+    // 5. Rebuild the same layout at the new site (offsets from the old level-0 min corner), foundations first.
+    const ground = owned.filter((o) => o.level === 0);
+    const ox = Math.min(...ground.map((o) => o.x)), oy = Math.min(...ground.map((o) => o.y));
+    const rebuildOrder = [...owned].sort((a, b) => a.level - b.level);
+    const newStorage: Entity[] = [];
+    const newStorageByKey = new Map<string, Entity[]>();
+    for (const o of rebuildOrder) {
+      const sn = snapPlacement(world, { piece: o.def.id, x: site.x + (o.x - ox), y: site.y + (o.y - oy), level: o.level, rot: o.rot, tier: o.tier, variant: o.variant });
+      if (typeof sn === "number") continue; // cannot snap here: its salvage is already in the manifest
+      if (validatePlacement(world, worker, sn, { ignoreCost: true, ignoreRange: true }) !== 0) continue;
+      const np = placePiece(world, worker, sn, { pay: false });
+      const att = resolveAttachment(world, np, AttachKind.Storage);
+      if (att) { newStorage.push(att); const l = newStorageByKey.get(o.def.key) ?? []; l.push(att); newStorageByKey.set(o.def.key, l); }
+    }
+    // 6. Deposit: each piece's stored contents back into a rebuilt piece of the same type first (then any new
+    // storage); the demolished home's salvage goes to the bot's pack (it rebuilds with it), then the owner's
+    // pack, then new storage; anything still left over lands in a loot bag at the new base.
+    const ownerEnt = playerEntity(world, world.get(worker, Worker)?.owner ?? 0);
+    const leftovers: [number, number][] = [];
+    const deposit = (item: number, n: number, targets: Entity[]): number => { let rem = n; for (const st of targets) { if (rem <= 0) break; rem -= addItem(world, st, item, rem); } return rem; };
+    const spill = (item: number, rem: number): void => {
+      if (rem > 0) rem -= addItem(world, worker, item, rem);
+      if (rem > 0 && ownerEnt) rem -= addItem(world, ownerEnt, item, rem);
+      if (rem > 0) leftovers.push([item, rem]);
+    };
+    for (const [key, contents] of storedByKey) {
+      const targets = newStorageByKey.get(key) ?? [];
+      for (const [item, n] of contents) {
+        let rem = deposit(item, n, targets);
+        if (rem > 0) rem = deposit(item, rem, newStorage);
+        spill(item, rem);
+      }
+    }
+    for (const [item, n] of salvage) {
+      let rem = n; // salvage does not claim storage first: the bot carries its home's materials
+      if (rem > 0) rem -= addItem(world, worker, item, rem);
+      if (rem > 0 && ownerEnt) rem -= addItem(world, ownerEnt, item, rem);
+      if (rem > 0) rem = deposit(item, rem, newStorage);
+      if (rem > 0) leftovers.push([item, rem]);
+    }
+    if (leftovers.length) {
+      const bag = world.create();
+      world.add(bag, Transform, { x: site.x + 1, y: site.y + 1, z: 0 }).add(bag, Container, { slotCount: 24 }).add(bag, ContainerViewers)
+        .add(bag, LootBag, lootBagInit(world, 0, "stall", LootSource.Dropped));
+      for (const [item, n] of leftovers) addItem(world, bag, item, n);
+      indexEntity(world, bag);
+    }
+    if (world.has(worker, BotHome)) world.set(worker, BotHome, { x: site.x, y: site.y }); else world.add(worker, BotHome, { x: site.x, y: site.y });
+    claimBaseSite(world, worker, { x: site.x, y: site.y });
+    return true;
+  } catch { return false; }
 }
 
 export function setWorkerJobValidate(world: World, actor: Entity, worker: Entity, job: number): WorkerFail {

@@ -3,16 +3,21 @@
  * (Tamed persists, despawn skipped, threat scan off, leashed wander). Feeding keeps it "fed"; fed tamed animals within
  * troughRange of a feeding_trough produce eggs/milk/wool into the trough container; with the breeding perk two fed animals
  * of one kind at a trough breed (cap maxPerTrough). Fences + trough = pen. Animal/AnimState are re-added after a load.
+ * Task 28: hay in a trough feeds hungry animals (1 hay = the usual fedSeconds); with no food at all a hungry animal
+ * grazes the grass tile it stands on — 20s of grazing feeds it and depletes the tile (bare 180s, then grass regrows).
  */
 import { DEFAULT_TICK_HZ, entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { Animal, AnimState, BuildPiece, Container, Dead, Equipment, IntentAction, PlayerIntent, Tamed, AnimalSkills } from "../components.js";
+import { Animal, AnimState, AttachKind, BuildPiece, Dead, Equipment, GrazedTile, Grazing, IntentAction, PlayerIntent, Tamed, AnimalSkills } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { emit, ev } from "../events.js";
-import { addItem, slotItem, takeFromSlot } from "../inventory.js";
+import { addItem, countItem, removeItem, slotItem, takeFromSlot } from "../inventory.js";
 import { animalDefs, spawnAnimal } from "../population.js";
 import { awardXp } from "./progression.js";
 import { animalSkillMods, awardAnimalXp, ensureAnimalSkills } from "../animal_skills.js";
 import { hasPerk, SKILLS, skillLevelOf, skillMod } from "./tree.js";
+import { resolveAttachment } from "../building/links.js";
+import { indexEntity } from "../spawn.js";
+import { TerrainRes } from "../world.js";
 
 const H = SKILLS.husbandry;
 export const AnimalTamed = ev<{ entity: Entity; animal: Entity }>("gameplay.AnimalTamed");
@@ -23,6 +28,8 @@ export const TAME_FAIL_TEXT: Readonly<Record<number, string>> = {
   [TameFail.NeedsSkill]: "Needs Animal Husbandry skill", [TameFail.Failed]: "It shied away — try again", [TameFail.NotYours]: "Someone else's animal",
 };
 const domestic = (kind: number): boolean => { const k = animalDefs()[kind]?.key; return !!k && k in H.animals; };
+/** Task 28: a live domestic (farm) animal — cow, goat, sheep, chicken, duck, goose, turkey. */
+export const isDomesticAnimal = (world: World, e: Entity): boolean => { const k = world.getField(e, Animal, "kind"); return k !== undefined && domestic(k); };
 const sec = (s: number): number => Math.round(s * DEFAULT_TICK_HZ);
 
 /** Nearest live animal within reach of e (deterministic tie-break by id). */
@@ -59,9 +66,26 @@ export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: Tam
 
 function troughs(world: World): Entity[] {
   let id: number; try { id = gameplayDefs(world).pieceId(H.trough); } catch { return []; }
-  const out: Entity[] = []; for (const b of world.query([BuildPiece, Transform, Container], [Dead])) if (world.get(b, BuildPiece)!.type === id) out.push(b);
+  // Task 28 fix: the trough's Container lives on its storage attachment, not the piece (placePiece/spawnAttachments) —
+  // the old [BuildPiece, Transform, Container] query matched NO real placed trough, so trough production never ran
+  // in live play (tests used synthetic troughs with Container on the piece). resolveAttachment returns the
+  // attachment for real troughs and the piece itself when it carries a Container directly, so both work; either
+  // way the returned entity is the one holding the food.
+  const out: Entity[] = [];
+  for (const b of world.query([BuildPiece, Transform], [Dead])) {
+    if (world.get(b, BuildPiece)!.type !== id) continue;
+    const att = resolveAttachment(world, b, AttachKind.Storage);
+    if (att !== undefined) out.push(att);
+  }
   return out.sort((x, y) => x - y);
 }
+/** Task 28: hay (the trough-feed item); 1 hay feeds one farm animal for the usual fedSeconds (600s). */
+export const HAY_ITEM = "hay";
+/** Task 28 grazing: seconds of grazing one grass tile to feed, and seconds the tile stays bare before regrowing. */
+export const GRAZE_SECONDS = 20;
+export const GRASS_REGROW_SECONDS = 180;
+/** Task 28: grass tile id in worldgen.json (tile 3). */
+export const GRASS_TILE = 3;
 export const HUSBANDRY_EVERY = DEFAULT_TICK_HZ; // once per second
 /** Restore Animal after load; production + breeding at troughs. */
 export function husbandrySystem(world: World): void {
@@ -76,6 +100,16 @@ export function husbandrySystem(world: World): void {
   const atTrough = (a: Entity): Entity | undefined => { const t = world.get(a, Transform)!; return tr.find((b) => { const bt = world.get(b, Transform)!; return (bt.x - t.x) ** 2 + (bt.y - t.y) ** 2 <= H.troughRange ** 2; }); };
   const perTrough = new Map<Entity, Entity[]>();
   for (const a of animals) { const b = canUsePens(world, world.get(a, Tamed)!.owner) ? atTrough(a) : undefined; if (b !== undefined) { const l = perTrough.get(b) ?? []; l.push(a); perTrough.set(b, l); } }
+  // Task 28: hay in a trough feeds hungry animals at it — 1 hay -> fed for the usual fedSeconds (600s). Runs before
+  // production so a hay-fed animal produces the same tick. Not gated on canUsePens (that gate is for settling /
+  // production / breeding); eating from a trough is feeding, like animal_feed by hand.
+  const hayId = (() => { try { return defs.itemId(HAY_ITEM); } catch { return 0; } })();
+  if (hayId) for (const a of animals) {
+    const t = world.get(a, Tamed)!; if (t.fedUntil > now) continue;
+    const b = atTrough(a); if (b === undefined) continue;
+    if (countItem(world, b, hayId) <= 0 || !removeItem(world, b, hayId, 1)) continue;
+    world.set(a, Tamed, { fedUntil: now + sec(H.fedSeconds) });
+  }
   for (const [b, list] of perTrough) {
     for (const a of list) {
       const t = world.get(a, Tamed)!; if (t.fedUntil <= now) continue;
@@ -99,6 +133,33 @@ export function husbandrySystem(world: World): void {
       emit(world, AnimalBred, { owner, baby }); awardXp(world, owner, "tame", 0.5);
       break;
     }
+  }
+  // Task 28 grazing: a hungry tamed animal with no food at a trough grazes the grass tile it stands on — GRAZE_SECONDS
+  // of grazing feeds it for the usual fedSeconds, depletes the tile (bare GRASS_REGROW_SECONDS, then grass regrows).
+  // Containment is emergent, not a loop proof: grazing only ever targets the tile the animal is already standing on,
+  // which it reached by walking inside its enclosure. Not gated on canUsePens (that gate is for trough production).
+  const terrain = world.getResource(TerrainRes);
+  const grazed = new Map<string, Entity>();
+  for (const g of world.query([GrazedTile])) { const v = world.get(g, GrazedTile)!; grazed.set(`${v.tx},${v.ty}`, g); }
+  for (const [key, g] of grazed) if (world.get(g, GrazedTile)!.regrowTick <= now) { world.destroy(g); grazed.delete(key); }
+  if (terrain) for (const a of animals) {
+    const t = world.get(a, Tamed)!;
+    if (t.fedUntil > now) { if (world.has(a, Grazing)) world.remove(a, Grazing); continue; }
+    const at = world.get(a, Transform)!; const tx = Math.floor(at.x), ty = Math.floor(at.y); const key = `${tx},${ty}`;
+    const g = world.get(a, Grazing);
+    if (g) {
+      if (g.tx !== tx || g.ty !== ty) { world.remove(a, Grazing); continue; } // walked off the tile — restart elsewhere
+      if (g.doneTick > now) continue;
+      world.remove(a, Grazing);
+      world.set(a, Tamed, { fedUntil: now + sec(H.fedSeconds) });
+      const old = grazed.get(key);
+      if (old !== undefined) world.set(old, GrazedTile, { regrowTick: now + sec(GRASS_REGROW_SECONDS) });
+      else { const e = world.create(); world.add(e, GrazedTile, { tx, ty, regrowTick: now + sec(GRASS_REGROW_SECONDS) }); indexEntity(world, e); grazed.set(key, e); }
+      continue;
+    }
+    if (terrain.tileAt(tx, ty) !== GRASS_TILE || grazed.has(key)) continue;
+    const b = atTrough(a); if (b !== undefined && hayId && countItem(world, b, hayId) > 0) continue; // hay in the trough wins
+    world.add(a, Grazing, { tx, ty, doneTick: now + sec(GRAZE_SECONDS) });
   }
 }
 

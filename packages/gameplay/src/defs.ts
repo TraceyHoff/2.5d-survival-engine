@@ -170,6 +170,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   /** ADR-216: light radius in tiles (gameplay light grid AND the rendered light; 0 = legacy max(heatRadius*2, 4)). */
   readonly lightRadius: number;
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
+  /** Task 28: the piece's spoilMul applies only while its container holds salt (salt-preserved food storage); false = spoilMul always applies. */
+  readonly saltFuel: boolean;
   /** Art skin name per variant index (`<piece>@<name>` sprite lookup); empty = unnamed. */
   readonly variantNames: readonly string[];
   /** ADR-112 build-menu category (structure|crafting|defense|furniture|lighting|decor|plants|wall|rugs|outdoor). */
@@ -317,7 +319,7 @@ export interface RawPiece extends RawVisual {
   sockets?: { x: number; y: number; z?: number; kind: number }[]; cost?: { resource: string; amount: number }[];
   tiered?: boolean; costScale?: number; tier?: number; groundOnly?: boolean; ground?: boolean; minLevel?: number; needsDeck?: boolean;
   supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
-  fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; lightRadius?: number; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
+  fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; lightRadius?: number; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; saltFuel?: boolean; fuelMul?: number;
   /** ADR-250: never skill-gated (pieceGates = []); pickup: Demolish refunds the full cost (x hp fraction). */
   starter?: boolean; pickup?: boolean;
   stall?: { listings: number; clanOnly?: boolean };
@@ -596,7 +598,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       supportsAbove: p.supportsAbove ?? false, roof: p.roof ?? false, blocksPath: p.blocksPath ?? false,
       opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false, lightRadius: p.lightRadius ?? 0,
-      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
+      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, saltFuel: p.saltFuel ?? false, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
       rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", shape: p.shape ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "", starter: p.starter ?? false, pickup: p.pickup ?? false,
       extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),

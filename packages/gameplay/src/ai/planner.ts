@@ -67,6 +67,10 @@ export const BASE_SLOTS: readonly BaseSlot[] = [
 export const STATION_SLOTS: Readonly<Record<string, readonly { x: number; y: number }[]>> = {
   campfire: [{ x: 2.6, y: 2.9 }, { x: 1.6, y: 3.4 }], workbench: [{ x: 3.5, y: 0.5 }, { x: 0.5, y: -1.5 }], storage_box: [{ x: 3.5, y: 1.6 }, { x: 1.5, y: -1.5 }], basic_storage_box: [{ x: 3.5, y: 1.6 }, { x: 1.5, y: -1.5 }], // ADR-250 starter box: same spots (one base box)
   furnace: [{ x: -1.5, y: 0.5 }, { x: 3.5, y: -1.2 }], anvil: [{ x: -1.5, y: 1.6 }, { x: -1.2, y: -1.2 }],
+  // Task 28: furnishing — table inside the hut (SE tile), light by the door, shelf + trough + salt barrel in the yard
+  table: [{ x: 1.5, y: 1.5 }], torch_stand: [{ x: 0.5, y: 2.9 }, { x: 2.6, y: 2.9 }],
+  shelf_rustic: [{ x: 3.5, y: 0.5 }, { x: 0.5, y: -1.5 }], feeding_trough: [{ x: 3.5, y: 2.6 }, { x: -1.5, y: 2.6 }],
+  salt_barrel: [{ x: 2.6, y: 3.4 }, { x: 4.5, y: 0.5 }],
 };
 /** Fallback station spots on a ring outside the walls (clear of the door path and BUILD_STAND). */
 export const SPARE_SPOTS: readonly { x: number; y: number }[] = [{ x: 3.6, y: -0.7 }, { x: -1.6, y: -0.7 }, { x: 1, y: -1.7 }, { x: -1.6, y: 1 }, { x: 3.7, y: 2.7 }, { x: -1.6, y: 2.7 }, { x: 4.7, y: 0.5 }, { x: 4.7, y: 1.8 }, { x: -0.6, y: -1.8 }, { x: 2.6, y: -1.8 }];
@@ -205,22 +209,32 @@ export type Step =
   | { k: "withdraw"; item: number; count: number }
   | { k: "craft"; recipe: number; count: number; station: StationKind; ticks: number }
   | { k: "build"; piece: number; x: number; y: number; level: number; rot?: number; tier?: number; slot: string; stand: { x: number; y: number } }
-  | { k: "wear"; invSlot: number };
+  | { k: "wear"; invSlot: number }
+  /** Task 28: upgrade an existing tiered piece to `tier` (Upgrade intent, full tier cost — the game's rule). */
+  | { k: "upgrade"; piece: number; tier: number };
 export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: number[]; keep: Set<number>; blocked: string[] }
 
-type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" } | { k: "bed" };
+type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" } | { k: "bed" } | { k: "furnish"; key: string; slot?: BaseSlot } | { k: "upgrade" };
 export const GOAL_LADDER: readonly Goal[] = [
   { k: "tool", kind: ToolKind.Axe, tier: 1, name: "axe" }, { k: "tool", kind: ToolKind.Pickaxe, tier: 1, name: "pickaxe" },
   // ADR-252 / ADR-250: campfire -> starter storage box -> workbench (isBaseStoragePiece: any storage piece satisfies the box goal)
   { k: "piece", key: "campfire" }, { k: "piece", key: STARTER_STORAGE_PIECE }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" },
   { k: "wear", key: "torch" }, // ADR-252 / ADR-217: a held light in the off hand keeps zombies out of its 5.5-tile ring at dusk / night
   { k: "base" }, { k: "hearth" },
-  { k: "bed" }, { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" },
+  { k: "bed" },
+  // Task 28: furnish the home like a player would (table inside, light by the door, shelf + trough + salt barrel
+  // in the yard), and stock animal feed so livestock can be tamed for food.
+  { k: "furnish", key: "table", slot: { id: "table", key: "table", x: 1.5, y: 1.5, level: 0 } },
+  { k: "furnish", key: "torch_stand" }, { k: "furnish", key: "shelf_rustic" }, { k: "furnish", key: "feeding_trough" },
+  { k: "furnish", key: "salt_barrel" }, { k: "item", key: "animal_feed", count: 4 },
+  { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" },
   { k: "cook" }, { k: "wear", key: "straw_hat" }, { k: "wear", key: "reed_sandals" }, { k: "tool", kind: ToolKind.Shovel, tier: 1, name: "shovel" },
   { k: "item", key: "wood", count: 20 }, { k: "item", key: "cooked_meat", count: 2 }, { k: "wear", key: "leather_gloves" }, { k: "wear", key: "leather_boots" },
   { k: "wear", key: "leather_cap" }, { k: "item", key: "water_flask", count: 1 }, { k: "piece", key: "furnace" }, { k: "item", key: "charcoal", count: 4 },
   { k: "item", key: "bronze_ingot", count: 4 }, { k: "piece", key: "anvil" }, { k: "tool", kind: ToolKind.Axe, tier: 2, name: "axe2" },
   { k: "tool", kind: ToolKind.Pickaxe, tier: 2, name: "pickaxe2" }, { k: "item", key: "bronze_spear", count: 1 },
+  // Task 28: last of all, upgrade the home to the max tier (reinforced) one piece at a time.
+  { k: "upgrade" },
 ];
 /** Fire wood a bot never spends on planks / sticks / pieces (a night's first fuel load). */
 export const WOOD_RESERVE = 8;
@@ -282,6 +296,14 @@ class Resolver {
     if (sp && !this.unlocked(sp, 0)) return false; if (this.p.bs?.stations.has(k)) return true; if (!sp) { this.stuck = true; return false; } this.obtainPiece(sp.key); return false; }
   /** ADR-221: the same gate the server's validatePlacement applies; a locked piece stops the chain (skill_pick learns it). */
   unlocked(def: PieceDef, tier: number): boolean { if (pieceUnlocked(this.p.world, this.p.self, def, def.tiered ? tier : def.fixedTier)) return true; this.locked ??= def.key; this.stuck = true; return false; }
+  /** Task 28: upgrade an existing tiered piece straight to `tier` (the game's Upgrade charges the full tier
+   * cost, not the delta). Materials are obtained first; the step is emitted only when all are in hand. */
+  obtainUpgrade(piece: number, def: PieceDef, tier: number): boolean {
+    if (!this.unlocked(def, tier)) return false;
+    let ok = true; for (const c of pieceCost(this.p.defs, def, tier)) ok = this.obtain(c.item, c.count) && ok;
+    if (!ok || this.step) return false;
+    this.step = { k: "upgrade", piece, tier }; return false;
+  }
   obtainPiece(key: string, slot?: BaseSlot): boolean {
     const def = this.ix.piece.get(key); const b = this.p.base; if (!def || !b) { this.stuck = true; return false; }
     if (!this.unlocked(def, slot?.tier ?? 0)) return false;
@@ -300,8 +322,8 @@ const standNear = (b: { x: number; y: number }, x: number, y: number): { x: numb
   const tx = b.x + BUILD_STAND.x, ty = b.y + BUILD_STAND.y; const dx = tx - x, dy = ty - y, d = Math.hypot(dx, dy) || 1; return d < 1.6 ? { x: tx, y: ty } : { x: x + (dx / d) * 1.6, y: y + (dy / d) * 1.6 };
 };
 
-const goalName = (g: Goal): string => (g.k === "tool" ? g.name : g.k === "item" ? g.key : g.k === "piece" ? g.key : g.k === "wear" ? `wear:${g.key}` : g.k);
-const buildsPiece = (g: Goal): boolean => g.k === "piece" || g.k === "base" || g.k === "hearth" || g.k === "bed";
+const goalName = (g: Goal): string => (g.k === "tool" ? g.name : g.k === "item" ? g.key : g.k === "piece" ? g.key : g.k === "wear" ? `wear:${g.key}` : g.k === "furnish" ? `furnish:${g.key}` : g.k);
+const buildsPiece = (g: Goal): boolean => g.k === "piece" || g.k === "base" || g.k === "hearth" || g.k === "bed" || g.k === "furnish" || g.k === "upgrade";
 /** One planner pass: first unmet, reachable goal of the ladder -> step + leaves. */
 export function makePlan(p: PlanInput): Plan {
   const ix = plannerIndex(p.defs); const { world, self, defs } = p; const sl = readSlots(world, self);
@@ -332,6 +354,29 @@ export function makePlan(p: PlanInput): Plan {
       r.obtainPiece(next.key, next); }
     else if (g.k === "bed") { name = "bed"; if (!p.base || !p.bs?.complete || p.bs.bed || (p.fails.bed ?? 0) >= 6) continue; const def = ix.piece.get(BED_SLOT.key); if (!def) continue;
       if (!pieceCost(defs, def, 0).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; } r.obtainPiece(BED_SLOT.key, BED_SLOT); }
+    else if (g.k === "furnish") { name = `furnish:${g.key}`; const def = ix.piece.get(g.key); if (!def || !p.base) continue;
+      // Task 28: unlike stations / storage, furniture has no scanBase slot — the goal is met when a piece of
+      // this key already stands within 6 tiles of the anchor (anywhere in the yard counts as furnished).
+      let have = false;
+      for (const e of installSpatialIndex(world).queryRadius(p.base.x + 1, p.base.y + 1, 6)) {
+        if (!world.has(e, BuildPiece)) continue; const t = world.getField(e, BuildPiece, "type");
+        if (t !== undefined && defs.pieces.get(t)?.key === g.key) { have = true; break; }
+      }
+      if (have) continue;
+      if (!pieceCost(defs, def, 0).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; } r.obtainPiece(g.key, g.slot); }
+    else if (g.k === "upgrade") { name = "upgrade"; if (!p.base || !p.bs) continue;
+      // Task 28: the lowest-tier tiered hut piece, straight to the max tier (reinforced). One piece per pass;
+      // the skill gate (tier token) holds the goal via Resolver.unlocked, like any locked build goal.
+      const maxTier = defs.tiers.length - 1; let target: { e: Entity; def: PieceDef; tier: number } | undefined;
+      for (const e of [...p.bs.pieces.values()]) {
+        const t = world.getField(e, BuildPiece, "type"); const df = t !== undefined ? defs.pieces.get(t) : undefined;
+        const tier = world.getField(e, BuildPiece, "tier") ?? 0;
+        if (!df?.tiered || tier >= maxTier) continue;
+        if (!target || tier < target.tier) target = { e, def: df, tier };
+      }
+      if (!target) continue;
+      if (!pieceCost(defs, target.def, maxTier).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; }
+      r.obtainUpgrade(target.e, target.def, maxTier); }
     else if (g.k === "hearth") { name = "hearth"; if (!p.base || !p.bs?.complete || p.bs.hearth !== undefined || (p.fails.hearth ?? 0) >= 6) continue; r.obtainPiece(HEARTH.key, HEARTH); }
     else if (g.k === "cook") { name = "cook"; const raw = ix.item.get("raw_meat"); const cooked = ix.item.get("cooked_meat"); if (!raw || !cooked || !p.bs?.stations.has(StationKind.Campfire) || allCount(raw.id) === 0) continue; r.obtain(cooked.id, allCount(cooked.id) + Math.min(5, allCount(raw.id)), false); }
     else if (g.k === "wear") { name = `wear:${g.key}`; const d = ix.item.get(g.key); if (!d?.wear) continue; if (worn.has(d.id)) { keepAll.add(d.id); continue; }
