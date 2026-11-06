@@ -1304,3 +1304,8 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
 
 /* ADR-258: character details use the same inset plates, ink and typography as other gameplay panels. */
 .gm-modal[data-menu=character] [data-role=body] > [data-role^=sheet-]{border-style:solid;border-width:14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x,url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% fill / 14px stretch;padding:2px 4px;color:var(--cz-ink);font:600 14px/1.35 Fredoka,system-ui,sans-serif;overflow-wrap:anywhere;min-width:0}
+
+/* ADR-259: readable detailed worker choices, including long recipe ingredients and named targets.
+   Existing Cozy Camp button plates/fonts remain shared; no nested fixed-height scroller. */
+.gm-modal .gm-panel [data-role=worker-detail-choices]{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+.gm-modal .gm-panel [data-role=worker-detail-choices] button{min-width:0;white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px;text-align:left}

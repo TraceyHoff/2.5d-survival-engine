@@ -8,7 +8,7 @@ import { pickSkillNode, treesOf } from "./skills/progression.js";
 import { Progression } from "./components.js";
 import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, entityIndex, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
 import raw from "../data/agents.json";
-import { Animal, Dead, Health, ResourceNode, Survival, Zombie } from "./components.js";
+import { Animal, Dead, Health, ResourceNode, Survival, Zombie, WorkerJob } from "./components.js";
 import { currentPhaseKey } from "./combat/zombies.js";
 import { populationData, rollTraits, scoreUtilities } from "./ai/population.js";
 import { fillAgentSensors, survivalBehaviors, type AgentSensors } from "./ai/survivor_behaviors.js";
@@ -20,7 +20,7 @@ import { emitAgentCommands } from "./ai/agent_output.js";
 import { fillStanceSensors, stancePolicy, type StanceSensors } from "./ai/stance_policy.js";
 import { baseBehaviors, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
 import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
-import { fillHireSensors, hireBehaviors } from "./ai/hire_behaviors.js";
+import { fillHireSensors, hireBehaviors, withHireDuty } from "./ai/hire_behaviors.js";
 
 export interface AgentsData {
   archetypes: Record<string, { perception: PerceptionConfig; imperfections: Imperfections; schedule: ScheduleSlot[]; goals: string[]; chatMinSeconds: number }>;
@@ -36,7 +36,7 @@ export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors
   /** ADR-113: best affordable skill node for this personality (undefined = no points / nothing affordable). */
   skillPick?: number;
   /** Task 22: hired-worker sensors (fillHireSensors; absent for unhired bots and humans). */
-  hire?: { job: number; owner: number; ax: number; ay: number };
+  hire?: { job: number; owner: number; ax: number; ay: number; supply?: { item: number; count: number } };
   /** Task 25: dye this (hair / worn / held) — set by fillAgentSensors when the bot holds a dye, a paint brush in its
    *  hotbar, and a dye target; instantChores turns it into a `dye:<kind>:<slot>:<palette>:<index>` command. */
   dye?: { kind: number; slot: number; palette: number; index: number };
@@ -184,8 +184,8 @@ export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0,
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
   const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), ...hireBehaviors(), skillPickBehavior, ...extra]) {
-    const run = b.name === "sleep" ? (c: AgentContext<AgentWorldView>, o: Parameters<GameBehavior["run"]>[1]) => (c.world.base ? baseSleepRun(c, o) : b.run(c, o)) : b.run;
-    r.register(withBotUtility({ ...b, run: (c, o) => { const res = run(c, o); stancePolicy(c, o, b.name); return res; } })); // ADR-252: sleep stillness + sneak crouch
+    const run = b.name === "sleep" ? (c: AgentContext<AgentWorldView>, o: Parameters<GameBehavior["run"]>[1]) => (c.world.base && c.world.hire?.job !== WorkerJob.Follow ? baseSleepRun(c, o) : b.run(c, o)) : b.run;
+    r.register(withBotUtility(withHireDuty({ ...b, run: (c, o) => { const res = run(c, o); stancePolicy(c, o, b.name); return res; } }))); // ADR-252: sleep stillness + sneak crouch
   }
   return r;
 }

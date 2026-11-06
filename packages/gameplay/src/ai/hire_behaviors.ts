@@ -19,21 +19,21 @@
  *    the missing materials from the owner's storage first. Only when the materials are carried or stored.
  *  - idle     — work_hold: a hired bot with no job target stays near the anchor instead of wandering off.
  */
-import { Transform, type AgentContext, type AgentOutput, type Entity, type World } from "@engine/core";
+import { Transform, evalCurve, type AgentContext, type AgentOutput, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
-import { BuildPiece, Crop, Dead, ResourceNode, Worker, WorkerJob, Worn, Zombie } from "../components.js";
+import { BuildPiece, Crop, Dead, ResourceNode, Worker, WorkerJob, WorkerOrder, Worn, Zombie } from "../components.js";
 import { GameplayConfig } from "../config.js";
 import { countItem, exchangeItems, readSlots } from "../inventory.js";
 import { pieceCost, tribeOf } from "../building/place.js";
 import { maxHpOf } from "../building/integrity.js";
 import { FARMING, FARM_TOOL, FarmFail, plantableBySeed, till } from "../farming.js";
-import { GOAL_CRAFTS, stuckOn } from "./autonomy.js";
+import { GOAL_CRAFTS, instantChores, stuckOn } from "./autonomy.js";
 import { crafterIdFor } from "../economy/provenance.js";
 import { containerSeq, goTo } from "./base_behaviors.js";
 import { storageWithdrawActions } from "./storage_api.js";
 import { scanBase } from "./planner.js";
 import { nearestClaimHostile } from "../territory.js";
-import { workerAnchor } from "../recruitment.js";
+import { workerAnchor, workerWorkAnchor, workerOrderTarget, workerSelections, workerRecipes } from "../recruitment.js";
 import { playerEntity } from "../pets.js";
 import { UseCmd } from "../input.js";
 import { StationKind, type GameDefs } from "../defs.js";
@@ -66,7 +66,18 @@ function nearestTillSpot(world: World, self: Entity, anchor: { x: number; y: num
 }
 
 /** First unowned goal tool whose hand recipe is affordable with room for the output (Task 16 room gate). */
-function hireCraftPick(world: World, self: Entity, defs: GameDefs): number | undefined {
+export function hireCraftPick(world: World, self: Entity, defs: GameDefs): number | undefined {
+  const selected = workerSelections(world, self);
+  if (selected.length) {
+    const cursor = world.getField(self, WorkerOrder, "craftCursor") ?? 0;
+    const allowed = new Set(workerRecipes(world, self).map((r) => r.id));
+    for (let i = 0; i < selected.length; i++) {
+      const r = defs.recipes.get(selected[(cursor + i) % selected.length]!);
+      if (!r || !allowed.has(r.id) || countItem(world, self, r.output.item) > 0) continue;
+      if (exchangeItems(world, self, r.ingredients, [r.output], true, crafterIdFor(world, self, r.output.item))) return r.id;
+    }
+    return undefined;
+  }
   for (const key of GOAL_CRAFTS) {
     const item = [...defs.items.values()].find((d) => d.key === key); if (!item || countItem(world, self, item.id) > 0) continue;
     const r = [...defs.recipes.values()].find((x) => x.output.item === item.id && x.station === StationKind.None); if (!r) continue;
@@ -82,7 +93,7 @@ function hireCraftPick(world: World, self: Entity, defs: GameDefs): number | und
  */
 /** Task 28 (was the hired-Farm sensor; now shared): harvest / water / plant / till around `anchor`. Returns
  * undefined when there is nothing to do. Unhired bots garden their own base with the same sensor. */
-export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, anchor: { x: number; y: number }, bs: ReturnType<typeof scanBase>): AgentWorldView["farm"] {
+export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, anchor: { x: number; y: number }, bs: ReturnType<typeof scanBase>, target?: Entity): AgentWorldView["farm"] {
   let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
   const canSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && defs.items.get(it)?.key === FARM_TOOL.wateringCan) : -1;
   const seedSlot = slots ? slots.items.findIndex((it, i) => it && slots.counts[i] && plantableBySeed(defs.items.get(it)?.key ?? "") > 0) : -1;
@@ -96,6 +107,7 @@ export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, an
   let soil: { id: number; x: number; y: number; slot: number; kind: "plant" } | undefined; let sd = Infinity;
   let emptySoil = 0;
   for (const e of installSpatialIndex(world).queryRadius(anchor.x, anchor.y, FARM_R)) {
+    if (target !== undefined && e !== target) continue;
     const t = world.get(e, Transform); if (!t) continue; const d = (t.x - anchor.x) ** 2 + (t.y - anchor.y) ** 2;
     if (world.has(e, ResourceNode) && (world.getField(e, ResourceNode, "amount") ?? 0) > 0) {
       const key = defs.resources.get(world.getField(e, ResourceNode, "kind")!)?.key;
@@ -109,7 +121,7 @@ export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, an
   // Task 23: till new soil when the worker has seeds — planting existing soil comes first, and only while every
   // tilled plot can still be planted (empty soil < seeds carried), so the field never outgrows the seed stock.
   let tillTarget: { x: number; y: number; slot: number; lack?: { item: number; count: number } } | undefined;
-  if (seedSlot >= 0 && !soil && emptySoil < seedCount && (hoeSlot >= 0 || (hoeId && (bs?.storage?.counts?.get(hoeId) ?? 0) > 0))) {
+  if (target === undefined && seedSlot >= 0 && !soil && emptySoil < seedCount && (hoeSlot >= 0 || (hoeId && (bs?.storage?.counts?.get(hoeId) ?? 0) > 0))) {
     const spot = nearestTillSpot(world, self, anchor);
     if (spot) {
       if (hoeSlot >= 0) tillTarget = { ...spot, slot: hoeSlot };
@@ -131,25 +143,33 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
     if (base && bs) { const f = computeFarmSensor(world, self, defs, base, bs); if (f) view.farm = f; else delete view.farm; }
     return;
   }
-  const anchor = workerAnchor(world, self);
+  const anchor = workerWorkAnchor(world, self);
+  const base = workerAnchor(world, self); // work/follow anchor is not the deposit-storage anchor
+  const target = workerOrderTarget(world, self);
+  const hasTarget = world.getField(self, WorkerOrder, "kind") === 2;
+  delete view.defend; delete view.farm; delete view.repair;
   view.hire = { job: w.job, owner: w.owner, ax: anchor.x, ay: anchor.y };
-  view.home = anchor; view.base = anchor;
-  const bs = scanBase(world, defs, anchor); view.bs = bs;
+  view.home = anchor; view.base = base;
+  const bs = scanBase(world, defs, base); view.bs = bs;
   delete view.plan; delete view.needs; delete view.tripWanted; delete view.buildPlan;
-  // surplus vs the owner's storage (never tools / weapons / worn / food stock / fire wood)
-  if (bs?.storage && bs.storage.free > 0) {
+  if (w.job === WorkerJob.Follow) { delete view.craftRecipe; delete view.surplus; }
+  // surplus vs the owner's storage (selected craft outputs may include tools)
+  if (w.job !== WorkerJob.Follow && bs?.storage && bs.storage.free > 0) {
     let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
     if (slots) {
       const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
       const wood = [...defs.items.values()].find((d) => d.key === "wood")?.id;
       const tot = new Map<number, number>(); for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (it && slots.counts[i]) tot.set(it, (tot.get(it) ?? 0) + slots.counts[i]!); }
+      const outputs = new Set(w.job === WorkerJob.Craft ? workerSelections(world, self).map((id) => defs.recipes.get(id)?.output.item ?? 0) : []);
       const sur: { item: number; count: number }[] = [];
-      for (const [it, n] of tot) { const d = defs.items.get(it); if (!d || d.tool || d.weapon || d.wear || worn.has(it)) continue;
+      for (const [it, n] of tot) { const d = defs.items.get(it); if (!d || worn.has(it)) continue;
+        if (outputs.has(it)) { sur.push({ item: it, count: n }); continue; }
+        if (d.tool || d.weapon || d.wear) continue;
         const keep = it === wood ? 12 : d.food && d.food.health >= 0 ? 6 : 0; if (n > keep) sur.push({ item: it, count: n - keep }); }
       if (sur.length) view.surplus = sur;
     }
   }
-  if (w.job === WorkerJob.Defend) {
+  if (w.job === WorkerJob.Defend || w.job === WorkerJob.Follow) {
     const owner = playerEntity(world, w.owner); const tribe = owner ? tribeOf(world, owner) : 0;
     let best: { id: number; x: number; y: number } | undefined;
     const claimed = tribe ? nearestClaimHostile(world, anchor.x, anchor.y, DEFEND_R, tribe) : undefined;
@@ -162,18 +182,18 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
     }
     if (best) view.defend = best;
   }
-  if (w.job === WorkerJob.Farm) { const f = computeFarmSensor(world, self, defs, anchor, bs); if (f) view.farm = f; else delete view.farm; }
+  if (w.job === WorkerJob.Farm) { const f = hasTarget && target === undefined ? undefined : computeFarmSensor(world, self, defs, anchor, bs, target); if (f) view.farm = f; else delete view.farm; }
   if (w.job === WorkerJob.Maintain) {
-    const rep = bs?.repair;
+    const rep = hasTarget ? target : scanBase(world, defs, anchor)?.repair;
     if (rep !== undefined) {
       const def = defs.pieces.get(world.getField(rep, BuildPiece, "type") ?? 0); const t = world.get(rep, Transform);
-      if (def && t) {
+      if (def && t && (world.getField(rep, BuildPiece, "hp") ?? 0) < maxHpOf(world, rep)) {
         const tier = world.getField(rep, BuildPiece, "tier") ?? 0;
         const missing = 1 - (world.getField(rep, BuildPiece, "hp") ?? 0) / Math.max(1, maxHpOf(world, rep));
         const mul = defs.tiers[tier]?.repairMul ?? 0.3;
         const cost = pieceCost(defs, def, tier, mul * missing).map((c) => ({ item: c.item, count: Math.max(1, Math.ceil(c.count)) }));
         // only a repair the bot can actually do: every material carried, or in the owner's storage
-        const storage = bs.storage?.counts;
+        const storage = bs?.storage?.counts;
         let ok = true; let lack: { item: number; count: number } | undefined;
         for (const c of cost) { const have = countItem(world, self, c.item); if (have >= c.count) continue;
           const short = c.count - have; if ((storage?.get(c.item) ?? 0) < short) { ok = false; break; } lack ??= { item: c.item, count: short }; }
@@ -181,7 +201,40 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
       }
     }
   }
-  if (w.job === WorkerJob.Craft) { const r = hireCraftPick(world, self, defs); if (r !== undefined) view.craftRecipe = r; else delete view.craftRecipe; }
+  if (w.job === WorkerJob.Craft) {
+    const r = hireCraftPick(world, self, defs); if (r !== undefined) view.craftRecipe = r;
+    else {
+      delete view.craftRecipe;
+      const selected = workerSelections(world, self), cursor = world.getField(self, WorkerOrder, "craftCursor") ?? 0;
+      const allowed = new Set(workerRecipes(world, self).map((r) => r.id));
+      for (let i = 0; i < selected.length && !view.hire.supply; i++) {
+        const recipe = defs.recipes.get(selected[(cursor + i) % selected.length]!); if (!recipe || !allowed.has(recipe.id) || countItem(world, self, recipe.output.item) > 0) continue;
+        for (const g of recipe.ingredients) {
+          const missing = g.count - countItem(world, self, g.item), stored = bs?.storage?.counts.get(g.item) ?? 0;
+          if (missing > 0 && stored > 0) { view.hire.supply = { item: g.item, count: Math.min(missing, stored) }; break; }
+        }
+      }
+    }
+  }
+}
+
+/** Follow is a duty, not a suggestion to the social/building scheduler. Do not let a scheduled
+ * night sleep or a greeting beat catching up, guarding, or a concrete survival trip. Other jobs are unchanged. */
+export function withHireDuty(b: GameBehavior): GameBehavior {
+  if (b.name.startsWith("work_") || ["flee", "eat", "drink", "drink_water", "warm_up", "cool_down", "seek_shelter"].includes(b.name)) return b;
+  const [first, ...rest] = b.considerations; if (!first) return b;
+  // Preserve the consideration count/weight: adding a neutral factor would change core's compensation
+  // and unintentionally rescore every unhired bot. Pre-evaluate just the first curve, or gate it to zero.
+  return { ...b, considerations: [{ ...first, curve: { type: "linear", m: 1, b: 0 }, input: (c) => {
+    const h = c.world.hire;
+    if (h?.job === WorkerJob.Follow) {
+      const catchingUp = c.self.hunger >= 0.55 && c.self.thirst >= 0.55 && Math.hypot(h.ax - c.self.x, h.ay - c.self.y) > 3;
+      const foodTrip = c.self.hunger < 0.55 && c.world.food === undefined && c.world.gatherNode !== undefined;
+      const waterTrip = c.self.thirst < 0.55 && c.world.water === undefined && c.world.waterAt !== undefined;
+      if (catchingUp || foodTrip || waterTrip || c.world.defend) return 0;
+    }
+    return evalCurve(first.curve, first.input(c));
+  } }, ...rest] };
 }
 
 /** Hired-worker behaviors (registered in survivorRegistry; unhired bots never see view.hire, so these score 0). */
@@ -205,12 +258,13 @@ function farmRun(c: Ctx, o: AgentOutput): boolean | void { const f = c.world.far
   return false; }
 
 export function hireBehaviors(): GameBehavior[] {
+  const survivalBreak = (c: Ctx): boolean => c.self.hunger < 0.55 || c.self.thirst < 0.55;
   const hiredJob = (job: WorkerJob) => (c: Ctx): number => (c.world.hire?.job === job ? 1 : 0);
   return [
     { name: "work_defend", inertia: 0.5, traits: { bravery: 0.6 }, considerations: [
-        { name: "job", curve: step01, input: hiredJob(WorkerJob.Defend) },
+        { name: "job", curve: step01, input: (c) => ([WorkerJob.Defend, WorkerJob.Follow].includes(c.world.hire?.job ?? 0) ? 1 : 0) },
         { name: "hostile", curve: step01, input: (c) => (c.world.defend ? 1 : 0) }],
-      run: (c, o) => { const h = c.world.hire; if (!h) return false; const d = c.world.defend;
+      run: (c, o) => { instantChores(c, o); const h = c.world.hire; if (!h) return false; const d = c.world.defend;
         if (!d) { if (Math.hypot(h.ax - c.self.x, h.ay - c.self.y) > 3) goTo(c, o, h.ax, h.ay); else stop(o); return false; }
         const dist = toward(o, c.self.x, c.self.y, d.x, d.y, 1); o.sprint = dist > 4 && c.self.stamina > 0.4;
         if (dist < 1.4) { stop(o); if (cooled(c, "hitAt", 10)) { o.actions.push(`attack:${d.id}`); c.bb.set("hitAt", c.self.tick); } } } },
@@ -238,13 +292,28 @@ export function hireBehaviors(): GameBehavior[] {
         if (cooled(c, "repairAt", 20)) { o.actions.push(`repair:${r.id}`); c.bb.set("repairAt", c.self.tick); } } },
     { name: "work_craft", inertia: 0.5, traits: { industriousness: 0.8 }, considerations: [
         { name: "job", curve: step01, input: hiredJob(WorkerJob.Craft) },
-        { name: "recipe", curve: step01, input: (c) => (c.world.craftRecipe !== undefined ? 1 : 0) }],
-      run: (c, o) => { const h = c.world.hire; if (!h || c.world.craftRecipe === undefined) return false;
+        { name: "recipe", curve: step01, input: (c) => (c.world.craftRecipe !== undefined || c.world.hire?.supply ? 1 : 0) }],
+      run: (c, o) => { const h = c.world.hire; if (!h) return false;
+        if (h.supply) { const sb = c.world.bs?.storage; if (!sb) return false;
+          if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) return false; return; } stop(o);
+          if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, h.supply.item, h.supply.count))) return false; return; }
+        if (c.world.craftRecipe === undefined) return false;
         if (goTo(c, o, h.ax, h.ay) > 3) return; stop(o); // hand recipes: craft at the base, stash via the stash behavior
         if (cooled(c, "craftedAt", 200)) { o.actions.push(`craft:${c.world.craftRecipe}`); c.bb.set("craftedAt", c.self.tick); } return false; } },
+    { name: "work_forage", inertia: 0.1, considerations: [
+        { name: "following", curve: step01, input: hiredJob(WorkerJob.Follow) },
+        { name: "hungry", curve: step01, input: (c) => c.self.hunger < 0.55 && c.world.food === undefined && c.world.gatherNode && !c.world.defend ? 1 : 0 }],
+      run: (c, o) => { instantChores(c, o); const n = c.world.gatherNode; if (!n) return false;
+        if (goTo(c, o, n.x, n.y) > 1.2) { if (stuckOn(c, n.x, n.y)) return false; return; }
+        stop(o); o.actions.push("gather"); return false; } },
+    { name: "work_follow", inertia: 0.1, considerations: [
+        { name: "following", curve: step01, input: hiredJob(WorkerJob.Follow) },
+        { name: "fed", curve: step01, input: (c) => survivalBreak(c) ? 0 : 1 }],
+      run: (c, o) => { instantChores(c, o); const h = c.world.hire; if (!h) return false;
+        if (Math.hypot(h.ax - c.self.x, h.ay - c.self.y) > 2.5) goTo(c, o, h.ax, h.ay); else stop(o); return false; } },
     { name: "work_hold", inertia: 0.3, considerations: [
-        { name: "hired", curve: { type: "linear", m: 0, b: 0.45 }, input: (c) => (c.world.hire ? 1 : 0) }],
-      run: (c, o) => { const h = c.world.hire; if (!h) return false;
+        { name: "hired", curve: { type: "linear", m: 0.45, b: 0 }, input: (c) => (c.world.hire && !(c.world.hire.job === WorkerJob.Follow && survivalBreak(c)) ? 1 : 0) }],
+      run: (c, o) => { instantChores(c, o); const h = c.world.hire; if (!h) return false;
         if (Math.hypot(h.ax - c.self.x, h.ay - c.self.y) > 4) { goTo(c, o, h.ax, h.ay); return; } stop(o); return false; } },
   ];
 }

@@ -17,7 +17,7 @@ describe("Task 22: AI-human recruitment (server)", () => {
   it("worker commands are bridged with their entity fields", () => {
     for (const c of G.WORKER_COMMANDS) expect(bridged.has(c)).toBe(true);
     expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.HireWorkerCmd)!.net.entityFields).toEqual(["target"]);
-    expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.SetWorkerJobCmd)!.net.entityFields).toEqual(["worker"]);
+    expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.SetWorkerJobCmd)!.net.entityFields).toEqual(["worker", "target"]);
     expect(GAMEPLAY_NET_COMMANDS.find((x) => x.core === G.DismissWorkerCmd)!.net.entityFields).toEqual(["worker"]);
     // worker commands sit just before the dye commands at the tail (append-only, wire indices stable);
     // Task 25 appended DyeCmd after them, so the tail is worker + dye, in that order.

@@ -212,7 +212,7 @@ export const AnimalSkills = defineComponent("AnimalSkills", {
  * re-rolled). `owner` is the hiring player's PlayerId (0 = for hire). `job` is the assigned WorkerJob. `homeX/homeY`
  * is where the bot was hired — the work anchor when the owner has no claim. Networked (every peer sees the same
  * want / owner / job) and persistent (a hired worker survives restarts via the player save path). */
-export const enum WorkerJob { None = 0, Gather = 1, Farm = 2, Defend = 3, Craft = 4, Maintain = 5 }
+export const enum WorkerJob { None = 0, Gather = 1, Farm = 2, Defend = 3, Craft = 4, Maintain = 5, Follow = 6 }
 export const Worker = defineComponent("Worker", {
   wantedItem: "u16",
   owner: "u32",
@@ -220,6 +220,15 @@ export const Worker = defineComponent("Worker", {
   homeX: "f32",
   homeY: "f32",
 }, { networked: true, persistent: true });
+/** ADR-259: the current assignment. Empty selections mean gather-any / automatic tool progression.
+ * Target ids are persistent identities, NOT process-local entity handles or NetIds. */
+export const WORKER_SELECTION_MAX = 16;
+export const WorkerOrder = defineComponent("WorkerOrder", {
+  selections: { type: "u16", length: WORKER_SELECTION_MAX },
+  craftCursor: "u8", kind: "u8", targetId: "f64", targetPlayer: "u32", x: "f32", y: "f32",
+}, { networked: true, persistent: true });
+/** Lazily assigned opaque 53-bit identity for guard / farm / repair targets; survives chunk/player save/load. */
+export const WorkerTarget = defineComponent("WorkerTarget", { id: "f64" }, { networked: true, persistent: true });
 /** Task 28: a bot's home anchor (server-side only, persistent) — set on hire relocation so the bot's planner
  * re-anchors on the new base instead of rebuilding at the old site. Not networked: the agent layer reads it
  * server-side only, so it costs nothing on the container-bandwidth budget. */
@@ -466,4 +475,5 @@ export const GAMEPLAY_COMPONENTS = [
   RoomHeat, // append-only (Task 24: smoothed flame heat of the enclosed room an entity stands in)
   SlotDye, // append-only (Task 25: per-inventory-slot dye colour for held tools/weapons — packed 0xRRGGBB, 0 = undyed)
   RecentCrafts, RecentBuilds, // append-only (Task 33: most-recently crafted recipes / placed pieces, most recent first)
+  WorkerOrder, WorkerTarget, // append-only (ADR-259: detailed hired-human orders)
 ] as const;

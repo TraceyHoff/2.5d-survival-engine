@@ -8,7 +8,7 @@
  */
 import { defineResource, entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
-import { CraftingStation, Crafter, Dead, Fuel, IntentAction, Inventory, PlayerIntent } from "../components.js";
+import { CraftingStation, Crafter, Dead, Fuel, IntentAction, Inventory, PlayerIntent, WorkerOrder, Worker, WorkerJob } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, StationKind, type RecipeDef } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
@@ -109,6 +109,10 @@ export function craftingSystem(world: World, dt: number): void {
     clear();
     if (why) { fail(current, why); continue; }
     exchangeItems(world, e, r.ingredients, [r.output], false, crafterIdFor(world, e, r.output.item));
+    if (world.getField(e, Worker, "job") === WorkerJob.Craft && world.has(e, WorkerOrder)) {
+      const selected = Array.from(world.getArray(e, WorkerOrder, "selections") ?? []).filter(Boolean);
+      const i = selected.indexOf(current); if (i >= 0) world.setField(e, WorkerOrder, "craftCursor", (i + 1) % selected.length);
+    }
     recordRecentCraft(world, e, current); // Task 33: a finished craft joins the player's Recently Crafted list
     emit(world, CraftCompleted, { entity: e, recipe: current, item: r.output.item, count: r.output.count });
   }

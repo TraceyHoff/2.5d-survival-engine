@@ -8,6 +8,7 @@
  * (present = unlocked); member rows `[data-rank=member|officer|leader]`; tooltips `[data-tip]` (never `title=`).
  * Chat log lines (game-menus.ts) carry `[data-chan=global|local|party|clan|trade|whisper|system]`.
  */
+import { workerJobMenu, beginWorkerJob } from "./worker-job-menu.js";
 import { revealAboveFooter } from "./back-history.js";
 import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
@@ -23,7 +24,7 @@ import { iconForItem, ROADS, clanTintIndex,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
-  workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
+  workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, dismissWorkerIntent,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent, WET_ICON,
   recentBuildsView, recentCraftsView,
 } from "@engine/gameplay";
@@ -1067,10 +1068,12 @@ function workerBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, se
     return out;
   }
   if (v.owned) {
-    head.append(el("p", { "data-role": "worker-job" }, `Job: ${WORKER_JOB_LABELS[v.job] ?? "—"}`));
+    head.append(el("p", { "data-role": "worker-job" }, `Job: ${WORKER_JOB_LABELS[v.job] ?? "—"}`), kit.para(v.assignment));
+    const details = workerJobMenu(c, src, kit, btn, v);
+    if (details) return [head, ...details];
     out.push(head);
     const g = grid(); g.dataset["role"] = "worker-jobs";
-    for (const job of WORKER_JOBS) g.append(btn(WORKER_JOB_LABELS[job]!, `worker-job-${job}`, () => send(setWorkerJobIntent(v.entity, job), `${v.name} is now ${(WORKER_JOB_LABELS[job] ?? "working").toLowerCase()}.`), { pressed: v.job === job, role: "toggle", title: WORKER_JOB_HELP[job] ?? "" }));
+    for (const job of WORKER_JOBS) g.append(btn(WORKER_JOB_LABELS[job]!, `worker-job-${job}`, () => { beginWorkerJob(c.world, workerView(c.world, c.player, v.entity, c.names) ?? v, job); kit.rerender(); focusKey("worker-detail-back"); }, { pressed: v.job === job, role: "toggle", title: WORKER_JOB_HELP[job] ?? "" }));
     out.push(heading("Job"), g);
     const rg = grid(); rg.dataset["role"] = "worker-release";
     rg.append(btn("Release", "worker-dismiss", () => send(dismissWorkerIntent(v.entity), `${v.name} released.`), { alt: true, title: "Stop working for you" }));

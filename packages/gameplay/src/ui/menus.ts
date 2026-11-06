@@ -1,7 +1,7 @@
 import { ContainerToSlotCmd, MoveSlotCmd, SplitStackCmd } from "../inventory_ops.js";
 import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetGuardCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
 import { AnimalSkillCmd } from "../animal_skills.js";
-import { DismissWorkerCmd, HireWorkerCmd, nearestWorker, SetWorkerJobCmd } from "../recruitment.js";
+import { DismissWorkerCmd, HireWorkerCmd, nearestWorker, SetWorkerJobCmd, WORKER_NO_TARGET, type WorkerJobDetails } from "../recruitment.js";
 import { DyeCmd, DyeKind, DyePalette } from "../dye.js";
 import { ReadyCmd } from "../ready.js";
 /**
@@ -542,7 +542,7 @@ export const petCommandIntent = (pet: Entity, cmd: number): MenuIntent => intent
 /** Task 22: hire an AI human (the wanted item is taken by the server as the hire completes). */
 export const hireWorkerIntent = (target: Entity): MenuIntent => intent(HireWorkerCmd, { target }, ["target"]);
 /** Task 22: assign / change a hired worker's job. */
-export const setWorkerJobIntent = (worker: Entity, job: number): MenuIntent => intent(SetWorkerJobCmd, { worker, job }, ["worker"]);
+export const setWorkerJobIntent = (worker: Entity, job: number, d: WorkerJobDetails = {}): MenuIntent => intent(SetWorkerJobCmd, { worker, job, selections: [...(d.selections ?? [])], kind: d.kind ?? 0, target: d.kind === 2 && d.target ? d.target : WORKER_NO_TARGET, x: d.x ?? 0, y: d.y ?? 0 }, ["worker", "target"]);
 /** Task 22: release a hired worker (owner and job cleared; the wanted item is kept for a future hire). */
 export const dismissWorkerIntent = (worker: Entity): MenuIntent => intent(DismissWorkerCmd, { worker }, ["worker"]);
 /** Task 14: guard a location (kind 1; target is ignored server-side, send the pet as the wire placeholder) or an entity (kind 2). */

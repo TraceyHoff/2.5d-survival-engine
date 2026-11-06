@@ -44,6 +44,8 @@ describe("worker panel (Task 22)", () => {
     expect(document.querySelector("[data-menu=worker]")!.textContent).toContain("Job: Gathering");
     for (const job of G.WORKER_JOBS) expect(document.querySelector(`[data-key=worker-job-${job}]`)).not.toBeNull();
     q(`[data-key=worker-job-${G.WorkerJob.Farm}]`).click();
+    expect(sent).toHaveLength(0); // choosing a job only opens its tailored details
+    q("[data-key=worker-detail-confirm]").click();
     expect(sent.at(-1)).toMatchObject({ cmd: G.SetWorkerJobCmd, args: { worker: bot, job: G.WorkerJob.Farm } });
     q("[data-key=worker-dismiss]").click();
     expect(sent.at(-1)).toMatchObject({ cmd: G.DismissWorkerCmd, args: { worker: bot } });
@@ -65,4 +67,44 @@ describe("worker panel (Task 22)", () => {
     const { w, me, bot } = setup();
     expect(G.interactPanel({ world: w, player: me, names: new Map() })).toEqual({ panel: "worker", worker: bot });
   });
+  for (const job of G.WORKER_JOBS) test(`job ${job} has a cancellable detail screen, reachable by keyboard and gamepad activation`, () => {
+    const { w, me, bot, sent, menus } = setup();
+    G.addItem(w, me, G.workerView(w, me, bot)!.wantedItem, 1); G.hireWorker(w, me, bot);
+    menus.openWorker(bot);
+    q(`[data-key=worker-job-${job}]`).focus();
+    document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(sent).toHaveLength(0);
+    expect(document.activeElement).toBe(q("[data-key=worker-detail-back]"));
+    const confirm = q("[data-key=worker-detail-confirm]");
+    expect(menus.nav.focusables()).toContain(confirm);
+    confirm.focus(); menus.nav.activate(true); // same A-button path the gamepad uses
+    expect(sent.at(-1)).toMatchObject({ cmd: G.SetWorkerJobCmd, args: { worker: bot, job } });
+    q(`[data-key=worker-job-${job}]`).click(); q("[data-key=worker-detail-back]").click();
+    expect(sent).toHaveLength(1); // Cancel does not change an existing job
+    menus.destroy();
+  });
+  test("resource selections survive paging and reopening the current assignment", () => {
+    const { w, me, bot, sent, menus } = setup();
+    G.addItem(w, me, G.workerView(w, me, bot)!.wantedItem, 1); G.hireWorker(w, me, bot);
+    menus.openWorker(bot); q(`[data-key=worker-job-${G.WorkerJob.Gather}]`).click();
+    const choice = q("[data-role=worker-detail-choices] button"); const id = Number(choice.dataset["key"]!.replace("worker-pick-", ""));
+    choice.click(); expect(q(`[data-key=worker-pick-${id}]`).getAttribute("aria-pressed")).toBe("true");
+    q("[data-key=worker-detail-next]").click(); q("[data-key=worker-detail-prev]").click();
+    expect(q(`[data-key=worker-pick-${id}]`).getAttribute("aria-pressed")).toBe("true");
+    q("[data-key=worker-detail-confirm]").click(); expect(sent.at(-1)!.args["selections"]).toEqual([id]);
+    G.setWorkerJob(w, me, bot, G.WorkerJob.Gather, { selections: [id] });
+    q(`[data-key=worker-job-${G.WorkerJob.Gather}]`).click();
+    expect(q(`[data-key=worker-pick-${id}]`).getAttribute("aria-pressed")).toBe("true");
+    menus.destroy();
+  });
+  test("Guard offers real map markers and current-position updates, not an empty location picker", () => {
+    const { w, me, bot, sent, menus } = setup();
+    G.addItem(w, me, G.workerView(w, me, bot)!.wantedItem, 1); G.hireWorker(w, me, bot);
+    const marker = G.spawnMarker(w, me, 50, 60, 0, "North gate");
+    menus.openWorker(bot); q(`[data-key=worker-job-${G.WorkerJob.Defend}]`).click();
+    q(`[data-key=worker-marker-${marker}]`).click(); q("[data-key=worker-detail-confirm]").click();
+    expect(sent.at(-1)!.args).toMatchObject({ job: G.WorkerJob.Defend, kind: 1, x: 50, y: 60, target: G.WORKER_NO_TARGET });
+    menus.destroy();
+  });
+
 });

@@ -9,7 +9,7 @@
  */
 import { Transform, entityIndex, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { AttachKind, BuildPiece, Equipment, Exposure, Fuel, NO_SLOT, ResourceNode, Survival } from "../components.js";
+import { AttachKind, BuildPiece, Equipment, Exposure, Fuel, NO_SLOT, ResourceNode, Survival, Worker, WorkerOrder, WorkerJob } from "../components.js";
 import { GameplayConfig } from "../config.js";
 import { countItem, readSlots } from "../inventory.js";
 import { bareHandsCan, heldTool } from "../systems/gathering.js";
@@ -96,7 +96,8 @@ function homeScan(world: World, defs: GameDefs, hx: number, hy: number, fireType
 const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "winter", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
 const sensed = new WeakMap<Agent, { tick: number; home: string; s: Partial<GoalSensors> }>();
 export function fillGoalSensors(world: World, self: Entity, view: AgentWorldView, a: Agent): void {
-  const home = `${view.home.x},${view.home.y}`; const c = sensed.get(a);
+  const wk = world.get(self, Worker); const order = world.getArray(self, WorkerOrder, "selections");
+  const home = `${view.home.x},${view.home.y}:${wk?.owner ?? 0}:${wk?.job ?? 0}:${order ? Array.from(order).join(",") : ""}:${(world.getField(self, Survival, "hunger") ?? 100) < 55}:${(world.getField(self, Survival, "thirst") ?? 100) < 60}`; const c = sensed.get(a);
   if (c && world.tick - c.tick < SENSE_EVERY && world.tick >= c.tick && c.home === home) { for (const k of SENSOR_KEYS) if (!(k in c.s)) delete view[k]; Object.assign(view, c.s); return; } // a cached pass must also clear what the planner removed (fillAgentSensors refills legacy craftRecipe / buildPlan every tick)
   computeGoalSensors(world, self, view, a);
   const s: Partial<GoalSensors> = {}; for (const k of SENSOR_KEYS) if (view[k] !== undefined) (s as Record<string, unknown>)[k] = view[k];
@@ -141,6 +142,20 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   // ADR-252: the planner owns needs / hand crafts / base pieces (needs = leaves of the first unmet goal)
   bindAgentWorld(a, world);
   { const pn = fillPlanSensors(world, self, view, a, defs, slots); if (pn) { needs.clear(); for (const x of pn) needs.add(x); if (view.food === undefined && view.bs?.stations.has(1)) for (const id of ix.foods) needs.add(id); if (needs.size) view.needs = [...needs]; else delete view.needs; } }
+  // ADR-259: employment replaces the personal building ladder, never survival food needs.
+  const worker = world.get(self, Worker); const selected = Array.from(world.getArray(self, WorkerOrder, "selections") ?? []).filter(Boolean);
+  const hungry = view.food === undefined && (world.getField(self, Survival, "hunger") ?? 100) < 55;
+  let jobItems: Set<number> | undefined;
+  if (worker?.owner) {
+    needs.clear();
+    if (worker.job === WorkerJob.Gather && selected.length) jobItems = new Set(selected);
+    if (worker.job === WorkerJob.Craft && selected.length) {
+      jobItems = new Set(selected.flatMap((id) => { const r = defs.recipes.get(id); return r && !have(r.output.item) ? r.ingredients.filter((g) => have(g.item) < g.count).map((g) => g.item) : []; }));
+    }
+    if (jobItems) for (const id of jobItems) needs.add(id);
+    if (hungry) for (const id of ix.foods) needs.add(id);
+    delete view.gatherNode;
+  }
   // gather target from memory (bounded), skipping banned / empty / tool-locked nodes; wanted yields win within ~20 tiles
   const ban = bans(a.bb); const tool = heldTool(world, self, defs); let best: GoalSensors["gatherNode"], bs = Infinity;
   // ADR-217: best tool of each kind in the bag (trees are worked with the axe, not fists) -> switch to it for that node
@@ -155,6 +170,11 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
     const withTool = def.requiredTool === ToolKind.None || (tool.kind === def.requiredTool && tool.tier >= def.minTier) || (bagTool !== undefined && bagTool.tier >= def.minTier);
     const bare = !withTool && bareHandsCan(defs, def);
     if (!withTool && !bare) continue;
+    const foodNode = hungry && def.yields.some((y) => ix.foods.includes(y.item));
+    if (worker?.owner) {
+      if (jobItems && !def.yields.some((y, i) => jobItems.has(y.item) && (!bare || i === 0)) && !foodNode) continue;
+      if (worker.job !== WorkerJob.Gather && worker.job !== WorkerJob.Craft && !foodNode) continue;
+    }
     const wanted = def.yields.some((y) => needs.has(y.item));
     if (!wanted && needs.size && def.yields[0] && have(def.yields[0].item) >= 8) continue; // stocked up: explore for what the goal needs
     // ADR-217: a wanted node's pull scales with how much of the needed items one swing is worth (an axe on a tree beats
@@ -166,7 +186,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   if (bestNeeds) view.equipSlot = bestNeeds.slot; // the inventory "Equip" a player taps before chopping
   noteTripWanted(view, needs, !!best?.wanted);
   // ADR-176 water: thirsty without a drink in the bag -> nearest tile next to water on a coarse 7x7 grid (2.5 tile step)
-  const sv = view as { water?: number }; const thirst = a.bb.num("thirstSeen", 1);
+  const sv = view as { water?: number }; const thirst = (world.getField(self, Survival, "thirst") ?? 100) / 100;
   if (sv.water === undefined && thirst < 0.6) {
     let wb: { x: number; y: number } | undefined, wd = Infinity;
     for (let gy = -3; gy <= 3; gy++) for (let gx = -3; gx <= 3; gx++) { const x = t.x + gx * 2.5, y = t.y + gy * 2.5; const d = gx * gx + gy * gy; if (d < wd && nearWater(world, x, y)) { wd = d; wb = { x, y }; } }

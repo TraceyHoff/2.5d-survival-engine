@@ -8,7 +8,7 @@
 import { DEFAULT_TICK_HZ, SeasonId, Transform, Weather, entityIndex, seasonAt, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
-import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
+import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode, WorkerTarget } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import type { GameDefs } from "./defs.js";
 import { countItem, readSlots, slotItem, takeFromSlot } from "./inventory.js";
@@ -190,7 +190,10 @@ export function cropGrowthSystem(world: World): void {
   for (const e of [...world.query([Crop, Transform])].sort((a, b) => a - b)) {
     const c = world.get(e, Crop)!; const p = plantableOf(c.kind); if (!p) continue;
     const growth = Math.min(1, c.growth + (dt / p.growSeconds) * growthMul(world, c));
-    if (growth >= 1) { const t = world.get(e, Transform)!; world.destroy(e); spawnResourceNode(world, p.becomes, t.x, t.y); continue; }
+    if (growth >= 1) { const t = world.get(e, Transform)!; const targetId = world.getField(e, WorkerTarget, "id");
+      world.destroy(e); const node = spawnResourceNode(world, p.becomes, t.x, t.y);
+      if (targetId) world.add(node, WorkerTarget, { id: targetId }); // a selected plot stays selected through maturity
+      continue; }
     const stage = Math.min(p.stages - 1, Math.floor(growth * p.stages));
     world.set(e, Crop, stage !== c.stage ? { growth, stage } : { growth });
   }

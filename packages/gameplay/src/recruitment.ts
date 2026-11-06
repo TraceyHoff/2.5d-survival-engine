@@ -7,7 +7,7 @@
  *     never re-rolled; a bot from an old save gets one from `recruitmentSystem` on first sight. (world.rngFor is
  *     tick-seeded and would re-roll every tick, so it is NOT used here.)
  *   owner      — the hiring player's PlayerId (0 = for hire).
- *   job        — the assigned WorkerJob (Gather / Farm / Defend / Craft / Maintain; None while for hire).
+ *   job        — the assigned WorkerJob (Gather / Farm / Defend / Craft / Maintain / Follow; None while for hire).
  *   homeX/Y    — where the bot was hired: the work anchor when the owner has no claim (see workerAnchor).
  *
  * Hire is server-authoritative: `hireWorker` re-checks owner === 0 and removes the wanted item *before* setting
@@ -17,17 +17,17 @@
  * again when it is still the owner's tribe. Unclaimed land needs no tribe (no zones -> every() is true).
  *
  * The multiplayer toggle lives in WorldRules.aiHumans (see hordes.ts setWorldRules/worldRules): when off, bots do
- * not spawn in multiplayer (gameModeConfig) and hires are refused (AiHumansOff). Existing bots and workers keep
+ * not spawn in multiplayer (gameModeConfig) and hires/new assignments are refused (AiHumansOff). Existing bots and workers keep
  * working when it is flipped — removing them would destroy player-paid hires. Singleplayer is unaffected by the
  * toggle in the sense that it is on by default there too; the same setting covers both modes.
  */
 import { defineCommand, fnv1a, PlayerId, Transform, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
-import { AttachKind, BotHome, BuildPiece, Container, ContainerViewers, Dead, LootBag, PieceOwner, PrivilegeZone, Tribe, Worker, WorkerJob, WorldRules } from "./components.js";
+import { AttachKind, BotHome, BuildPiece, Crop, Health, ResourceNode, Pet, Tamed, WorkerOrder, WorkerTarget, WORKER_SELECTION_MAX, Container, ContainerViewers, Dead, LootBag, PieceOwner, PrivilegeZone, Tribe, Worker, WorkerJob, WorldRules } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { addItem, countItem, readSlots, removeItem } from "./inventory.js";
 import { DestroyCause, emit, ev } from "./events.js";
 import { isAiHuman } from "./skills/xp.js";
-import { pieceCost, placePiece, snapPlacement, tribeOf, validatePlacement } from "./building/place.js";
+import { hasPrivilege, pieceCost, placePiece, snapPlacement, tribeOf, validatePlacement } from "./building/place.js";
 import { destroyPiece } from "./building/integrity.js";
 import { resolveAttachment } from "./building/links.js";
 import { claimBaseSite, pickBaseSite } from "./ai/planner.js";
@@ -35,6 +35,8 @@ import { structures } from "./building/structure.js";
 import { lootBagInit } from "./loot_despawn.js";
 import { LootSource } from "./loot_labels.js";
 import { indexEntity } from "./spawn.js";
+import { meetsSkill } from "./systems/crafting.js";
+import { StationKind } from "./defs.js";
 import type { PieceDef } from "./defs.js";
 import type { NameLookup } from "./economy/provenance.js";
 
@@ -58,21 +60,22 @@ const playerEntity = (world: World, id: number): Entity | undefined => {
 const near = (world: World, a: Entity, b: Entity, r: number): boolean => { const p = world.get(a, Transform), q = world.get(b, Transform); return !!p && !!q && Math.hypot(p.x - q.x, p.y - q.y) <= r; };
 
 /** Jobs a hired worker can be assigned (None = for hire / between jobs). Order is the panel order. */
-export const WORKER_JOBS: readonly WorkerJob[] = [WorkerJob.Gather, WorkerJob.Farm, WorkerJob.Defend, WorkerJob.Craft, WorkerJob.Maintain];
-export const WORKER_JOB_LABELS: Record<number, string> = { [WorkerJob.None]: "No job", [WorkerJob.Gather]: "Gathering", [WorkerJob.Farm]: "Farming", [WorkerJob.Defend]: "Defending", [WorkerJob.Craft]: "Crafting", [WorkerJob.Maintain]: "Maintaining" };
+export const WORKER_JOBS: readonly WorkerJob[] = [WorkerJob.Gather, WorkerJob.Farm, WorkerJob.Defend, WorkerJob.Craft, WorkerJob.Maintain, WorkerJob.Follow];
+export const WORKER_JOB_LABELS: Record<number, string> = { [WorkerJob.None]: "No job", [WorkerJob.Gather]: "Gathering", [WorkerJob.Farm]: "Farming", [WorkerJob.Defend]: "Guarding", [WorkerJob.Craft]: "Crafting", [WorkerJob.Maintain]: "Maintaining", [WorkerJob.Follow]: "Following" };
 /** Panel help copy (mirrors PET_HELP). */
 export const WORKER_HELP = [
   "AI humans: walk up to one and interact (E / X / tap). Each wants one item — food, a tool, clothing or a resource. Hire them and the item is taken from your pack.",
-  "A hired worker does one job at a time around your base: Gathering (collects and stashes), Farming (waters and harvests crops), Defending (fights zombies near your base), Crafting (makes tools), Maintaining (repairs damaged pieces).",
+  "A hired worker does one job at a time around your base: Gathering (collects and stashes), Farming (waters and harvests crops), Guarding (defends a location, player, animal or structure), Crafting (makes selected hand recipes), Maintaining (repairs damaged pieces), Following (follows and guards you). Choose a job to configure its details, then confirm.",
   "Workers keep eating, drinking and sleeping like any survivor. Release them from the panel when you no longer need them; they keep the wanted item for a future hire.",
 ];
 /** One-line job descriptions for the panel's job buttons. */
 export const WORKER_JOB_HELP: Record<number, string> = {
   [WorkerJob.Gather]: "Collect resources and bring them to your base storage",
   [WorkerJob.Farm]: "Water thirsty crops, plant seeds on tilled soil, harvest mature crops",
-  [WorkerJob.Defend]: "Stay at your base and fight zombies that come near it",
-  [WorkerJob.Craft]: "Craft tools by hand at your base and stash them",
+  [WorkerJob.Defend]: "Choose a location, player, tamed animal or structure to guard",
+  [WorkerJob.Craft]: "Choose hand recipes to craft at your base and stash",
   [WorkerJob.Maintain]: "Repair damaged base pieces, fetching materials from your storage",
+  [WorkerJob.Follow]: "Follow and guard you, taking breaks for food and water",
 };
 
 /**
@@ -120,8 +123,8 @@ export function recruitmentSystem(world: World): void {
 }
 
 // ---- hire / job / dismiss ---------------------------------------------------------------------------
-export const enum WorkerFail { None = 0, NotFound = 1, TooFar = 2, AlreadyHired = 3, NoItem = 4, AiHumansOff = 5, NotOwner = 6, BadJob = 7, NotWorker = 8 }
-export const WORKER_FAIL_REASONS = ["", "not_found", "too_far", "already_hired", "no_item", "ai_humans_off", "not_owner", "bad_job", "not_worker"] as const;
+export const enum WorkerFail { None = 0, NotFound = 1, TooFar = 2, AlreadyHired = 3, NoItem = 4, AiHumansOff = 5, NotOwner = 6, BadJob = 7, NotWorker = 8, BadDetails = 9 }
+export const WORKER_FAIL_REASONS = ["", "not_found", "too_far", "already_hired", "no_item", "ai_humans_off", "not_owner", "bad_job", "not_worker", "bad_worker_details"] as const;
 export const enum WorkerResult { Hired = 1, JobSet = 2, Released = 3, Relocated = 4 }
 export const WorkerEvent = ev<{ entity: Entity; worker: Entity; result: WorkerResult; value: number }>("gameplay.WorkerEvent");
 /** Toast copy for a WorkerEvent (client: main.ts). `value` is the wanted item id on hire, the job on JobSet. */
@@ -278,16 +281,97 @@ export function relocateWorkerBase(world: World, worker: Entity, actor: Entity):
   } catch { return false; }
 }
 
-export function setWorkerJobValidate(world: World, actor: Entity, worker: Entity, job: number): WorkerFail {
+/** 0 = owner's base, 1 = fixed point, 2 = live entity. Follow always uses its owner. */
+export const enum WorkerTargetKind { Base = 0, Location = 1, Entity = 2 }
+/** Network no-entity sentinel (gameplay does not depend on @engine/net). */
+export const WORKER_NO_TARGET = 0xffffffff;
+export interface WorkerJobDetails { selections?: readonly number[]; kind?: number; target?: Entity; x?: number; y?: number }
+export function workerSelections(world: World, worker: Entity): number[] {
+  return Array.from(world.getArray(worker, WorkerOrder, "selections") ?? []).filter((n) => n !== 0);
+}
+/** Hand recipes share the player's skill checks. Stations aren't offered until worker routing supports them. */
+export function workerRecipes(world: World, worker: Entity) {
+  return [...gameplayDefs(world).recipes.values()].filter((r) => r.station === StationKind.None && meetsSkill(world, worker, r));
+}
+export function workerGatherItems(world: World): number[] {
+  return [...new Set([...gameplayDefs(world).resources.values()].flatMap((r) => r.yields.map((y) => y.item)))].sort((a, b) => a - b);
+}
+function workerTargetAllowed(world: World, actor: Entity, target: Entity, job: number): boolean {
+  if (!world.isAlive(target) || world.has(target, Dead) || !world.has(target, Transform) || (world.has(target, Health) && (world.getField(target, Health, "hp") ?? 0) <= 0)) return false;
+  const p = world.get(target, Transform)!;
+  if ((job === WorkerJob.Farm || job === WorkerJob.Maintain) && !hasPrivilege(world, actor, p.x, p.y)) return false;
+  if (world.has(target, Pet) && (world.getField(target, Pet, "hp") ?? 0) <= 0) return false;
+  if (job === WorkerJob.Farm) return world.has(target, Crop) || (world.has(target, ResourceNode) && (gameplayDefs(world).resources.get(world.getField(target, ResourceNode, "kind") ?? 0)?.key.startsWith("crop_") ?? false));
+  if (job === WorkerJob.Maintain) return world.has(target, BuildPiece);
+  if (job !== WorkerJob.Defend) return false;
+  return (pidOf(world, target) !== 0 && !isAiHuman(world, target) && !world.has(target, Worker)) || world.has(target, BuildPiece)
+    || (world.has(target, Pet) && world.getField(target, Pet, "owner") === pidOf(world, actor))
+    || (world.has(target, Tamed) && world.getField(target, Tamed, "owner") === pidOf(world, actor));
+}
+/** Guardable / tendable targets currently visible and within command range; same filter on server and replica. */
+export function workerTargets(world: World, actor: Entity, job: number, names?: NameLookup): { entity: Entity; label: string }[] {
+  const out: { entity: Entity; label: string }[] = [];
+  for (const e of world.query([Transform], [Dead])) if (near(world, actor, e, 40) && workerTargetAllowed(world, actor, e, job)) out.push({ entity: e, label: workerTargetName(world, e, names) });
+  return out.sort((a, b) => a.label.localeCompare(b.label) || a.entity - b.entity);
+}
+export function workerTargetName(world: World, e: Entity, names?: NameLookup): string {
+  const pid = pidOf(world, e); if (pid) return names?.get(pid) ?? `Player ${pid}`;
+  const pos = world.get(e, Transform); const at = pos ? ` (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})` : "";
+  if (world.has(e, Pet)) { const a = world.getArray(e, Pet, "name"), n = world.getField(e, Pet, "len") ?? 0; return (a && n ? String.fromCharCode(...Array.from(a).slice(0, n)) : "Tamed animal") + at; }
+  if (world.has(e, Tamed)) return "Tamed farm animal" + at;
+  if (world.has(e, BuildPiece)) return (gameplayDefs(world).pieces.get(world.getField(e, BuildPiece, "type") ?? 0)?.key.replace(/_/g, " ") ?? "Structure") + at;
+  return "Farm plot" + at;
+}
+/** Resolve stable identities on both replicas and authority. Missing/dead/unloaded targets hold last assigned point. */
+export function workerOrderTarget(world: World, worker: Entity): Entity | undefined {
+  const o = world.get(worker, WorkerOrder); if (!o || o.kind !== WorkerTargetKind.Entity) return undefined;
+  if (o.targetPlayer) return playerEntity(world, o.targetPlayer);
+  for (const e of world.query([WorkerTarget, Transform], [Dead])) if (world.getField(e, WorkerTarget, "id") === o.targetId) return e;
+  return undefined;
+}
+export function workerWorkAnchor(world: World, worker: Entity): { x: number; y: number } {
+  const w = world.get(worker, Worker);
+  if (w?.job === WorkerJob.Follow) { const owner = playerEntity(world, w.owner); const p = owner === undefined ? undefined : world.get(owner, Transform); if (p) return { x: p.x, y: p.y }; }
+  const o = world.get(worker, WorkerOrder);
+  if (o && o.kind !== WorkerTargetKind.Base) { const target = workerOrderTarget(world, worker); const p = target === undefined ? undefined : world.get(target, Transform); return p ? { x: p.x, y: p.y } : { x: o.x, y: o.y }; }
+  return workerAnchor(world, worker);
+}
+function targetIdentity(world: World, target: Entity): number {
+  const old = world.getField(target, WorkerTarget, "id"); if (old) return old;
+  // Authority-generated random identity, not simulation randomness. No local entity handle is saved or replicated.
+  const bytes = new Uint32Array(2); let id: number;
+  do { globalThis.crypto.getRandomValues(bytes); id = (bytes[0]! & 0x1fffff) * 0x100000000 + bytes[1]!; }
+  while (!id || [...world.query([WorkerTarget])].some((e) => world.getField(e, WorkerTarget, "id") === id));
+  world.add(target, WorkerTarget, { id });
+  const idx = structures(world); const info = idx.info.get(target); if (info) idx.bump(info.ck);
+  return id;
+}
+export function setWorkerJobValidate(world: World, actor: Entity, worker: Entity, job: number, details: WorkerJobDetails = {}): WorkerFail {
+  if (!aiHumansOn(world)) return WorkerFail.AiHumansOff;
   if (!world.isAlive(worker) || world.has(worker, Dead)) return WorkerFail.NotFound;
   if (!world.has(worker, Worker)) return WorkerFail.NotWorker;
   if (world.get(worker, Worker)!.owner !== pidOf(world, actor) || pidOf(world, actor) === 0) return WorkerFail.NotOwner;
   if (!WORKER_JOBS.includes(job as WorkerJob)) return WorkerFail.BadJob;
   if (!near(world, actor, worker, 40)) return WorkerFail.TooFar;
+  const { selections = [], kind = 0, x = 0, y = 0 } = details;
+  const target = details.target === WORKER_NO_TARGET ? 0 : details.target ?? 0;
+  if (selections.length > WORKER_SELECTION_MAX || selections.some((n) => !Number.isInteger(n) || n < 0 || n > 65535)) return WorkerFail.BadDetails;
+  const picked = selections.filter(Boolean);
+  const valid = job === WorkerJob.Gather ? workerGatherItems(world) : job === WorkerJob.Craft ? workerRecipes(world, worker).map((r) => r.id) : [];
+  if (picked.some((n) => !valid.includes(n)) || new Set(picked).size !== picked.length) return WorkerFail.BadDetails;
+  if (![0, 1, 2].includes(kind) || !Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x) > 1e7 || Math.abs(y) > 1e7) return WorkerFail.BadDetails;
+  if (![WorkerJob.Defend, WorkerJob.Farm, WorkerJob.Maintain].includes(job) && (kind !== 0 || target)) return WorkerFail.BadDetails;
+  if (kind === WorkerTargetKind.Entity && (!near(world, actor, target, 40) || !workerTargetAllowed(world, actor, target, job))) return WorkerFail.BadDetails;
+  if (kind !== WorkerTargetKind.Entity && target) return WorkerFail.BadDetails;
   return WorkerFail.None;
 }
-export function setWorkerJob(world: World, actor: Entity, worker: Entity, job: number): WorkerFail {
-  const fail = setWorkerJobValidate(world, actor, worker, job); if (fail) return fail;
+export function setWorkerJob(world: World, actor: Entity, worker: Entity, job: number, details: WorkerJobDetails = {}): WorkerFail {
+  const fail = setWorkerJobValidate(world, actor, worker, job, details); if (fail) return fail;
+  const kind = details.kind ?? 0; const target = details.target; const p = kind === WorkerTargetKind.Entity && target ? world.get(target, Transform) : undefined;
+  const values = { craftCursor: 0, selections: Array.from({ length: WORKER_SELECTION_MAX }, (_, i) => details.selections?.[i] ?? 0), kind,
+    targetId: kind === WorkerTargetKind.Entity && target && !pidOf(world, target) ? targetIdentity(world, target) : 0,
+    targetPlayer: kind === WorkerTargetKind.Entity && target ? pidOf(world, target) : 0, x: p?.x ?? details.x ?? 0, y: p?.y ?? details.y ?? 0 };
+  if (world.has(worker, WorkerOrder)) world.set(worker, WorkerOrder, values); else world.add(worker, WorkerOrder, values);
   world.setField(worker, Worker, "job", job);
   emit(world, WorkerEvent, { entity: actor, worker, result: WorkerResult.JobSet, value: job });
   return WorkerFail.None;
@@ -307,6 +391,7 @@ export function dismissWorker(world: World, actor: Entity, worker: Entity): Work
   const fail = dismissWorkerValidate(world, actor, worker); if (fail) return fail;
   const tribe = tribeOf(world, actor);
   world.set(worker, Worker, { owner: 0, job: WorkerJob.None });
+  if (world.has(worker, WorkerOrder)) world.remove(worker, WorkerOrder);
   if (tribe !== 0 && world.has(worker, Tribe) && world.getField(worker, Tribe, "id") === tribe) world.remove(worker, Tribe);
   emit(world, WorkerEvent, { entity: actor, worker, result: WorkerResult.Released, value: 0 });
   return WorkerFail.None;
@@ -315,7 +400,22 @@ export function dismissWorker(world: World, actor: Entity, worker: Entity): Work
 // ---- views --------------------------------------------------------------------------------------------
 export interface WorkerView {
   entity: Entity; name: string; wantedItem: number; wantedKey: string; wantedName: string;
-  hasWanted: boolean; hasCount: number; hired: boolean; owner: number; owned: boolean; job: number; aiHumans: boolean;
+  hasWanted: boolean; hasCount: number; hired: boolean; owner: number; owned: boolean; job: number; aiHumans: boolean; assignment: string; details: WorkerJobDetails;
+}
+export function workerDetails(world: World, e: Entity): WorkerJobDetails {
+  const o = world.get(e, WorkerOrder); if (!o) return {};
+  return { selections: workerSelections(world, e), kind: o.kind, target: workerOrderTarget(world, e) ?? (0 as Entity), x: o.x, y: o.y };
+}
+export function workerAssignment(world: World, e: Entity, names?: NameLookup): string {
+  const w = world.get(e, Worker); if (!w) return "";
+  if (w.job === WorkerJob.Follow) return "Following you · guarding you; food and water breaks enabled";
+  const ids = workerSelections(world, e); const defs = gameplayDefs(world);
+  if (w.job === WorkerJob.Gather) return `Gathering ${ids.length ? ids.map((id) => defs.items.get(id)?.name ?? "resource").join(", ") : "any resources"}`;
+  if (w.job === WorkerJob.Craft) return `Crafting ${ids.length ? ids.map((id) => defs.items.get(defs.recipes.get(id)?.output.item ?? 0)?.name ?? "recipe").join(", ") : "automatic tool progression"}`;
+  const o = world.get(e, WorkerOrder); const target = workerOrderTarget(world, e);
+  const place = o?.kind === WorkerTargetKind.Entity && target !== undefined ? workerTargetName(world, target, names)
+    : o && o.kind !== WorkerTargetKind.Base ? `location (${o.x.toFixed(1)}, ${o.y.toFixed(1)})${o.kind === WorkerTargetKind.Entity ? " — target unavailable" : ""}` : "your base";
+  return `${WORKER_JOB_LABELS[w.job] ?? "Working"}: ${place}`;
 }
 /** Panel view-model for one AI human (undefined when the entity is not a worker). */
 export function workerView(world: World, player: Entity, e: Entity, names?: NameLookup): WorkerView | undefined {
@@ -327,7 +427,7 @@ export function workerView(world: World, player: Entity, e: Entity, names?: Name
     entity: e, name: names?.get(pid) ?? (pid ? `AI Human ${pid}` : "AI Human"),
     wantedItem: w.wantedItem, wantedKey: d?.key ?? "", wantedName: d?.name ?? "",
     hasWanted: w.wantedItem !== 0 && countItem(world, player, w.wantedItem) > 0, hasCount: w.wantedItem ? countItem(world, player, w.wantedItem) : 0,
-    hired: w.owner !== 0, owner: w.owner, owned: w.owner !== 0 && w.owner === me, job: w.job, aiHumans: aiHumansOn(world),
+    hired: w.owner !== 0, owner: w.owner, owned: w.owner !== 0 && w.owner === me, job: w.job, aiHumans: aiHumansOn(world), assignment: workerAssignment(world, e, names), details: workerDetails(world, e),
   };
 }
 /** Nearest hireable / hired AI human within interact range (2.5 + 0.5, like nearestPet). */
@@ -359,15 +459,15 @@ export function workerAnchor(world: World, worker: Entity): { x: number; y: numb
 
 // ---- commands -----------------------------------------------------------------------------------------
 export const HireWorkerCmd = defineCommand("gameplay.hireWorker", { target: "u32" });
-export const SetWorkerJobCmd = defineCommand("gameplay.setWorkerJob", { worker: "u32", job: "u8" });
+export const SetWorkerJobCmd = defineCommand("gameplay.setWorkerJob", { worker: "u32", job: "u8", selections: { type: "u16", length: WORKER_SELECTION_MAX }, kind: "u8", target: "u32", x: "f32", y: "f32" });
 export const DismissWorkerCmd = defineCommand("gameplay.dismissWorker", { worker: "u32" });
 export const WORKER_COMMANDS: readonly CommandDef[] = [HireWorkerCmd, SetWorkerJobCmd, DismissWorkerCmd];
-export const WORKER_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [HireWorkerCmd.name]: ["target"], [SetWorkerJobCmd.name]: ["worker"], [DismissWorkerCmd.name]: ["worker"] };
+export const WORKER_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [HireWorkerCmd.name]: ["target"], [SetWorkerJobCmd.name]: ["worker", "target"], [DismissWorkerCmd.name]: ["worker"] };
 /** New reject reasons (not_found / too_far / no_item / not_owner already exist in COMMAND_REJECT_REASONS). */
-export const WORKER_REJECT_REASONS = ["not_worker", "already_hired", "ai_humans_off", "bad_job"] as const;
+export const WORKER_REJECT_REASONS = ["not_worker", "already_hired", "ai_humans_off", "bad_job", "bad_worker_details"] as const;
 export function installWorkerCommands(world: World, handlers: CommandHandlers): void {
   const r = (f: WorkerFail): string | undefined => (f ? WORKER_FAIL_REASONS[f] : undefined);
   handlers.on(HireWorkerCmd, { validate: (v, c) => r(hireWorkerValidate(world, c.actor, v.target as Entity)), handle: (v, c) => { hireWorker(world, c.actor, v.target as Entity); } });
-  handlers.on(SetWorkerJobCmd, { validate: (v, c) => r(setWorkerJobValidate(world, c.actor, v.worker as Entity, v.job)), handle: (v, c) => { setWorkerJob(world, c.actor, v.worker as Entity, v.job); } });
+  handlers.on(SetWorkerJobCmd, { validate: (v, c) => r(setWorkerJobValidate(world, c.actor, v.worker as Entity, v.job, { ...v, target: v.target as Entity })), handle: (v, c) => { setWorkerJob(world, c.actor, v.worker as Entity, v.job, { ...v, target: v.target as Entity }); } });
   handlers.on(DismissWorkerCmd, { validate: (v, c) => r(dismissWorkerValidate(world, c.actor, v.worker as Entity)), handle: (v, c) => { dismissWorker(world, c.actor, v.worker as Entity); } });
 }

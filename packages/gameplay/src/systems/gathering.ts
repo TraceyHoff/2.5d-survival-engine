@@ -8,7 +8,7 @@
  * world state arrive by replication).
  */
 import { entityIndex, NetId, Transform, type Entity, type World } from "@engine/core";
-import { Anim, AnimState, BuildPiece, Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, NodeRegrow, PieceLink, PlayerIntent, ResourceNode, Road, Survival } from "../components.js";
+import { Anim, AnimState, BuildPiece, Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, NodeRegrow, PieceLink, PlayerIntent, ResourceNode, Road, Survival, Crop, WorkerTarget } from "../components.js";
 import { spawnResourceNode } from "../spawn.js";
 import { ChunkNodes } from "../world.js";
 import { populationTile, PopulationTiles } from "../population.js";
@@ -177,7 +177,11 @@ export function gatherSystem(world: World, dt: number): void {
     rn.markChanged(nIdx);
     if (left === 0) {
       emit(world, NodeDepleted, { node, kind: def.id });
-      if (def.oneShot) world.destroy(node); // ADR-110: harvested crop
+      if (def.oneShot) {
+        // ADR-259: keep a specifically assigned farm plot's identity and soil for replanting.
+        if (world.has(node, WorkerTarget) && def.key.startsWith("crop_")) { world.remove(node, ResourceNode); world.add(node, Crop); }
+        else world.destroy(node);
+      } // ADR-110: harvested crop
       else { // ADR-134: gone from the world; regrows elsewhere
         const dep = defs.depletion;
         depleteNode(world, node, def.id, world.tick + secondsToTicks(def.respawnSeconds * dep.respawnMul, dt), def.requiredTool === ToolKind.Axe ? secondsToTicks(dep.stumpSeconds, dt) : 0);
