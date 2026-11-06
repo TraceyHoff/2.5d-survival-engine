@@ -14,6 +14,7 @@ import { secondsToTicks, StationKind, type RecipeDef } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { exchangeItems } from "../inventory.js";
 import { crafterIdFor } from "../economy/provenance.js";
+import { recordRecentCraft } from "../recent.js";
 import stationsRaw from "../../data/stations.json";
 
 /** Stations are looked up in the shared spatial index within this radius (>= any CraftingStation.range). */
@@ -108,6 +109,7 @@ export function craftingSystem(world: World, dt: number): void {
     clear();
     if (why) { fail(current, why); continue; }
     exchangeItems(world, e, r.ingredients, [r.output], false, crafterIdFor(world, e, r.output.item));
+    recordRecentCraft(world, e, current); // Task 33: a finished craft joins the player's Recently Crafted list
     emit(world, CraftCompleted, { entity: e, recipe: current, item: r.output.item, count: r.output.count });
   }
 }

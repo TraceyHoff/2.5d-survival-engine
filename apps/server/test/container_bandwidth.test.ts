@@ -25,8 +25,9 @@ describe("96-slot Container replication bandwidth", () => {
     // Task 14: 25, not 24 — a Change record carries changedMask + removedMask, one bit per networked
     // component, so the three new networked components (PetGuard, PetStatus, PlayerReady) pushed the
     // record over a byte boundary. Task 22: 26, not 25 — the new networked Worker component adds one
-    // more bit. The assertion's point stands: 26 B vs the ~1344 B whole array.
-    expect(deltaBytes).toBeLessThanOrEqual(26); // mostly the per-record component masks
+    // more bit. Task 33: 27, not 26 — the two new networked RecentCrafts / RecentBuilds components
+    // add two more bits. The assertion's point stands: 27 B vs the ~1344 B whole array.
+    expect(deltaBytes).toBeLessThanOrEqual(27); // mostly the per-record component masks
 
     // a full stack move (item+count+tick+durability+crafter in 2 slots) is still well under 5% of the array
     for (const f of ["items", "counts", "createdTick", "durability", "crafterId"] as const) { st.data[f][slot * N + 10] = 0; st.data[f][slot * N + 95] = 3; }

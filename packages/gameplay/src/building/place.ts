@@ -23,6 +23,7 @@ import { BuildFail, emit, PiecePlaced } from "../events.js";
 import { countItem, exchangeItems } from "../inventory.js";
 import { emitterSpecs } from "../realism.js";
 import { makeNoise } from "../systems/noise.js";
+import { recordRecentBuild } from "../recent.js";
 import { TerrainRes } from "../world.js";
 import { linkAttachment } from "./links.js";
 import { reseatSmallOn, smallPieceZ, surfaceHeightAt } from "./surface.js";
@@ -367,6 +368,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
     initDefense(world, e, def, builder);
     if (def.features.planter) spawnCrop(world, sn.pos.x, sn.pos.y, 0); // ADR-112 planter soil
   }
+  if (builder) recordRecentBuild(world, builder, def.id); // Task 33: a placed piece joins the builder's Recently Crafted list
   return e;
 }
 

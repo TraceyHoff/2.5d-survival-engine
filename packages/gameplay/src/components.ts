@@ -401,6 +401,16 @@ export const Grazing = defineComponent("Grazing", { tx: "i32", ty: "i32", doneTi
  * slots (primary colour), not here — see dye.ts.
  */
 export const SlotDye = defineComponent("SlotDye", { colors: { type: "u32", length: INVENTORY_SLOTS } }, { networked: true, persistent: true });
+/** Task 33: most-recently crafted recipes (ids, most recent first) and placed pieces, per player. Networked (the
+ * crafting / build panels read the owner's list on every peer) and persistent (the player codec encodes every
+ * component on the player entity, so the lists survive save/reconnect; old saves: absent = empty). */
+export const RECENT_MAX = 8;
+export const RecentCrafts = defineComponent("RecentCrafts", {
+  recipe: { type: "u16", length: RECENT_MAX }, count: "u8",
+}, { networked: true, persistent: true });
+export const RecentBuilds = defineComponent("RecentBuilds", {
+  piece: { type: "u16", length: RECENT_MAX }, count: "u8",
+}, { networked: true, persistent: true });
 /**
  * Task 14: a joined player's load-in state (networked, NOT persistent — re-added on every join).
  * The server adds it with ready=0 when a client joins; the client sends gameplay.ready when its second
@@ -455,4 +465,5 @@ export const GAMEPLAY_COMPONENTS = [
   GrazedTile, Grazing, // append-only (Task 28: grazing — depleted-grass tiles + per-animal grazing progress)
   RoomHeat, // append-only (Task 24: smoothed flame heat of the enclosed room an entity stands in)
   SlotDye, // append-only (Task 25: per-inventory-slot dye colour for held tools/weapons — packed 0xRRGGBB, 0 = undyed)
+  RecentCrafts, RecentBuilds, // append-only (Task 33: most-recently crafted recipes / placed pieces, most recent first)
 ] as const;

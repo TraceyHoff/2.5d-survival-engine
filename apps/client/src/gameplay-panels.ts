@@ -25,6 +25,7 @@ import { iconForItem, ROADS, clanTintIndex,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent, WET_ICON,
+  recentBuildsView, recentCraftsView,
 } from "@engine/gameplay";
 import { formatTemp, loadTempUnit } from "./hud-temp.js";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
@@ -482,6 +483,21 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       search.oninput = () => { craftUi.q = search.value; kit.rerender(); };
       const counts = grid(); counts.dataset["tabs"] = "page"; counts.dataset["tabsLabel"] = "Amount"; counts.dataset["role"] = "craft-counts"; for (const n of [1, 5, 10]) counts.append(btn(`×${n}`, `count-${n}`, () => { castSel.count = n; kit.rerender(); }, { alt: castSel.count !== n, pressed: castSel.count === n }));
       tools.append(search, counts); out.push(tabs, tools);
+      // Task 33: Recently Crafted — the last recipes this player finished, craftable first within the list.
+      // Same queue action as the main grid (same count selector, same intent).
+      const recent = recentCraftsView(c);
+      if (recent.length) {
+        out.push(heading("Recently Crafted"));
+        const rg = grid(); rg.dataset["role"] = "recent-crafts";
+        for (const r of recent) {
+          const b = btn("", `recent-recipe-${r.id}`, () => { craftUi.sel = r.id; send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`); }, { role: "recipe", alt: !!r.reason, data: { item: String(r.output.item), icon: gameplayDefsIcon(c, r.output.item), ...(craftUi.sel === r.id && { sel: "" }) } });
+          b.append(el("span", { class: "nm" }, r.output.name)); if (r.output.count > 1) b.append(el("span", { class: "ct" }, `×${r.output.count}`));
+          b.setAttribute("aria-label", `${r.output.name} ×${r.output.count}${r.reason ? `. ${r.reason.replace(/_/g, " ")}` : ""}`);
+          const pick = (): void => { if (craftUi.sel !== r.id) { craftUi.sel = r.id; kit.rerender(); } }; b.onfocus = pick; b.onmouseenter = pick;
+          rg.append(b);
+        }
+        out.push(rg);
+      }
       const qq = craftUi.q.trim().toLowerCase();
       const shown = v.recipes.filter((r) => (craftUi.cat === "all" || catOf(r.output.item) === craftUi.cat) && (!qq || r.output.name.toLowerCase().includes(qq) || r.ingredients.some((i) => i.name.toLowerCase().includes(qq))));
       const g = grid(); g.dataset["role"] = "recipe-grid";
@@ -553,6 +569,26 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         src.startPlacing({ ...buildSel }); kit.close();
       };
       const focusPiece = (id: number): void => { if (buildSel.piece === id) return; buildSel.piece = id; buildSel.variant = 0; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); };
+      // Task 33: Recently Crafted — the last pieces this player placed, in recency order. Same choose flow
+      // as the main grid (same snapping, validation and cost).
+      const recentPieces = recentBuildsView(c);
+      if (recentPieces.length) {
+        out.push(heading("Recently Crafted"));
+        const rg = grid(); rg.dataset["role"] = "recent-builds";
+        for (const p of recentPieces) {
+          const t = tierOf(p); const lk = t.locked; const name = p.key.replace(/_/g, " ");
+          const costTxt = t.cost.map((x) => `${x.count} ${x.name}`).join(" · ") || "free";
+          const b = btn("", `recent-piece-${p.id}`, () => choose(p), { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable || lk,
+            data: { padLabel: lk ? "Locked" : t.affordable ? "Place" : "Can't afford", glyph: pieceGlyph(p.key), ...(lk ? { locked: "1" } : {}), ...(!t.affordable ? { short: "1" } : {}) } });
+          iconize(b, buildIconKey(p.key, t.tier, p.tiers.length > 1), isClanTintedIcon(p.key));
+          const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
+          const ct = document.createElement("span"); ct.className = "ct"; ct.textContent = lk ? "Locked" : costTxt;
+          b.append(nm, ct); b.setAttribute("aria-label", `${name}, ${lk ? (t.requirement ?? "locked") : t.affordable ? costTxt : `need ${costTxt}`}`);
+          b.addEventListener("focus", () => focusPiece(p.id)); b.addEventListener("mouseenter", () => focusPiece(p.id));
+          rg.append(b);
+        }
+        out.push(rg);
+      }
       const g = grid(); g.dataset["role"] = "piece-grid";
       for (const p of v) {
         const t = tierOf(p); const lk = t.locked; const name = p.key.replace(/_/g, " ");

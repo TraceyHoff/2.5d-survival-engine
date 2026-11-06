@@ -13,6 +13,24 @@ export interface SpawnPointXY { x: number; y: number }
 const SpawnPointsRes = defineResource<{ points: SpawnPointXY[]; respawnAt?: ((e: Entity) => SpawnPointXY | undefined) | undefined }>("gameplay.SpawnPoints");
 /** Players within this many tiles of a spawn point count as crowding it. */
 export const CROWD_RADIUS = 24;
+/** Task 33: radius (tiles) around every world spawn point kept free of aggressive creatures, so players and
+ * AI humans can get started without constantly dying. Larger than the legacy zombie spawner's 16-tile
+ * minimum spawn distance, so a fresh arrival is never in immediate danger. */
+export const SAFE_SPAWN_RADIUS = 20;
+/** The authority-installed spawn points, if any (else undefined). The pvp.json fallback is NOT a configured
+ * spawn location — a bare world that never installed points (tests, dev) has no safe radius, so zombie and
+ * animal behaviour there is unchanged; live servers always install points (server game.ts). */
+export function installedSpawnPoints(world: World): SpawnPointXY[] | undefined {
+  const s = world.getResource(SpawnPointsRes);
+  return s && s.points.length ? s.points.map((p) => ({ ...p })) : undefined;
+}
+/** True when (x, y) lies within SAFE_SPAWN_RADIUS of any installed world spawn point. */
+export function inSpawnSafeRadius(world: World, x: number, y: number): boolean {
+  const pts = installedSpawnPoints(world); if (!pts) return false;
+  const r2 = SAFE_SPAWN_RADIUS * SAFE_SPAWN_RADIUS;
+  for (const p of pts) { const dx = x - p.x, dy = y - p.y; if (dx * dx + dy * dy <= r2) return true; }
+  return false;
+}
 /** Default jitter radius around the chosen point (tiles; spawn patches are clear for >= 2 tiles). */
 export const SPAWN_JITTER = 2;
 

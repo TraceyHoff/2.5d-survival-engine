@@ -24,6 +24,16 @@ import { creatureStep, type TileBlocked } from "./systems/creature_nav.js";
 import { nearestClaimHostile, tamedOwnerTribe, TERRITORY_BITE, TERRITORY_DEFEND_RANGE } from "./territory.js";
 import { installSpatialIndex } from "@engine/world";
 import { populationData, resolveBehavior, toSpawnEntries, type AggroMode, type GameMode, type LootEntry } from "./ai/population.js";
+import { inSpawnSafeRadius } from "./spawn_points.js";
+
+/** Task 33: "aggressive" for the spawn safe radius — zombies plus animals whose ai.json aggro mode is hostile
+ * (today: the wolf). Territorial / defensive animals only engage when provoked or approached, so they may spawn
+ * near a spawn point; they still will not engage a survivor standing inside the radius (see animalAISystem). */
+export function isAggressiveSpawnKind(kind: string, category: string): boolean {
+  if (category === "zombie") return true;
+  if (category !== "animal") return false;
+  return animalDefs().find((a) => a.key === kind)?.aggro.mode === "hostile";
+}
 
 /** Animal def resolved from ai.json (kind "animal"); key = art key (animal_*), spawn rows in spawns.json. */
 export interface AnimalDef {
@@ -164,7 +174,11 @@ export function animalAISystem(world: World, dt: number): void {
       }
     }
     const engaged = state === AnimalState.Attack;
-    const wants = aggressive && threat && ((engaged || retaliating) ? threat.d <= def.aggro.leashRange && homeD <= pressHome
+    // Task 33: aggressive animals do not engage survivors standing inside a spawn safe radius. Retaliation
+    // (the attacker overrides the scanned threat above) still applies, so the zone is not a free shooting
+    // gallery; fleeing from a safe-zone survivor still works (only the attack decision is gated).
+    const safeTarget = threat !== undefined && !retaliating && inSpawnSafeRadius(world, threat.x, threat.y);
+    const wants = aggressive && threat && !safeTarget && ((engaged || retaliating) ? threat.d <= def.aggro.leashRange && homeD <= pressHome
       : threat.d <= def.aggro.range && (def.aggro.mode === "hostile" || (def.aggro.mode === "territorial" && homeD <= def.aggro.leashRange) || (def.aggro.mode === "defensive" && hurt)));
     // Task 14: tame animals defend their owner's claim. Passive farm animals have no species attack, so they
     // get a generic bite; goat/cow reuse their own attack. Movement still goes through creatureStep, so a
@@ -275,6 +289,9 @@ export function installPopulation(world: World, o: InstallPopulationOptions): Po
     tileAt: (tx, ty) => populationTile(world, tx, ty),
     blocked: (tx, ty) => populationBlocked(world, tx, ty, o.buildings),
     spawn: (entry, x, y) => {
+      // Task 33: no aggressive creature spawns inside the safe radius around spawn points. The spawner
+      // retries other positions in the chunk, so the radius only ever costs a spawn attempt, never a crash.
+      if (isAggressiveSpawnKind(entry.kind, entry.category) && inSpawnSafeRadius(world, x, y)) return undefined;
       if (entry.category === "zombie") { if (!zombieKindAllowed(world, entry.kind, x, y)) return undefined; /* ADR-226 */ const rng = world.rngFor(`pop.variant:${entry.kind}`); return spawnZombie(world, entry.kind, x, y, rng.int(0, 255)); }
       if (entry.category === "animal") return spawnAnimal(world, entry.kind, x, y);
       if (entry.category === "human_bot") return o.humanBots?.spawn(x, y, entry.kind) ? "pending" : undefined;

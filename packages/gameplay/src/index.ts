@@ -64,6 +64,7 @@ export * from "./territory.js"; // Task 14: territory defense helpers
 export * from "./ready.js"; // Task 14: second loading screen — client loaded-in signal
 export * from "./agents.js";
 export * from "./systems/craft_queue.js";
+export * from "./recent.js"; // Task 33: Recently Crafted lists
 export * from "./ai/population.js";
 export * from "./ai/bot_input.js";
 export * from "./ai/agent_output.js";

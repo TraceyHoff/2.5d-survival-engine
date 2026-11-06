@@ -35,6 +35,7 @@ import { attachmentsOf, pieceOf } from "../building/links.js";
 import { damagePiece } from "../building/integrity.js";
 import { BuildPiece, Fuel, HordeMember } from "../components.js";
 import { gateZombieKind } from "./zombie_gate.js";
+import { inSpawnSafeRadius } from "../spawn_points.js";
 
 const PHASE_KEY = { [DayPhase.Night]: "night", [DayPhase.Dawn]: "dawn", [DayPhase.Day]: "day", [DayPhase.Dusk]: "dusk" } as const;
 export const currentPhaseKey = (world: World): "night" | "dawn" | "day" | "dusk" => PHASE_KEY[dayPhase(timeOfDay(world).t)];
@@ -71,6 +72,7 @@ export function zombieSpawnerSystem(world: World, dt: number): void {
     for (let attempt = 0; attempt < 6; attempt++) {
       const a = world.rng.range(-Math.PI, Math.PI); const d = world.rng.range(sp.minDistance, sp.maxDistance);
       const x = t.x + Math.cos(a) * d, y = t.y + Math.sin(a) * d; const tx = Math.floor(x), ty = Math.floor(y);
+      if (inSpawnSafeRadius(world, x, y)) continue; // Task 33: no zombie spawns inside the safe radius around spawn points
       if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty)) && terrainBlocksWalker(world, tx, ty)) continue;
       if (idx.deck(tx, ty, 0)) continue;
       const k0 = pickWeighted(world, sp.weights[ph], defs.zombieKinds); if (k0 === undefined) break;
@@ -100,11 +102,19 @@ const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hy
  * seen/heard ranges (sight <= 18, heard <= ~16), and the Dead check is kept so a player who
  * dies mid-run is still excluded for later zombies in the same tick.
  */
-function acquire(world: World, x: number, y: number, def: ZombieDef, survivors: readonly Entity[]): { e: Entity; seen: boolean } | undefined {
+function acquire(world: World, z: Entity, x: number, y: number, def: ZombieDef, survivors: readonly Entity[], dt: number): { e: Entity; seen: boolean } | undefined {
+  const ai = gameplayDefs(world).ai;
+  const la = lastAttacker(world, z);
   let best: { e: Entity; seen: boolean; d: number } | undefined;
   for (const p of survivors) {
     if (world.has(p, Dead)) continue;
     const t = world.get(p, Transform)!; const d = dist(x, y, t.x, t.y);
+    // Task 33: survivors inside a spawn safe radius are not targets — except a recent attacker
+    // (retaliation still re-engages, so the zone is not a free shooting gallery) and except horde
+    // members: a player-triggered raid is a deliberate attack, not ambient danger, so it is out of
+    // scope for the safe radius and must still reach its target.
+    const recentAttacker = la !== undefined && la.e === p && world.tick - la.tick <= secondsToTicks(ai.retaliateSeconds, dt);
+    if (!recentAttacker && !world.has(z, HordeMember) && inSpawnSafeRadius(world, t.x, t.y)) continue;
     const seen = d <= def.sightRange * (isCrouched(world, p) ? STANCE.crouchSightMul : 1); const heard = d <= (world.getField(p, NoiseLevel, "value") ?? 0) * def.hearingMul;
     if (!seen && !heard) continue;
     if (!best || d < best.d || (d === best.d && p < best.e)) best = { e: p, seen, d };
@@ -169,7 +179,7 @@ export function zombieAISystem(world: World, dt: number): void {
       if (!anyNear && !horde && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
       const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
       const aggr = horde || zombieAggressive(world, z, todT);
-      let tgt = aggr ? acquire(world, x, y, def, survivors) : provoker(world, z, x, y, def, dt);
+      let tgt = aggr ? acquire(world, z, x, y, def, survivors, dt) : provoker(world, z, x, y, def, dt);
       // Task 15: a zombie that just gave up a chase does not instantly re-acquire the same player next think
       // (they are usually still in sight). Retaliation still breaks the cooldown: hitting the zombie re-engages it.
       const gu = giveUpsOf(world).get(z);

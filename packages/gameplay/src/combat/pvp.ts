@@ -5,7 +5,7 @@
  *    LootBag container at the body; equipment is cleared. Only the owner may loot for bagOwnerOnlySeconds; the bag
  *    despawns per ADR-238 (loot_despawn.ts: timer by kind, short grace once emptied, ground cap).
  *  - Respawn: `respawnPlayer` (or gameplay.respawn command) after respawnSeconds: bed/claim hook or world spawn point, partial vitals, clears
- *    Dead / Burning / CombatTag.
+ *    Dead / Burning / CombatTag and every affliction (Task 33: diseases, exposure counters, wetness).
  *  - Hit validation: `setHitValidator(world, fn)`; the combat system calls it for player attackers on the authority
  *    before damage (server wires net validateHit + lag-comp rewind; gameplay cannot import net).
  *  - Combat tag: player-vs-player damage sets CombatTag on both for combatTagSeconds.
@@ -20,6 +20,7 @@ import { listSlots, moveSlotTuples } from "../inventory.js";
 import { bagSpawnTick, lootBagInit } from "../loot_despawn.js";
 import { LootSource, tagLootSource } from "../loot_labels.js";
 import { indexEntity } from "../spawn.js";
+import { clearAfflictions } from "../diseases.js";
 import { pickSpawnPoint, respawnLocation } from "../spawn_points.js";
 
 export interface PvpTuning {
@@ -117,6 +118,7 @@ export function respawnPlayer(world: World, e: Entity): RespawnReject {
   const p = respawnLocation(world, e) ?? pickSpawnPoint(world, "pvp.respawn", e, { exclude: e });
   const vt = gameplayDefs(world).vitals; const max = world.getField(e, Health, "max") ?? vt.maxHealth;
   world.remove(e, Dead); if (world.has(e, Burning)) world.remove(e, Burning); if (world.has(e, CombatTag)) world.remove(e, CombatTag);
+  clearAfflictions(world, e); // Task 33: death clears diseases / illnesses / wetness — respawn with no health issues
   world.set(e, Transform, { x: p.x, y: p.y });
   world.setField(e, Health, "hp", Math.max(1, max * PVP.respawnHealthFrac));
   world.setField(e, Survival, "hunger", PVP.respawnHunger); world.setField(e, Survival, "thirst", PVP.respawnThirst); world.setField(e, Survival, "stamina", world.getField(e, Survival, "maxStamina")!);

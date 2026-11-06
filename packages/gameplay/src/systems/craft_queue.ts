@@ -18,6 +18,7 @@ import { secondsToTicks } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { crafterIdFor } from "../economy/provenance.js";
 import { meetsSkill, stationInRange, stationUnlocked } from "./crafting.js";
+import { recordRecentCraft } from "../recent.js";
 
 export const CRAFT_QUEUE_SLOTS = 4;
 export const MAX_CRAFT_COUNT = 50;
@@ -64,6 +65,7 @@ export function installCraftQueue(world: World, handlers?: CommandHandlers): Job
       onComplete: (w, e, job: JobInfo) => {
         const o = outputFor(w, e, job.recipeId); if (!o) return;
         if (!addOutput(w, e, o) && !oweCraftOutput(w, e, o)) { emit(w, CraftFailed, { entity: e, recipe: job.recipeId, reason: CraftFail.InventoryFull }); return; }
+        recordRecentCraft(w, e, job.recipeId); // Task 33: a finished craft joins the player's Recently Crafted list
         emit(w, CraftCompleted, { entity: e, recipe: job.recipeId, item: o.item, count: o.count });
       },
       onCancel: (w, e, job: JobInfo) => {

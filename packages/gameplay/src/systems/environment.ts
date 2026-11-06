@@ -21,6 +21,7 @@ import { shelterAt, type Shelter } from "../building/shelter.js";
 import { waterproofOf } from "../combat/arms.js";
 import { pendingReady } from "../ready.js";
 import { HEAT_DAMAGE_ABOVE_C } from "./vitals.js";
+import { inWater } from "./movement.js";
 
 export const EXPOSURE_EVERY = 4;
 export const SURFACE_EVERY = 20;
@@ -268,6 +269,9 @@ export const COLD_DAMAGE_INSULATION_C = 10;
  * wetness, so it dries with them — no per-item wetness state.
  */
 export const WET_INSULATION_LOSS = 0.5;
+/** Task 33: wetness gained per second standing in a water tile — faster than rain (0.02/s) or a storm
+ * (0.05/s), so wading soaks you in ~7s. Applies even in clear weather; shelter does not cover a swim. */
+export const WATER_WET_PER_SEC = 0.15;
 /** Effective insulation at a wetness level (0 dry .. 1 soaked); shared by the exposure system and the sheet. */
 export function effectiveInsulation(insulation: number, wetness: number): number {
   return insulation * (1 - WET_INSULATION_LOSS * Math.min(1, Math.max(0, wetness)));
@@ -307,7 +311,10 @@ export function exposureSystem(world: World, dt: number): void {
       else world.add(e, RoomHeat, { heat: roomHeat });
     }
     let wet = ex.data.wetness[s]!;
-    if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
+    // Task 33: standing in a water tile wets you (and your worn gear, which shares your wetness) even when
+    // it is not raining. Drying afterwards follows the existing rules below (indoors / by a fire).
+    if (inWater(world, x, y)) wet += WATER_WET_PER_SEC * dt;
+    else if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
     const ambient = ambient0 ?? ambientTemperature(world, x, y);

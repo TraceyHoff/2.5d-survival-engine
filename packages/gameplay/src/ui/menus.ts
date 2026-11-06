@@ -41,6 +41,7 @@ import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLea
 import { PlaceMapMarkerCmd, RemoveMapMarkerCmd } from "../map_marker_commands.js";
 import { MAP_MARKER_LABEL_MAX } from "../components.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
+import { recentBuilds, recentCrafts } from "../recent.js";
 import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
 
 export const TICKS_PER_SECOND = 20;
@@ -198,6 +199,9 @@ export function craftingView(c: MenuCtx, station = 0): CraftingView { // station
   const elsewhere = [...counts].sort((a, b) => a[0] - b[0]).map(([k, n]) => ({ station: k, name: STATION_NAMES[k] ?? `Station ${k}`, count: n }));
   const recipes = all.filter((r) => station < 0 || r.station === station).map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
     output: { item: r.output.item, name: itemName(w, r.output.item), count: r.output.count }, ingredients: withNames(w, r.ingredients, c.player), reason: craftQueueReason(w, c.player, r.id, 1) }));
+  // Task 33: craftable first — a recipe with no reason is craftable right now (materials + station + skill +
+  // unlock + queue space, all for ×1). Stable sort, so the data order is kept within each group.
+  recipes.sort((a, b) => (a.reason ? 1 : 0) - (b.reason ? 1 : 0));
   const queue: QueueJobView[] = []; const q = w.get(c.player, CraftQueue);
   if (q) for (let i = 0; i < q.state.length; i++) {
     const st = q.state[i]!; if (!st) continue; const r = defs.recipes.get(q.recipeId[i]!);
@@ -209,6 +213,25 @@ export function craftingView(c: MenuCtx, station = 0): CraftingView { // station
   return { station, stationName: STATION_NAMES[station] ?? `Station ${station}`, recipes, queue, owed, maxCount: MAX_CRAFT_COUNT, elsewhere };
 }
 export const JOB_STATE_LABEL = ["", "Queued", "Crafting", "Paused", "Done"] as const;
+/** Task 33: the player's Recently Crafted recipes as RecipeViews, in recency order (craftable first within
+ * the list, like the main list). Recipes whose defs are gone are skipped. */
+export function recentCraftsView(c: MenuCtx): RecipeView[] {
+  const w = c.world; const defs = gameplayDefs(w);
+  const out: RecipeView[] = [];
+  for (const id of recentCrafts(w, c.player)) {
+    const r = defs.recipes.get(id); if (!r) continue;
+    out.push({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
+      output: { item: r.output.item, name: itemName(w, r.output.item), count: r.output.count },
+      ingredients: withNames(w, r.ingredients, c.player), reason: craftQueueReason(w, c.player, r.id, 1) });
+  }
+  out.sort((a, b) => (a.reason ? 1 : 0) - (b.reason ? 1 : 0));
+  return out;
+}
+/** Task 33: the player's Recently Crafted pieces as BuildPieceViews, in recency order. */
+export function recentBuildsView(c: MenuCtx): BuildPieceView[] {
+  const order = new Map(recentBuilds(c.world, c.player).map((id, i) => [id, i]));
+  return buildView(c).filter((p) => order.has(p.id)).sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+}
 export const queueCraftIntent = (recipe: number, count = 1): MenuIntent => intent(QueueCraftCmd, { recipe, count: Math.max(1, Math.min(MAX_CRAFT_COUNT, count | 0)) });
 export const cancelQueuedCraftIntent = (slot: number): MenuIntent => intent(CancelQueuedCraftCmd, { slot });
 

@@ -5,7 +5,7 @@
  * curing themselves are deterministic writes.
  */
 import { DEFAULT_TICK_HZ, entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, DamageCause, Diseases, Exposure, Fuel, Health, MAX_DISEASES, Animal, Survival, Worn, Zombie } from "./components.js";
+import { BuildPiece, CraftingStation, DamageCause, Diseases, Exposure, Fuel, Health, MAX_DISEASES, Animal, Survival, Wetness, Worn, Zombie } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { secondsToTicks, StationKind, WearSlot, type DiseaseDef } from "./defs.js";
 import { Damaged } from "./events.js";
@@ -63,6 +63,25 @@ export function cureDiseasesForItem(world: World, e: Entity, item: number): stri
   const cured: string[] = [];
   for (const key of gameplayDefs(world).items.get(item)?.cures ?? []) if (cureDisease(world, e, key)) cured.push(key);
   return cured;
+}
+/**
+ * Task 33: death clears afflictions — every disease slot plus every exposure accumulator (cold/heat/sprint/rest/
+ * contact/care ticks), so a respawned player (or AI human, via the same respawnPlayer path) starts with no health
+ * issues. Wetness clears too: it is part of the body's state, and a fresh body is dry (bodyTemp is already reset
+ * by respawnPlayer). Timed Buffs modifiers are left alone — they lapse on their own expiry.
+ */
+export function clearAfflictions(world: World, e: Entity): void {
+  if (world.has(e, Diseases)) {
+    const st = world.store(Diseases); const s = st.slot(entityIndex(e));
+    if (s >= 0) {
+      for (let i = 0; i < MAX_DISEASES; i++) { st.data.disease[s * MAX_DISEASES + i] = 0; st.data.untilTick[s * MAX_DISEASES + i] = 0; }
+      st.data.coldTicks[s] = 0; st.data.heatTicks[s] = 0; st.data.sprintTicks[s] = 0; st.data.restTicks[s] = 0;
+      st.data.contactTicks[s] = 0; st.data.careTicks[s] = 0;
+      st.markChanged(entityIndex(e));
+    }
+  }
+  if (world.has(e, Exposure)) world.setField(e, Exposure, "wetness", 0);
+  if (world.has(e, Wetness)) world.setField(e, Wetness, "level", 0);
 }
 /** Combined walk-speed multiplier from active diseases (1 = healthy); multiplied into speedMultiplier. */
 export function diseaseMoveMul(world: World, e: Entity): number {

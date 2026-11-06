@@ -90,11 +90,17 @@ describe("Task 30: frozen stored food does not spoil", () => {
   });
   it("food in a player's pack freezes outdoors in winter (felt temp below 0)", () => {
     const w = makeWorld(); const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 }); steps(w, 1);
-    summer(w);
+    // Task 33: the player must stay alive through both phases for this to mean anything — a bare
+    // player standing outside dies to night zombies in summer and to hypothermia in winter, and a
+    // dead player's pack is empty (freshness 1 == 1), so the test used to pass vacuously. Noon keeps
+    // the zombies calm (ADR-194) and a large health pool outlasts the winter cold; winter noon is
+    // still below freezing (-0.4 C), so the frozen assertion is unchanged.
+    w.setField(p, G.Health, "max", 10000); w.setField(p, G.Health, "hp", 10000);
+    summer(w); setTimeOfDay(w, 12);
     G.addItem(w, p, item("cooked_meat"), 5);
     steps(w, 12000);
     const f0 = G.slotFreshness(w, p, G.readSlots(w, p).items.findIndex((x) => x === item("cooked_meat")));
-    winter(w); steps(w, 20); // let the exposure system read the cold
+    winter(w); setTimeOfDay(w, 12); steps(w, 20); // let the exposure system read the cold
     expect(w.getField(p, G.Exposure, "feltTemp")!).toBeLessThan(0);
     const slot = G.readSlots(w, p).items.findIndex((x) => x === item("cooked_meat"));
     steps(w, 12000);
