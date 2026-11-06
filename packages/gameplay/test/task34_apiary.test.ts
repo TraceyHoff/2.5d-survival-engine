@@ -77,7 +77,9 @@ describe("Task 34: Apiary piece", () => {
     expect(G.countItem(w, att, iid("honey"))).toBe(1);
   });
 
-  it("Apiary build icon is build_apiary on the salt barrel's tile (ADR-250, Task 28 pattern: borrow until Art ships dedicated art)", () => {
+  it("Apiary world piece still falls back to salt_barrel art; build menu uses dedicated build_apiary (d163528)", () => {
+    // World sprite fallback until dedicated piece art ships. Build menu icon is build_apiary @ items_build frame 286
+    // (CSS --cz-ipos 93.33% 100%) and auto-binds via buildIconKey — verified in apps/client adr229 / CSS.
     expect((G.SPRITE_FALLBACKS.sprites as Record<string, { to: string[] }>)["apiary"]).toEqual({ to: ["salt_barrel"] });
   });
 

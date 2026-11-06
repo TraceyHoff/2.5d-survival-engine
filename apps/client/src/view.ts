@@ -31,7 +31,7 @@ import { netIdOf } from "@engine/net";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, SlotDye, INVENTORY_SLOTS, wornCosmetics } from "@engine/gameplay";
-import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, STATION_LIGHT_RADIUS, StationKind, Crop, cropSpriteKey, clutterForChunk, resolveSprite, despawnFadeAlpha, type ResolvedSprite } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, STATION_LIGHT_RADIUS, StationKind, Crop, cropSpriteKey, clutterForChunk, resolveSprite, despawnFadeAlpha, GrazedTile, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -219,6 +219,17 @@ export class IsoView {
   private movingVe = new Set<number>(); private driverVe = new Set<number>();
   /** ADR-244: sleeper ve -> bed lie kind + bedFits offset; carrier ve -> carried bag sprite; net bags hidden while carried. */
   private bedOf = new Map<number, { lie: "lie" | "under"; fit: { x: number; y: number } }>(); private carriedOf = new Map<number, number>(); private carriedNet = new Set<Entity>();
+  /** ADR-256: GrazedTile keys from the net world (tx,ty) + revision for renderer cache invalidation. */
+  private grazedKeys = new Set<string>(); private grazedRev = 0;
+
+  /** ADR-256: mirror GrazedTile entities from the net world onto the renderer (view World has no GrazedTile). */
+  private syncGrazed(net: World): void {
+    const next = new Set<string>();
+    if (net.isRegistered(GrazedTile)) for (const e of net.query([GrazedTile])) { const g = net.get(e, GrazedTile)!; next.add(`${g.tx},${g.ty}`); }
+    let same = next.size === this.grazedKeys.size; if (same) for (const k of next) if (!this.grazedKeys.has(k)) { same = false; break; }
+    if (!same) { this.grazedKeys = next; this.grazedRev++; }
+    this.renderer.setGrazed(this.grazedKeys.size ? (x, y) => this.grazedKeys.has(`${x},${y}`) : undefined, this.grazedRev);
+  }
   private syncStance(net: World, e: Entity, ve: Entity): void {
     const s = net.isRegistered(Stance) ? net.get(e, Stance) : undefined;
     if (s && s.mode === StanceMode.Sleep && s.lie) {
@@ -555,6 +566,7 @@ export class IsoView {
     r.sceneDiag = { entities: this.map.size, playerEid: player, cameraTarget: tgt, localServer: st?.localServer, snapshots: st?.snapshots, lastError: st?.error ?? this.camGuard.error };
     v.runPhase("renderPrep", 0);
     const held0 = r.heldFrames;
+    this.syncGrazed(net); // ADR-256: grazed grass art on the tilemap
     try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
     // all-black self-check over the first frames (daytime only, where black means a broken pass)
     // ADR-148: async readback (no pipeline stall during startup); the default framebuffer is read right after the frame

@@ -2922,3 +2922,28 @@ and that **every plant and every gatherable resource** listed for worldgen be fi
 - Guaranteed nodes / features sit near the origin (within ~160 tiles). Far-flung continents are still biome-only.
 - A river may skim a biome lake; tags prefer the forced lake/pond disks.
 - Shovel / flowing player-dug water / underground bases remain Task 36.
+
+## ADR-256: Grazed grass draws `gt_grass_grazed` (Art batch 1)
+
+**Context.** Task 28 grazing creates networked `GrazedTile` entities (180s regrow) but the ground renderer only
+looked at terrain material, so eaten grass still showed full `gt_grass`. Art & Assets shipped
+`gt_grass_grazed` / `_fall` / `_winter` on atlas `gt_grazed` (commit d163528) with placeholders pointing at
+ungrazed grass. The Apiary build-menu icon (`build_apiary`, items_build frame 286) was also shipped and already
+auto-binds via CSS `[data-icon="build_apiary"]`.
+
+**Decision.**
+
+- `groundLayers(..., grazed?)` swaps the grass base for `gt_grass_grazed${seasonSuffix}` when `grazed(x,y)` is true
+  (no `_b`..`_f` variants). Neighbour edge logic still treats the cell as grass.
+- `GroundArt` retains the `gt_grazed` atlas pages per season and falls back `gt_grass_grazed*` → `gt_grass*` when
+  the grazed sprite is missing (manifest placeholders).
+- `TileTerrain` / Canvas2D take `grazedAt(tx,ty)` + `grazedRev` (included in chunk/block stamps) so caches rebuild
+  when the set changes.
+- Client `IsoView.syncGrazed` reads `GrazedTile` from the **net** world each frame (view World does not mirror it)
+  and calls `renderer.setGrazed`. Optional `GameplayBindings.grazedTile` covers single-world demos.
+
+**Tests.** `packages/render/test/adr256_grazed_grass.test.ts`.
+
+**Limits.** Side faces stay `gt_side_grass*`. World Apiary piece art still falls back to `salt_barrel` until a
+dedicated piece sprite ships; only the build-menu icon is dedicated.
+

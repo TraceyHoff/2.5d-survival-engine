@@ -5,6 +5,7 @@
  * per-registry key resolver ("ground season loader": `<key>_<fall|winter>` first, winter water aliased to gt_ice).
  * Task 21: the shore/bank overlays are deliberately NOT emitted (see groundLayers): their art paints water over
  * land cells, and the mesh cliff + gt_side faces already mark the shoreline.
+ * ADR-256: an optional `grazed(x,y)` swaps the grass base for `gt_grass_grazed` (+ seasonal twin) when a GrazedTile is present.
  *
  * Cell: 68x52 px (64x48 art + 2 px pad), diamond centre at frame px (34, 18) = anchor (0.5, 18/52); @2x pages 136x104.
  */
@@ -49,7 +50,8 @@ export const LEAF_NEAR = 0.3, LEAF_FAR = 0.08;
  * (only consulted for fall leaves). Returns [] for empty cells.
  */
 export function groundLayers(tileAt: (x: number, y: number) => number, x: number, y: number, season: number, tint?: (x: number, y: number) => number, out: GroundLayer[] = [],
-  hash?: number): GroundLayer[] { // ADR-253: `hash` = the world tile's groundHash when (x, y) are view-space cells (variants stay put on rotation)
+  hash?: number, grazed?: (x: number, y: number) => boolean): GroundLayer[] { // ADR-253: `hash` = the world tile's groundHash when (x, y) are view-space cells (variants stay put on rotation)
+  // ADR-256: `grazed` = true for a GrazedTile at the same (x, y) the tileAt callback uses (view space when rotated).
   out.length = 0; const id = tileAt(x, y); const mat = groundMaterial(id); if (!mat) return out;
   const h = hash ?? groundHash(x, y), v = GROUND_VARIANTS[h % 6]!, suf = GROUND_SEASON_SUFFIX[season] ?? "";
   if (mat === "water") {
@@ -59,7 +61,9 @@ export function groundLayers(tileAt: (x: number, y: number) => number, x: number
       out.push({ key: `gt_water_leaves_${"abc"[(h >> 3) % 3]}`, kind: GroundLayerKind.Leaves }); // after the tint (own instance)
     return out;
   }
-  out.push({ key: `gt_${mat}${v}${suf}`, kind: GroundLayerKind.Base });
+  // ADR-256: grazed grass uses the dedicated short lawn (no _b.._f variants; seasonal twins only).
+  if (mat === "grass" && grazed?.(x, y)) out.push({ key: `gt_grass_grazed${suf}`, kind: GroundLayerKind.Base });
+  else out.push({ key: `gt_${mat}${v}${suf}`, kind: GroundLayerKind.Base });
   // neighbour materials once
   const nm: (string | undefined)[] = BLOB_DIRS.map(([dx, dy]) => { const n = tileAt(x + dx, y + dy); return n === 0 ? undefined : groundMaterial(n); });
   const me = PRIO[mat]!;
@@ -99,6 +103,7 @@ export class GroundArt {
       for (const m of GROUND_PRIORITY) { add(groundSideKey(m, s, 0)); add(groundSideKey(m, s, 1)); } // ADR-251 height-drop faces
       if (s === 2) for (const v of GROUND_VARIANTS) add(`gt_ice${v}`); else { add("gt_water"); add("gt_water_shallow"); }
       if (s === 1) for (const c of "abc") add(`gt_water_leaves_${c}`);
+      add(`gt_grass_grazed${GROUND_SEASON_SUFFIX[s]}`); // ADR-256: grazed lawn atlas (gt_grazed)
       this.pages[s] = [...by.values()];
     }
   }
@@ -108,6 +113,10 @@ export class GroundArt {
     const t = (k: string): number => this.reg.ids.sprites.tryId(k) ?? -1;
     v = t(key);
     if (v < 0 && /_(fall|winter)$/.test(key)) v = t(key.replace(/_(fall|winter)$/, ""));
+    if (v < 0 && key.startsWith("gt_grass_grazed")) { // ADR-256: placeholders point at ungrazed grass (+ season)
+      const u = key.replace("gt_grass_grazed", "gt_grass"); v = t(u);
+      if (v < 0 && /_(fall|winter)$/.test(u)) v = t("gt_grass");
+    }
     if (v < 0 && key.startsWith("gt_ice")) v = t("gt_water_winter");
     if (v < 0 && key.startsWith("gt_side_") && key.includes("_low")) v = this.id(key.replace("_low", "")); // lower level -> top face
     this.ids.set(key, v); return v;

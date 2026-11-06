@@ -98,6 +98,15 @@ export class Canvas2DRenderer {
     this.ctx = c;
   }
   bindGameplay(b: GameplayBindings): void { this.bindings = b; }
+  /** ADR-256: grazed grass lookup (world tile coords) + revision so gt blocks rebuild. */
+  setGrazed(at: ((tx: number, ty: number) => boolean) | undefined, rev = 0): void { this.grazedAt = at; this.grazedRev = rev | 0; }
+  private syncGrazedBinding(world: World): void {
+    const def = this.bindings.grazedTile; if (!def || !world.isRegistered(def)) return;
+    const next = new Set<string>(); for (const e of world.query([def])) { const g = world.get(e, def)!; next.add(`${g.tx},${g.ty}`); }
+    let same = next.size === this.grazedKeys.size; if (same) for (const k of next) if (!this.grazedKeys.has(k)) { same = false; break; }
+    if (!same) { this.grazedKeys = next; this.grazedBindRev++; this.setGrazed((x, y) => this.grazedKeys.has(`${x},${y}`), this.grazedBindRev); }
+  }
+  private grazedKeys = new Set<string>(); private grazedBindRev = 0;
   setFocusEntity(e: number): void { this.focus = e; }
   private fullRes = false;
   /** Full preset: do not cap the backbuffer at 1.5x DPR (see resize). Any other preset restores the 1.5x cap. */
@@ -195,6 +204,8 @@ export class Canvas2DRenderer {
   private gArt: GroundArt | null = null; private gArtReg: AssetRegistry | undefined;
   private gBlocks = new Map<string, { cv: HTMLCanvasElement; stamp: string; used: number }>(); private gFrame = 0;
   /** false = flat legacy diamonds (tests / diag). */ groundArtEnabled = true;
+  /** ADR-256: world-tile grazed lookup; undefined = ungrazed. */ grazedAt: ((tx: number, ty: number) => boolean) | undefined;
+  /** ADR-256: bumped when the grazed set changes so gt blocks rebuild. */ grazedRev = 0;
   /** gt blocks drawn / built this frame (diag). */ groundStats = { blocks: 0, built: 0, cached: 0 };
   private groundArtOf(reg: AssetRegistry): GroundArt | null {
     if (this.gArtReg !== reg) { this.gArtReg = reg; const g = new GroundArt(reg); this.gArt = g.available ? g : null; this.gBlocks.clear(); }
@@ -204,7 +215,7 @@ export class Canvas2DRenderer {
   private gtBlock(tm: TileMap, reg: AssetRegistry, ga: GroundArt, bx: number, by: number, season: number, build: boolean, q = 0): HTMLCanvasElement | null {
     // ADR-253: (bx, by) and the cells below are VIEW indices (U, V) of quarter q; tile (x, y) sits at view point toView(x, y)
     // (C2D centres tile (x, y) on the point (x, y)), so view index -> world tile = fromView. q = 0 is unchanged.
-    const B = GT_BLOCK, x0 = bx * B, y0 = by * B; let st = `${season}`;
+    const B = GT_BLOCK, x0 = bx * B, y0 = by * B; let st = `${season}:g${this.grazedRev | 0}`; // ADR-256
     const ca = fromView(x0 - 1, y0 - 1, q), cb = fromView(x0 + B, y0 + B, q); // world tile bounds of the block (+1 ring)
     const wx0 = Math.min(ca.x, cb.x), wx1 = Math.max(ca.x, cb.x), wy0 = Math.min(ca.y, cb.y), wy1 = Math.max(ca.y, cb.y);
     for (let cy = Math.floor(wy0 / CHUNK_SIZE); cy <= Math.floor(wy1 / CHUNK_SIZE); cy++) for (let cx = Math.floor(wx0 / CHUNK_SIZE); cx <= Math.floor(wx1 / CHUNK_SIZE); cx++) { const n = tm.getChunk(cx, cy); st += n ? `,${n.version}` : ",x"; }
@@ -216,7 +227,8 @@ export class Canvas2DRenderer {
     for (let d = 0; d <= 2 * (B - 1); d++) for (let lx = Math.max(0, d - B + 1); lx <= Math.min(B - 1, d); lx++) {
       const x = x0 + lx, y = y0 + d - lx; if (!at(x, y)) continue;
       const w = q === 0 ? null : fromView(x, y, q);
-      groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L, w ? groundHash(w.x, w.y) : undefined);
+      const grazed = this.grazedAt ? (a: number, b: number): boolean => { const ww = q === 0 ? { x: a, y: b } : fromView(a, b, q); return this.grazedAt!(ww.x, ww.y); } : undefined;
+      groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L, w ? groundHash(w.x, w.y) : undefined, grazed);
       for (const l of L) { if (l.kind === GroundLayerKind.Water) continue; /* tinted by the drawWater gradient underneath (the grey detail art needs the GPU tint) */ const id = ga.id(l.key); if (id < 0) continue; let f; try { f = reg.dirFrame(id, "idle", 0, 0); } catch { continue; }
         const img = this.image(f.atlas.key); if (!img) return hit?.cv ?? null; ops.push({ img, f, dx: (lx - (d - lx)) * 32 + GT_OX, dy: d * 16 + GT_OY }); }
     }
@@ -383,6 +395,7 @@ export class Canvas2DRenderer {
     const nowMs = performance.now(); if (this.clockAt >= 0) this.clock += Math.min(0.1, (nowMs - this.clockAt) / 1000) * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1); this.clockAt = nowMs; const time = this.clock; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
     const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
     this.sv = seasonVisual(world); this.seasonBuilds = 0; // ADR-239
+    this.syncGrazedBinding(world); // ADR-256
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
     const ox = Math.round(this.w / 2 - cam.x * s), oy = Math.round(this.h / 2 - cam.y * s); g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1; // ADR-197: whole-pixel camera origin

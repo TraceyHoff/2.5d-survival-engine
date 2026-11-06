@@ -366,6 +366,15 @@ export class IsoRenderer implements Renderer {
   setViewRotation(q: number, pivot?: { x: number; y: number; z?: number }): void { this.camera.setView(q, pivot); }
   /** Gameplay components the renderer reads (BuildPiece, AnimState). */
   bindGameplay(b: GameplayBindings): void { this.bindings = { ...this.bindings, ...b }; }
+  /** ADR-256: grazed grass lookup (world tile coords) + revision so TileTerrain chunk caches rebuild. */
+  setGrazed(at: ((tx: number, ty: number) => boolean) | undefined, rev = 0): void { this.tiles.grazedAt = at; this.tiles.grazedRev = rev | 0; }
+  private syncGrazedBinding(world: World): void {
+    const def = this.bindings.grazedTile; if (!def || !world.isRegistered(def)) return;
+    const next = new Set<string>(); for (const e of world.query([def])) { const g = world.get(e, def)!; next.add(`${g.tx},${g.ty}`); }
+    let same = next.size === this.grazedKeys.size; if (same) for (const k of next) if (!this.grazedKeys.has(k)) { same = false; break; }
+    if (!same) { this.grazedKeys = next; this.grazedRev++; this.setGrazed((x, y) => this.grazedKeys.has(`${x},${y}`), this.grazedRev); }
+  }
+  private grazedKeys = new Set<string>(); private grazedRev = 0;
   /** BuildingGrid used for cutaway detection (multi-level). */
   setBuildingGrid(g: BuildingGrid | undefined): void { this.grid = g; }
   /** Use a ChunkedSpatialIndex for sprite culling (iterate only visible, active chunks). */
@@ -530,6 +539,7 @@ export class IsoRenderer implements Renderer {
     const sv = seasonVisual(world); const SU = this.seasonU;
     SU[0] = sv.fall; SU[1] = sv.winter; SU[2] = sv.snow; SU[3] = sv.ice;
     this.terrain.season = SU; this.tiles.season = SU; this.tiles.groundSeason = sv.art; // ADR-246: gt_ ground art season
+    this.syncGrazedBinding(world); // ADR-256: single-world demos (client uses IsoView.setGrazed from the net world)
     this.sprites.season = sv; this.sprites.seasonSnowCap = Math.max(sv.snow * 1.15, sf.snow * 0.9);
     this.terrain.surfaceStyle = { puddles: su.puddles, wetDarken: su.wetDarken, skyRefl: su.skyReflection };
     // lightning during storms

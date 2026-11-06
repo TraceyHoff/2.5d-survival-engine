@@ -171,6 +171,8 @@ export interface GameplayBindings {
   hitFlash?: (entity: number) => number;
   /** ADR-134 flinch tilt in radians about the sprite's foot (Canvas2D only; WebGL shows flash + scale pulse). */
   hitTilt?: (entity: number) => number;
+  /** ADR-256: gameplay GrazedTile {tx, ty, regrowTick} — depleted grass tiles drawn as gt_grass_grazed. */
+  grazedTile?: ComponentDef<{ tx: "i32"; ty: "i32"; regrowTick: "u32" }>;
 }
 
 const VS = /* glsl */ `#version 300 es

@@ -11,6 +11,7 @@
  * ADR-253 view rotation: instances are built in view space (cell (X, Y) of the rotated grid; neighbourhood rules, skirts,
  * shore/edge blob masks and corner tints all see view-space neighbours, so the screen-relative art stays correct), one
  * cached instance buffer per view quarter; vWorld is rotated back to world space for the surface noise / shimmer.
+ * ADR-256: `grazedAt(tx,ty)` swaps grass bases for `gt_grass_grazed` (+ seasonal twin) when a GrazedTile is present.
  */
 import { CHUNK_SIZE, VIEW_COS, VIEW_SIN, viewRect, renderTileHeight, waterShoreTint, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { SEASON_GROUND_GLSL } from "./season.js";
@@ -144,6 +145,10 @@ export class TileTerrain {
   groundSeason = 0;
   /** ADR-246: false = always the legacy tile_* art (tests / diag). */
   groundArt = true;
+  /** ADR-256: world-tile grazed lookup (tx, ty); undefined = draw ungrazed grass. */
+  grazedAt: ((tx: number, ty: number) => boolean) | undefined;
+  /** ADR-256: bumped when the grazed set changes so chunk caches rebuild. */
+  grazedRev = 0;
   private gart: GroundArt | null = null; private gartReg: unknown = null;
   private held: readonly number[] = []; private heldSeason = -1; private pend: readonly number[] = []; private pendSeason = -1;
   /** ADR-253: build the two adjacent view quarters' chunks in idle frames (one chunk per frame without other builds). */
@@ -161,7 +166,7 @@ export class TileTerrain {
   private stamp(map: TileMap, c: Chunk): number {
     let s = c.version;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const n = map.getChunk(c.cx + dx, c.cy + dy); s = (Math.imul(s, 31) + (n ? n.version + 1 : 0)) | 0; }
-    return s;
+    return (Math.imul(s, 31) + (this.grazedRev | 0)) | 0; // ADR-256: rebuild when GrazedTile set changes
   }
 
   /** ADR-246: the gt_ set for this atlas's registry (null = not shipped). */
@@ -212,7 +217,8 @@ export class TileTerrain {
       const z = renderTileHeight(id, c.height[i]!) - (water ? 0.25 : 0); // ADR-182: one flat water surface
       const mask = (hAt(x + 1, y) < z ? 1 : 0) | (hAt(x, y + 1) < z ? 2 : 0);
       if (art && g) { // ADR-246: gt_ layers (base, edges by priority, shore/bank | water or ice, leaves)
-        groundLayers(tileAt, x, y, art - 1, tintAt, L, groundHash(tx, ty)); let n = 0;
+        const grazed = this.grazedAt ? (X: number, Y: number): boolean => this.grazedAt!(wx(X, Y), wy(X, Y)) : undefined;
+        groundLayers(tileAt, x, y, art - 1, tintAt, L, groundHash(tx, ty), grazed); let n = 0;
         for (const l of L) {
           const e = EI(g.id(l.key)); if (!e) continue; const wl = l.kind === GroundLayerKind.Water;
           const mode = l.kind === GroundLayerKind.Ice || l.kind === GroundLayerKind.Leaves ? 2 : 1;
