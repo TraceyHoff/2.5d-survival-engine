@@ -21,7 +21,23 @@ import { bedSpots } from "../stance.js";
 import { StationKind, ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef, type ResourceDef } from "../defs.js";
 import { bareHandsCan } from "../systems/gathering.js";
 import { nearWater } from "../systems/vitals.js";
+import { emitterSpecs, EmitterKind } from "../realism.js";
 import { animalDefs } from "../population.js";
+
+/** Task 30: lit state + remaining burn (ticks) of a fired piece: the current burn plus every fuel item in its box. */
+export function fireState(world: World, defs: GameDefs, e: Entity): { lit: boolean; fuelTicks: number } {
+  const fa = resolveAttachment(world, e, AttachKind.Fire) ?? e;
+  let fuelTicks = Math.max(0, (world.getField(fa, Fuel, "burnUntilTick") ?? 0) - world.tick);
+  if (world.has(fa, Container)) {
+    const sl = readSlots(world, fa);
+    for (let i = 0; i < sl.items.length; i++) {
+      if (!sl.items[i] || !sl.counts[i]) continue;
+      const sec = defs.items.get(sl.items[i]!)?.fuelSeconds ?? 0;
+      if (sec > 0) fuelTicks += sl.counts[i]! * sec * 20;
+    }
+  }
+  return { lit: (world.getField(fa, Fuel, "lit") ?? 0) > 0, fuelTicks };
+}
 
 // ---------------- long-term memory ----------------
 export interface AiStats { trips: number; tripMax: number; deposits: number; withdraws: number; repairs: number; refuels: number; crafts: number; stationCrafts: number; built: number; hunts: number; loots: number; wears: number; relocations: number; bestTier: number; snoozed: number }
@@ -134,25 +150,27 @@ export function plannerIndex(defs: GameDefs): Ix {
 export interface BaseState {
   pieces: Map<string, Entity>; stations: Map<StationKind, { id: Entity; x: number; y: number; fired: boolean; lit: boolean; fuelTicks: number }>;
   storage?: { id: Entity; x: number; y: number; counts: Map<number, number>; free: number }; bed?: { id: Entity; x: number; y: number }; door?: { id: Entity; x: number; y: number; open: boolean }; repair?: Entity; complete: boolean; hearth?: Entity;
+  /** Task 30: every fired piece with a heat emitter at the base (campfire, fireplace, stove, furnace, torch
+   * stand) — the refuel behaviour tops up the lowest one. Lamps / candles are light-only and not fires. */
+  fires?: { id: Entity; key: string; x: number; y: number; lit: boolean; fuelTicks: number }[];
 }
 const scans = new WeakMap<World, Map<string, { tick: number; s: BaseState }>>();
 const BASE_SCAN_EVERY = 20;
 export function scanBase(world: World, defs: GameDefs, b: { x: number; y: number }): BaseState {
   let m = scans.get(world); if (!m) scans.set(world, (m = new Map())); const key = `${b.x},${b.y}`; const c = m.get(key);
   if (c && world.tick - c.tick < BASE_SCAN_EVERY && world.tick >= c.tick) return c.s;
-  const ix = plannerIndex(defs); const s: BaseState = { pieces: new Map(), stations: new Map(), complete: false };
-  const legacy = new Map<string, Entity>(); const cx = b.x + 1, cy = b.y + 1; const woodFuel = (ix.item.get("wood")?.fuelSeconds ?? 20) * 20;
+  const s: BaseState = { pieces: new Map(), stations: new Map(), complete: false };
+  const legacy = new Map<string, Entity>(); const cx = b.x + 1, cy = b.y + 1;
   for (const e of installSpatialIndex(world).queryRadius(cx, cy, 6)) {
     if (!world.has(e, BuildPiece)) continue; const t = world.get(e, Transform); if (!t) continue;
     const def = defs.pieces.get(world.getField(e, BuildPiece, "type")!); if (!def) continue;
     const hp = world.getField(e, BuildPiece, "hp") ?? 0; if (def.hp && s.repair === undefined && hp < maxHpOf(world, e) * 0.6) s.repair = e;
     const hearth = def.key === HEARTH.key && Math.abs(t.x - (b.x + HEARTH.x)) < 0.4 && Math.abs(t.y - (b.y + HEARTH.y)) < 0.4; if (hearth) s.hearth = e;
+    // Task 30: every heat fire at the base, for the refuel behaviour (stations and plain fired pieces alike).
+    if (def.fired && emitterSpecs(def).some((s) => s.kind === EmitterKind.Heat)) { const fs = fireState(world, defs, e); (s.fires ??= []).push({ id: e, key: def.key, x: t.x, y: t.y, lit: fs.lit, fuelTicks: fs.fuelTicks }); }
     if (def.station !== StationKind.None) { if (!s.stations.has(def.station) || hearth) { // the hearth is THE campfire once built (warmth, cooking, refuel)
-      const fa = resolveAttachment(world, e, AttachKind.Fire) ?? e; // Fuel / fuel slots live on the fire attachment
-      let fuelTicks = 0; if (def.fired) { const until = world.getField(fa, Fuel, "burnUntilTick") ?? 0; fuelTicks = Math.max(0, until - world.tick);
-        if (world.has(fa, Container)) { const sl = readSlots(world, fa); for (let i = 0; i < sl.items.length; i++) if (sl.items[i] && sl.counts[i]) fuelTicks += sl.counts[i]! * Math.max(1, defs.items.get(sl.items[i]!)?.fuelSeconds ?? 0) * 20 * ((defs.items.get(sl.items[i]!)?.fuelSeconds ?? 0) > 0 ? 1 : 0); }
-        void woodFuel; }
-      s.stations.set(def.station, { id: e, x: t.x, y: t.y, fired: def.fired, lit: (world.getField(fa, Fuel, "lit") ?? 0) > 0, fuelTicks }); } continue; }
+      const fs = fireState(world, defs, e); // Fuel / fuel slots live on the fire attachment
+      s.stations.set(def.station, { id: e, x: t.x, y: t.y, fired: def.fired, lit: fs.lit, fuelTicks: fs.fuelTicks }); } continue; }
     if (!s.bed && bedSpots(def.key).length) { s.bed = { id: e, x: t.x, y: t.y }; continue; }
     const sa = isBaseStoragePiece(def) ? resolveAttachment(world, e, AttachKind.Storage) : undefined; // ADR-250: any base storage piece
     if (sa !== undefined && world.has(sa, Container) && (!s.storage || (s.storage.free === 0 && readSlots(world, sa).counts.some((n) => !n)))) { const sl = readSlots(world, sa); const counts = new Map<number, number>(); let free = 0;

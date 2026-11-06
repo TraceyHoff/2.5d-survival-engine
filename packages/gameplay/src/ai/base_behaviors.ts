@@ -177,6 +177,27 @@ const depositAndLight = (id: number, item: number, n: number): string[] => { con
 const night = (p: string): number => (p === "night" ? 1 : p === "dusk" ? 0.6 : 0);
 const cooled = (c: Ctx, k: string, n: number): boolean => c.self.tick - c.bb.num(k, -1e9) >= n;
 const step01 = { type: "step" as const, at: 0.5 };
+/** Task 30: a fire is "low" under this much burn left (120 s) — top it up before it goes out. */
+export const REFUEL_BELOW_TICKS = 2400;
+/** Task 30: wood deposited per top-up (10 wood ≈ 200 s of burn; efficient fires stretch it further). */
+export const REFUEL_DEPOSIT = 10;
+/** Task 30: work fires (smelting / cooking) are refuelled whenever low, day or night. Warmth / light fires
+ * (campfire, fireplace, torch stand) only when the fire is needed — night, dusk, cold or winter — so a bot
+ * does not burn the wood pile keeping a summer-midday campfire lit. */
+export const WORK_FIRES: ReadonlySet<string> = new Set(["furnace", "wood_stove", "stove_iron", "cook_range", "clay_oven"]);
+const workFire = (key: string): boolean => WORK_FIRES.has(key);
+const fireNeeds = (c: Ctx, key: string): boolean => workFire(key) || night(c.self.phase) > 0 || c.world.cold === true || c.world.winter === true;
+/** Task 30: the lowest-fuel lit fire at the bot's base that needs refuelling now (all heat fires, not just
+ * the campfire — fireplace, stove, furnace, torch stand included). Hired workers read the owner's base
+ * scan (fillHireSensors re-anchors bs), so the same behaviour tends the player's fires. */
+export function lowFire(c: Ctx): { id: number; key: string; x: number; y: number; fuelTicks: number } | undefined {
+  let best: { id: number; key: string; x: number; y: number; fuelTicks: number } | undefined;
+  for (const f of c.world.bs?.fires ?? []) {
+    if (!f.lit || f.fuelTicks >= REFUEL_BELOW_TICKS || !fireNeeds(c, f.key)) continue;
+    if (!best || f.fuelTicks < best.fuelTicks) best = { id: f.id, key: f.key, x: f.x, y: f.y, fuelTicks: f.fuelTicks };
+  }
+  return best;
+}
 const mark = (c: Ctx, k: Parameters<typeof bumpStat>[1], by = 1): void => bumpStat(c.agent, k, c.self.tick, by);
 
 export function baseBehaviors(): GameBehavior[] {
@@ -261,11 +282,19 @@ export function baseBehaviors(): GameBehavior[] {
         return false; // re-evaluate every tick so gather / hunt take over when a wanted node or prey shows up
       } },
     { name: "refuel", inertia: 0.4, considerations: [
-        { name: "low", weight: 1.5, curve: step01, input: (c) => { const f = c.world.bs?.stations.get(StationKind.Campfire); return f && f.lit && f.fuelTicks < 2400 && (c.world.woodTotal ?? 0) > 0 && cooled(c, "refuelAt", 200) ? 1 : 0; } },
-        { name: "needed", curve: step01, input: (c) => (night(c.self.phase) > 0 || c.world.cold || c.world.winter ? 1 : 0) }], // ADR-252: winter days need the fire too
-      run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
+        // Task 30: any low heat fire at the base (not just the campfire), fuel from the bag or base storage.
+        // Bounded like the Task 28 garden: only when a fire is actually low, and 200 ticks of cooldown after
+        // each top-up (or after finding no fuel anywhere), so it never starves the job / ladder work.
+        { name: "low", weight: 1.5, curve: step01, input: (c) => (lowFire(c) !== undefined && cooled(c, "refuelAt", 200) ? 1 : 0) }],
+      run: (c, o) => { const f = lowFire(c); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined) return false;
+        const bagWood = c.world.woodTotal ?? 0;
+        if (bagWood <= 0) { // no wood in the bag: fetch it from base storage (the owner's box for a hired worker)
+          const sb = c.world.bs?.storage; const stored = sb?.counts.get(wood) ?? 0;
+          if (!sb || stored <= 0) { c.bb.set("refuelAt", c.self.tick); return false; } // no fuel anywhere: cool down, don't loop
+          if (goTo(c, o, sb.x, sb.y) > 2.2) { if (stuckOn(c, sb.x, sb.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
+          if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, wood, Math.min(REFUEL_DEPOSIT, stored)))) { mark(c, "withdraws"); return false; } return; }
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
-        if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(10, c.world.woodTotal)))) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
+        if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(REFUEL_DEPOSIT, bagWood)))) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
     // ADR-252: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;

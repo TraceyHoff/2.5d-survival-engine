@@ -29,6 +29,7 @@ export const TOUCH_LIFT_PX = 48;
 export const BUILD_FAIL_TEXT: Readonly<Record<number, string>> = {
   1: "Unknown piece", 2: "Tier not allowed", 3: "Too far away", 4: "Too high", 5: "Not your land", 6: "Area full", 7: "Bad ground",
   8: "Spot taken", 9: "Blocked", 10: "Needs a socket", 11: "Needs support", 12: "Not enough materials",
+  21: "Corner: use a corner piece here", // Task 30: BuildFail.CornerSlot (was the generic fallback)
   22: "Locked: learn it in the skill tree", // ADR-221 BuildFail.SkillLocked
   23: "Needs a paint brush in the hotbar", // Task 25 BuildFail.NoBrush
 };

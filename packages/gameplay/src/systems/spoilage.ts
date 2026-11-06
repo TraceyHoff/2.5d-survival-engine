@@ -11,7 +11,7 @@ import { pieceOf } from "../building/links.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { countItem, freshness, listSlots, mapSlots, rebaseCreated, removeItem, slotsAdd } from "../inventory.js";
 import { pendingReady } from "../ready.js";
-import { ambientTemperature } from "./environment.js";
+import { ambientTemperature, FREEZING_C } from "./environment.js";
 import type { ComponentDef } from "@engine/core";
 
 export const SPOILAGE_EVERY = 20;
@@ -19,6 +19,12 @@ export const SPOILAGE_EVERY = 20;
 export const SALT_CONSUME_TICKS = 3600;
 /** Last tick each salt-fuelled container consumed salt (authority-side only; resets on reload — timing, not state). */
 const saltLast = new WeakMap<World, Map<Entity, number>>();
+/**
+ * Task 30: last spoilage-pass tick per holder. Frozen food's effective age is held still by advancing each
+ * slot's `created` tick by the time since the last pass, so it resumes spoiling from where it left off on
+ * thaw instead of resetting (a stored multiplier of 0 would lose the age) or decaying retroactively.
+ */
+const frozenLast = new WeakMap<World, Map<Entity, number>>();
 /** Salt in a container holder (0 when the holder has no salt item, or the catalog has no salt). */
 export function saltCount(world: World, e: Entity): number {
   let salt = 0; try { salt = gameplayDefs(world).itemId("salt"); } catch { return 0; }
@@ -60,16 +66,25 @@ export function spoilageSystem(world: World, dt: number): void {
     const st = world.store(def);
     for (let k = st.size - 1; k >= 0; k--) {
       const e = st.dense[k]!; if (pendingReady(world, e)) continue; // Task 14: a loading player's pack does not spoil
-      if (def === Container) burnSalt(world, e); // Task 28: salt burns before the multiplier is read this pass
+      // Task 30: frozen food (at or below 32 F / 0 C) does not spoil and burns no salt. Its stored multiplier
+      // is left alone — a stored 0 would lose the food's age (rebaseCreated from 0 resets freshness on thaw).
       const idx = entityIndex(e);
       const temp = world.has(e, Exposure) ? world.getField(e, Exposure, "feltTemp")! : world.has(e, Transform) ? ambientTemperature(world, world.getField(e, Transform, "x")!, world.getField(e, Transform, "y")!) : sp.tempRefC;
+      const frozen = temp <= FREEZING_C;
+      let m = frozenLast.get(world); if (!m) frozenLast.set(world, (m = new Map()));
+      const prev = m.get(e); m.set(e, world.tick);
+      // normally exactly one pass (20 ticks) back; capped so a holder skipped for a while (loading) never jumps fresh
+      const held = prev === undefined || prev > world.tick ? 0 : Math.min(world.tick - prev, SPOILAGE_EVERY * 2);
+      if (def === Container && !frozen) burnSalt(world, e); // Task 28: salt burns before the multiplier is read this pass
       const tempMul = Math.min(sp.maxMul, Math.max(sp.minMul, 1 + sp.mulPerDegree * (temp - sp.tempRefC)));
-      const want = baseMul(world, e) * tempMul; const cur = st.data.spoilMul[k]!;
-      const rebase = Math.abs(want - cur) > sp.rebaseThreshold * cur;
+      const cur = st.data.spoilMul[k]!;
+      const want = frozen ? cur : baseMul(world, e) * tempMul;
+      const rebase = !frozen && Math.abs(want - cur) > sp.rebaseThreshold * cur;
       mapSlots(world, e, (v) => {
         let changed = false;
         for (let i = 0; i < v.slotCount; i++) {
           const item = v.item(i); if (!item || !(defs.items.get(item)?.spoilSeconds)) continue;
+          if (frozen && held > 0) { v.put(i, item, v.count(i), v.created(i) + held); changed = true; } // hold the age still
           if (rebase) { v.put(i, item, v.count(i), rebaseCreated(v.created(i), world.tick, cur, want)); changed = true; }
           if (freshness(defs, item, v.created(i), rebase ? want : cur, world.tick, tickDt) <= 0 && defs.spoiledItem) {
             const n = v.count(i); v.put(i, 0, 0); slotsAdd(v, defs.spoiledItem, n, defs, world.tick); changed = true;

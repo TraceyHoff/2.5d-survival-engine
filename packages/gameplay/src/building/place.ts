@@ -52,6 +52,28 @@ export function pieceCost(defs: GameDefs, def: PieceDef, tier: number, scale = 1
   return base.map((c) => ({ item: c.item, count: Math.ceil(c.count * scale - 1e-9) })).filter((c) => c.count > 0);
 }
 
+/** Task 30: the nearest edge within FRAME_SNAP_RADIUS tiles whose piece is a frame for `def.fits`
+ * (a door frame wall for a door, a window frame for shutters/glass). An opening piece only ever snaps
+ * into a matching frame: aiming at a plain wall or open ground near a doorway lands the ghost on the
+ * doorway instead of failing NoSocket. With no frame in reach the plain nearest-edge snap stands and
+ * validation rejects the placement (NoSocket), so a door can never land anywhere but a frame. */
+export const FRAME_SNAP_RADIUS = 1;
+export function nearestFrameEdge(idx: StructureIndex, def: PieceDef, x: number, y: number, z: number): { tx: number; ty: number; side: EdgeSide } | undefined {
+  let best: { tx: number; ty: number; side: EdgeSide } | undefined; let bd = Infinity;
+  const cx = Math.floor(x), cy = Math.floor(y);
+  for (let ty = cy - 1; ty <= cy + 1; ty++) for (let tx = cx - 1; tx <= cx + 1; tx++) {
+    for (const side of [EdgeSide.North, EdgeSide.West]) {
+      const e = idx.edge(tx, ty, z, side); if (!e) continue;
+      if (idx.def(e)?.opening !== def.fits) continue;
+      const mx = side === EdgeSide.North ? tx + 0.5 : tx, my = side === EdgeSide.North ? ty : ty + 0.5;
+      const d = Math.hypot(mx - x, my - y);
+      if (d > FRAME_SNAP_RADIUS || d > bd) continue;
+      if (d < bd || !best || tx < best.tx || (tx === best.tx && (ty < best.ty || (ty === best.ty && side < best.side)))) { bd = d; best = { tx, ty, side }; }
+    }
+  }
+  return best;
+}
+
 /** Nearest edge to (x,y): socket snapping (deck EDGE sockets) first, else geometric nearest edge of the tile. */
 export function snapEdge(idx: StructureIndex, x: number, y: number, z: number): { tx: number; ty: number; side: EdgeSide } {
   const s = idx.grid.snap(x * SUBTILE, y * SUBTILE, z, { kind: SocketKind.Edge, maxDist: SUBTILE });
@@ -91,7 +113,9 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
         const tx = Math.floor(req.x), ty = Math.floor(req.y); slot = { tx, ty, z, side: EdgeSide.None, rot: 0 };
         parent = idx.deck(tx, ty, z);
       } else {
-        const e = snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) };
+        // Task 30: a door / window only snaps into a matching frame wall within a tile of the aim
+        const frame = nearestFrameEdge(idx, def, req.x, req.y, z);
+        const e = frame ?? snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) };
         parent = idx.edge(e.tx, e.ty, z, e.side);
       }
       break;
@@ -149,6 +173,25 @@ export function isCornerSlot(idx: StructureIndex, tx: number, ty: number, z: num
   const k = edgeKey(tx, ty, z, side);
   const verts: [number, number][] = side === EdgeSide.North ? [[tx, ty], [tx + 1, ty]] : [[tx, ty], [tx, ty + 1]];
   return verts.some(([vx, vy]) => outerCornerRots(idx, vx, vy, z).some((r) => lCornerArms(vx, vy, r).some((a) => edgeKey(a.tx, a.ty, z, a.side) === k)));
+}
+/**
+ * Task 30: a corner slot is only reserved for the L corner while an L could still be placed there — both
+ * arms free. Once one arm is taken (a wall, an L, a doorway), the L can never fit, so the remaining arm
+ * takes a straight wall. Without this, a 1-row foundation's end tiles could never be fully walled: the
+ * two end corners share the end edge, so only one L fits and the other long edge stays bare forever
+ * (straight wall: CornerSlot; second L: Occupied).
+ */
+export function cornerSlotReserved(idx: StructureIndex, tx: number, ty: number, z: number, side: EdgeSide): boolean {
+  if (!isCornerSlot(idx, tx, ty, z, side)) return false;
+  const verts: [number, number][] = side === EdgeSide.North ? [[tx, ty], [tx + 1, ty]] : [[tx, ty], [tx, ty + 1]];
+  for (const [vx, vy] of verts) for (const r of outerCornerRots(idx, vx, vy, z)) {
+    const arms = lCornerArms(vx, vy, r);
+    const mine = arms.find((a) => a.tx === tx && a.ty === ty && a.side === side);
+    if (!mine) continue;
+    const other = arms.find((a) => a !== mine)!;
+    if (!idx.edge(other.tx, other.ty, z, other.side)) return true; // the L still fits here
+  }
+  return false;
 }
 /** ADR-211: "regular straight walls" = wall-family edge pieces without an opening socket (door/window frames may still sit in a corner slot). */
 export const isStraightWall = (def: PieceDef | undefined): boolean => !!def && def.placement === Placement.Edge && !def.features.mount && def.family === "wall" && !def.opening;
@@ -254,7 +297,7 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
     if (idx.mount(slot.tx, slot.ty, slot.z, slot.side, slot.rot)) return BuildFail.Occupied;
   } else if (def.placement === Placement.Edge) {
     if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied;
-    if (isStraightWall(def) && isCornerSlot(idx, slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.CornerSlot; // ADR-211
+    if (isStraightWall(def) && cornerSlotReserved(idx, slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.CornerSlot; // ADR-211 + Task 30: only while an L could still fit there
   }
   else if (def.placement === Placement.Tri) {
     if (idx.triAt(slot.fx!, slot.fy!, slot.z) || idx.deck(slot.tx, slot.ty, slot.z)) return BuildFail.Occupied;
