@@ -18,19 +18,9 @@ export interface ChunkProvider {
   save?(key: ChunkKey, bytes: Uint8Array): void;
 }
 
-/** Deterministic per-(seed,cx,cy) hash value in [0,1). */
-export function hash2(seed: number, x: number, y: number): number {
-  let h = Math.imul(seed ^ Math.imul(x | 0, 0x27d4eb2d), 0x165667b1) ^ Math.imul(y | 0, 0x9e3779b1);
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
-/** Smooth value noise in [0,1). */
-export function valueNoise(seed: number, x: number, y: number, scale: number): number {
-  const fx = x / scale, fy = y / scale, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
-  const s = (t: number) => t * t * (3 - 2 * t);
-  const a = hash2(seed, x0, y0), b = hash2(seed, x0 + 1, y0), c = hash2(seed, x0, y0 + 1), d = hash2(seed, x0 + 1, y0 + 1);
-  return a + (b - a) * s(tx) + (c - a) * s(ty) + (a - b - c + d) * s(tx) * s(ty);
-}
+export { hash2, valueNoise } from "./noise.js";
+import { hash2, valueNoise } from "./noise.js";
+import { isForcedWater, waterFeatureLayout, type WaterFeatureLayout } from "./waterFeatures.js";
 
 /**
  * ADR-254: pick a fresh world seed for a new playthrough. Prefer crypto.getRandomValues; fall back to `random`.
@@ -63,6 +53,10 @@ export interface ProceduralOptions {
   cover?: false | Partial<typeof COVER_DEFAULTS>;
   /** ADR-254: cap on generated height levels (default HEIGHT_MAX). Tests may lower it. */
   heightMax?: number;
+  /** ADR-255: forced lake / river / pond. false = off (tests). Default on. */
+  waterFeatures?: false;
+  /** ADR-255: place every band node kind at least once near the origin. false = off. Default on. */
+  guaranteeNodes?: false;
 }
 /** ADR-249 ground cover. shallow: water (1) within `shallowBand` noise of the shore -> 8. forest: forest-band dirt (4)
  *  at least `forestMargin` noise inside the band where a canopy field > `canopy` -> 7 (edges stay dirt / farmable).
@@ -81,9 +75,32 @@ export const DEFAULT_BANDS = [
   { max: 1.01, tile: 5, nodeKinds: [6, 7], nodeChance: 0.04, temp: 8, humidity: 0.35 }, // rock: boulder, iron
 ];
 /** Seeded procedural generator stub: biome noise + resource node placement. Pure function of (seed, cx, cy). */
+/** ADR-255: radius (tiles) around the origin that always contains every guaranteed resource node. */
+export const NODE_GUARANTEE_RADIUS = 160;
+
 export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
   private bands: NonNullable<ProceduralOptions["bands"]>;
-  constructor(readonly opts: ProceduralOptions) { this.bands = opts.bands ?? DEFAULT_BANDS; }
+  private readonly water: WaterFeatureLayout | undefined;
+  /** kind -> band tile ids that may host it (from nodeKinds lists). */
+  private readonly kindTiles: Map<number, number[]>;
+  private readonly allKinds: number[];
+  constructor(readonly opts: ProceduralOptions) {
+    this.bands = opts.bands ?? DEFAULT_BANDS;
+    this.water = opts.waterFeatures === false ? undefined : waterFeatureLayout(opts.seed);
+    const kt = new Map<number, Set<number>>();
+    for (const b of this.bands) for (const k of b.nodeKinds ?? []) {
+      let s = kt.get(k); if (!s) kt.set(k, (s = new Set())); s.add(b.tile);
+    }
+    this.kindTiles = new Map([...kt].map(([k, s]) => [k, [...s]]));
+    this.allKinds = [...this.kindTiles.keys()];
+  }
+  private forcedWater(tx: number, ty: number): boolean {
+    return !!this.water && isForcedWater(this.opts.seed, tx, ty, this.water);
+  }
+  /** True when the final tile at (tx,ty) is water (biome or ADR-255 feature), without building cover. */
+  private biomeOrForcedWater(tx: number, ty: number): boolean {
+    return this.forcedWater(tx, ty) || this.bandOf(this.noiseAt(tx, ty)).tile === 1;
+  }
   private noiseAt(tx: number, ty: number): number {
     const seed = this.opts.seed >>> 0;
     return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
@@ -93,7 +110,7 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
    * multi-octave field adds hills and ridges; a terrace field snaps some areas into plateaus so neighbouring tiles
    * form clear ledges (drops of 2+ levels) that the cliff / gt_side passes can draw.
    */
-    heightAt(tx: number, ty: number): number {
+  heightAt(tx: number, ty: number): number {
     const seed = this.opts.seed >>> 0; const H = this.opts.heightMax ?? HEIGHT_MAX;
     const biome = this.noiseAt(tx, ty);
     const field = 0.55 * valueNoise(seed ^ HEIGHT_SALT, tx, ty, 48)
@@ -105,16 +122,23 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     const detail = Math.floor(field * 2) + Math.floor(biome * 2); // 0..3
     return Math.max(0, Math.min(H, plateau * 3 + detail));
   }
-  /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). */
-  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return this.surface(tx, ty, n, this.bandOf(n)); }
-  /** Final ground tile: band tile, then ADR-246 mud, then ADR-249 cover. */
-  private surface(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number]): number {
-    const t = this.mudOr(tx, ty, n, band); const c = this.opts.cover; if (c === false || t !== band.tile) return t;
+  /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). ADR-255: forced lake/river/pond override biome. */
+  tileAt(tx: number, ty: number): number {
+    if (this.forcedWater(tx, ty)) {
+      const waterBand = this.bands.find((b) => b.tile === 1) ?? this.bands[0]!;
+      return this.surface(tx, ty, 0, waterBand, true);
+    }
+    const n = this.noiseAt(tx, ty); return this.surface(tx, ty, n, this.bandOf(n), false);
+  }
+  /** Final ground tile: band tile, then ADR-246 mud, then ADR-249 cover. `forced` = ADR-255 water feature. */
+  private surface(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number], forced = false): number {
+    const t = forced ? 1 : this.mudOr(tx, ty, n, band); const c = this.opts.cover; if (c === false || (!forced && t !== band.tile)) return t;
     const o = { ...COVER_DEFAULTS, ...(c ?? {}) }; const bi = this.bands.indexOf(band); const lo = bi > 0 ? this.bands[bi - 1]!.max : 0;
-    if (t === 1) { // shallows: the shore end of the water band, and every water tile touching a non-water band (steep shores too)
-      const up = this.bands[bi + 1]; if (!up || up.tile === 1) return t;
-      if (n >= band.max - o.shallowBand) return 8;
-      for (const [dx, dy] of NEIGH4) if (this.bandOf(this.noiseAt(tx + dx, ty + dy)).tile !== 1) return 8;
+    if (t === 1) { // shallows: shore end of the water band, or any water tile touching land (biome or non-feature)
+      const up = this.bands[bi + 1];
+      if (!forced && (!up || up.tile === 1)) return t;
+      if (!forced && n >= band.max - o.shallowBand) return 8;
+      for (const [dx, dy] of NEIGH4) if (!this.biomeOrForcedWater(tx + dx, ty + dy)) return 8;
       return t;
     }
     if (t === 4) {
@@ -149,13 +173,67 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
   load(cx: number, cy: number): GeneratedChunk {
     const c = new Chunk(cx, cy); const nodes: NodePlacement[] = []; const seed = this.opts.seed >>> 0;
     const rng = new Rng(fnv1a(`${cx},${cy}`, seed));
+    const occupied = new Set<number>();
     for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
       const n = this.noiseAt(tx, ty);
       const band = this.bandOf(n);
-      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.surface(tx, ty, n, band); c.height[i] = this.heightAt(tx, ty);
-      if (band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) });
+      const i = ly * CHUNK_SIZE + lx; const tile = this.tileAt(tx, ty); c.tiles[i] = tile; c.height[i] = this.heightAt(tx, ty);
+      // No land resources on water (forced features or biome). Band chance still uses biome band kinds.
+      if (tile !== 1 && tile !== 8 && band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) {
+        nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) }); occupied.add(i);
+      }
     }
+    if (this.opts.guaranteeNodes !== false) this.placeGuaranteedNodes(cx, cy, nodes, occupied);
     c.dirty = false; return { chunk: c, nodes };
+  }
+
+  /**
+   * ADR-255: every node kind listed in any band is placed at least once inside NODE_GUARANTEE_RADIUS.
+   * Slot = unique angle around the origin; we walk outward until the tile's biome matches a band that lists the kind
+   * (or any non-water land as a last resort). Pure function of (seed, kind) so every peer agrees.
+   */
+  private placeGuaranteedNodes(cx: number, cy: number, nodes: NodePlacement[], occupied: Set<number>): void {
+    if (!this.allKinds.length) return;
+    const seed = this.opts.seed >>> 0; const N = this.allKinds.length;
+    const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
+    for (let i = 0; i < N; i++) {
+      const kind = this.allKinds[i]!;
+      const [tx, ty] = this.guaranteeTile(seed, kind, i, N);
+      if (tx < x0 || tx >= x1 || ty < y0 || ty >= y1) continue;
+      const li = (ty - y0) * CHUNK_SIZE + (tx - x0);
+      if (occupied.has(li)) continue;
+      const tile = this.tileAt(tx, ty); if (tile === 1 || tile === 8) continue; // never plant on water
+      nodes.push({ tx, ty, kind }); occupied.add(li);
+    }
+  }
+
+  /** Deterministic host tile for a guaranteed kind (inside NODE_GUARANTEE_RADIUS). */
+  guaranteeTile(seed: number, kind: number, index: number, count = this.allKinds.length): [number, number] {
+    const want = this.kindTiles.get(kind) ?? [3];
+    const ang = (index + hash2(seed ^ 0x6775, kind, index)) / Math.max(1, count) * Math.PI * 2;
+    const baseR = 52 + hash2(seed ^ 0x6775, kind, 1) * (NODE_GUARANTEE_RADIUS - 60);
+    for (let attempt = 0; attempt < 48; attempt++) {
+      const r = baseR + (attempt % 8) * 3;
+      const a = ang + (attempt * 0.17);
+      const tx = Math.round(Math.cos(a) * r);
+      const ty = Math.round(Math.sin(a) * r);
+      if (Math.abs(tx) >= NODE_GUARANTEE_RADIUS || Math.abs(ty) >= NODE_GUARANTEE_RADIUS) continue;
+      if (this.forcedWater(tx, ty)) continue;
+      const tile = this.bandOf(this.noiseAt(tx, ty)).tile;
+      if (want.includes(tile)) return [tx, ty];
+    }
+    // Last resort: first non-water land near the base angle (still inside the radius).
+    for (let attempt = 0; attempt < 64; attempt++) {
+      const r = 40 + attempt * 2;
+      const a = ang + attempt * 0.31;
+      const tx = Math.round(Math.cos(a) * r);
+      const ty = Math.round(Math.sin(a) * r);
+      if (Math.abs(tx) >= NODE_GUARANTEE_RADIUS || Math.abs(ty) >= NODE_GUARANTEE_RADIUS) continue;
+      if (this.forcedWater(tx, ty)) continue;
+      const tile = this.bandOf(this.noiseAt(tx, ty)).tile;
+      if (tile !== 1) return [tx, ty];
+    }
+    return [Math.round(Math.cos(ang) * 56), Math.round(Math.sin(ang) * 56)];
   }
 }

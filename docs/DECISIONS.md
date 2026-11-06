@@ -2894,3 +2894,31 @@ and short. Camera-facing cliff faces were shaded, but faces turned away from the
 - Canvas2D ground is still drawn flat (pre-existing); ledge lips / far-face silhouettes are WebGL (Full preset).
 - Dedicated servers that pass neither a save nor `--seed` now get a random world each launch (was always 1234).
 - Terrain editing / flowing water / underground bases are Task 36 — not this ADR.
+
+## ADR-255: Guaranteed lakes / rivers / ponds and full plant & resource coverage
+
+**Context.** Task 35 (ADR-254) gave every playthrough a random seed, but biome noise alone could still omit a
+recognisable river or pond, and a player exploring near the spawn ring could miss whole plant species or ore types
+that only roll in rare forest/rock bands. The user required every map to always have **lakes, rivers and ponds**,
+and that **every plant and every gatherable resource** listed for worldgen be findable on every seed.
+
+**Decision.**
+
+- **Forced water features** (`waterFeatures.ts`, default on). Pure functions of `(seed, tx, ty)`:
+  - **Lake** — disk (radius 12–17) on a cardinal axis ~48–83 tiles from the origin.
+  - **Pond** — small disk (radius 3–4) on a different cardinal.
+  - **River** — meandering strip (width ~1.2–1.7, half-length 70–99) along a seed angle.
+  Cardinals keep the four **diagonal** spawn patches (ADR-106) and their Task 33 20-tile safe radii clear.
+  Priority when features overlap: **lake > pond > river**. `ProceduralGenerator.tileAt` paints them as water (tile 1 / shore 8 via cover). `waterFeatures: false` disables the paint (tests).
+- **Classification.** `waterFeatureAt` tags a tile; `surveyWaterFeatures` also flood-fills water components so biome seas still count as lakes. Tests assert `forced.lake/river/pond` and ≥1 of each morphologically.
+- **Full node coverage** (`guaranteeNodes`, default on). Every distinct `nodeKinds` id across bands is placed once inside `NODE_GUARANTEE_RADIUS` (160) at a seed+kind angle, snapped to a biome tile that band lists (else any land). Chunk `load()` merges these with the usual chance rolls. This covers all **worldgen.json** gatherables and wild plants (70 today). Farm-only `crop_*` nodes stay player-grown (not world-spawned) and are out of scope.
+- **Safe zones.** Unchanged: `SAFE_SPAWN_RADIUS = 20`, hordes exempt.
+
+**Tests.**
+- `packages/world/test/task35_water_resources.test.ts` — layout, tile paint, survey; 70-kind coverage across seeds.
+- `packages/gameplay/test/task35_water_resources.test.ts` — real `worldgenBands(defaultDefs())` coverage; safe radius; water paint.
+
+**Limits.**
+- Guaranteed nodes / features sit near the origin (within ~160 tiles). Far-flung continents are still biome-only.
+- A river may skim a biome lake; tags prefer the forced lake/pond disks.
+- Shovel / flowing player-dug water / underground bases remain Task 36.
