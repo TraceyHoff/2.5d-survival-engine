@@ -4971,5 +4971,17 @@
     ,{"key": "cooling_brew", "name": "Cooling Brew", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 20, "health": 2}, "cures": ["heatstroke"]}
     ,{"key": "medicated_bandage", "name": "Medicated Bandage", "category": "food", "maxStack": 10, "weight": 0.2, "food": {"hunger": 0, "thirst": 0, "health": 10}, "cures": ["wound_infection"]}
     ,{"key": "paint_brush", "name": "Paint Brush", "category": "tool", "maxStack": 1, "weight": 0.3, "tool": {"kind": "brush", "tier": 1}, "tier": 1, "family": "brush", "durability": 200}
+    ,{"key": "lettuce", "name": "Lettuce", "category": "food", "maxStack": 20, "weight": 0.1, "food": {"hunger": 6, "thirst": 8, "health": 0}, "spoilSeconds": 1800}
+    ,{"key": "lettuce_seeds", "name": "Lettuce Seeds", "category": "resource", "maxStack": 50, "weight": 0.01}
+    ,{"key": "pepper", "name": "Bell Pepper", "category": "food", "maxStack": 20, "weight": 0.15, "food": {"hunger": 7, "thirst": 4, "health": 0}, "spoilSeconds": 1800}
+    ,{"key": "pepper_seeds", "name": "Pepper Seeds", "category": "resource", "maxStack": 50, "weight": 0.01}
+    ,{"key": "beetroot", "name": "Beetroot", "category": "food", "maxStack": 20, "weight": 0.15, "food": {"hunger": 9, "thirst": 3, "health": 0}, "spoilSeconds": 1800}
+    ,{"key": "beetroot_seeds", "name": "Beetroot Seeds", "category": "resource", "maxStack": 50, "weight": 0.01}
+    ,{"key": "rice", "name": "Rice", "category": "food", "maxStack": 20, "weight": 0.1, "food": {"hunger": 10, "thirst": 0, "health": 0}, "spoilSeconds": 1800}
+    ,{"key": "rice_seeds", "name": "Rice Seeds", "category": "resource", "maxStack": 50, "weight": 0.01}
+    ,{"key": "truffle", "name": "Truffle", "category": "food", "maxStack": 20, "weight": 0.1, "food": {"hunger": 15, "thirst": 0, "health": 2}, "spoilSeconds": 1800}
+    ,{"key": "salad", "name": "Salad", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 18, "thirst": 6, "health": 1}, "spoilSeconds": 1800}
+    ,{"key": "rice_bowl", "name": "Rice Bowl", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 16, "thirst": 4, "health": 1}, "spoilSeconds": 1800}
+    ,{"key": "truffle_stew", "name": "Truffle Stew", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 22, "thirst": 4, "health": 3}, "spoilSeconds": 1800}
   ]
 }

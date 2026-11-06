@@ -476,7 +476,19 @@
     "waterskin": 474,
     "paint_brush": 475,
     "hay_seeds": 476,
-    "hay": 477
+    "hay": 477,
+    "beetroot": 478,
+    "beetroot_seeds": 479,
+    "lettuce": 480,
+    "lettuce_seeds": 481,
+    "pepper": 482,
+    "pepper_seeds": 483,
+    "rice": 484,
+    "rice_bowl": 485,
+    "rice_seeds": 486,
+    "salad": 487,
+    "truffle": 488,
+    "truffle_stew": 489
   },
   "resources": {
     "fallen_branches": 1,
@@ -564,7 +576,15 @@
     "wild_yarrow": 83,
     "willow_tree": 84,
     "crop_hay": 85,
-    "wild_hay": 86
+    "wild_hay": 86,
+    "crop_beetroot": 87,
+    "crop_lettuce": 88,
+    "crop_pepper": 89,
+    "crop_rice": 90,
+    "wild_beetroot": 91,
+    "wild_lettuce": 92,
+    "wild_pepper": 93,
+    "wild_rice": 94
   },
   "recipes": {
     "stone_axe": 1,
@@ -940,7 +960,10 @@
     "medicated_bandage": 371,
     "salt_brew": 372,
     "waterskin": 373,
-    "paint_brush": 374
+    "paint_brush": 374,
+    "rice_bowl": 375,
+    "salad": 376,
+    "truffle_stew": 377
   },
   "pieces": {
     "anvil": 1,

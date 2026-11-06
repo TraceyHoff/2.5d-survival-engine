@@ -457,6 +457,114 @@
         "raw_venison",
         "salted_fish"
       ]
+    },
+    {
+      "key": "fox",
+      "name": "Fox",
+      "animal": "animal_fox",
+      "family": "small",
+      "baseTame": 0.2,
+      "damageMul": 0.9,
+      "treats": {
+        "dog_biscuit": "like",
+        "meaty_chew": "love",
+        "fish_treat": "love",
+        "seed_mix": "hate",
+        "veggie_bites": "ok",
+        "egg_crunch": "like"
+      },
+      "diet": [
+        "raw_small_game",
+        "raw_poultry",
+        "raw_meat",
+        "cooked_small_game",
+        "cooked_poultry",
+        "cooked_meat",
+        "fish",
+        "cooked_fish",
+        "egg",
+        "jerky"
+      ]
+    },
+    {
+      "key": "owl",
+      "name": "Owl",
+      "animal": "animal_owl",
+      "family": "bird",
+      "baseTame": 0.18,
+      "damageMul": 0.6,
+      "treats": {
+        "dog_biscuit": "ok",
+        "meaty_chew": "love",
+        "fish_treat": "like",
+        "seed_mix": "ok",
+        "veggie_bites": "hate",
+        "egg_crunch": "like"
+      },
+      "diet": [
+        "raw_small_game",
+        "raw_poultry",
+        "fish",
+        "cooked_fish",
+        "egg",
+        "jerky",
+        "raw_meat"
+      ]
+    },
+    {
+      "key": "turtle",
+      "name": "Turtle",
+      "animal": "animal_turtle",
+      "family": "small",
+      "baseTame": 0.3,
+      "damageMul": 0.5,
+      "treats": {
+        "dog_biscuit": "ok",
+        "meaty_chew": "hate",
+        "fish_treat": "hate",
+        "seed_mix": "like",
+        "veggie_bites": "love",
+        "egg_crunch": "hate"
+      },
+      "diet": [
+        "cabbage",
+        "carrot",
+        "lettuce",
+        "apple",
+        "berries",
+        "wheat",
+        "herbs",
+        "pumpkin"
+      ]
+    },
+    {
+      "key": "squirrel",
+      "name": "Squirrel",
+      "animal": "animal_squirrel",
+      "family": "small",
+      "baseTame": 0.28,
+      "damageMul": 0.5,
+      "treats": {
+        "dog_biscuit": "ok",
+        "meaty_chew": "hate",
+        "fish_treat": "hate",
+        "seed_mix": "love",
+        "veggie_bites": "like",
+        "egg_crunch": "ok"
+      },
+      "diet": [
+        "seed_mix",
+        "corn",
+        "corn_seeds",
+        "wheat",
+        "wheat_seeds",
+        "apple",
+        "berries",
+        "blueberry",
+        "raspberry",
+        "strawberry",
+        "pear"
+      ]
     }
   ]
 }

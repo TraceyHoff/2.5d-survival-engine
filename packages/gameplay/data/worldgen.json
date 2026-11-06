@@ -71,7 +71,11 @@
         "fallen_log",
         "tree_stump",
         "birch_tree",
-        "willow_tree"
+        "willow_tree",
+        "wild_lettuce",
+        "wild_pepper",
+        "wild_beetroot",
+        "wild_rice"
       ],
       "nodeChance": 0.045,
       "temp": 18,

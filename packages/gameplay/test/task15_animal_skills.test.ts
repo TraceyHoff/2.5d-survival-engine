@@ -41,14 +41,14 @@ const pens = (w: World, p: Entity): void => {
 const ATTACK = 3;
 
 describe("animal skill trees (Task 15)", () => {
-  it("every tameable / farmable species has a valid tree (19 kinds, no strays)", () => {
+  it("every tameable / farmable species has a valid tree (26 kinds, no strays)", () => {
     const { w } = setup();
     const defs = G.gameplayDefs(w);
     const petKinds = G.PET_SPECIES.map((s) => s.animal);
     const farmKinds = Object.keys(G.SKILLS.husbandry.animals);
     const roster = new Set([...petKinds, ...farmKinds]);
-    expect(roster.size).toBe(19);
-    expect(defs.animalSkills.size).toBe(19);
+    expect(roster.size).toBe(26);
+    expect(defs.animalSkills.size).toBe(26);
     const EFFECTS = new Set(["produce", "produceSpeed", "fertility", "damage", "health", "speed"]);
     for (const kind of roster) {
       const tree = defs.animalSkillTree(kind);

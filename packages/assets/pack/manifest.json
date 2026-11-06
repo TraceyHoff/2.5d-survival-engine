@@ -42937,6 +42937,23 @@
           "loop": true
         }
       }
+    },
+    {
+      "key": "truffle",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      }
     }
   ],
   "sounds": [

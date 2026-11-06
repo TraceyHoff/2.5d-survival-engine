@@ -101,6 +101,22 @@
    "animal_sheep": {
     "produce": "wool",
     "seconds": 480
+   },
+   "animal_pig": {
+    "produce": "truffle",
+    "seconds": 480
+   },
+   "animal_alpaca": {
+    "produce": "wool",
+    "seconds": 420
+   },
+   "animal_bee": {
+    "produce": "honey",
+    "seconds": 360
+   },
+   "animal_rabbit": {
+    "produce": "wool",
+    "seconds": 480
    }
   }
  },

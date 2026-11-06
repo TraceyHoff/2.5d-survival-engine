@@ -334,6 +334,62 @@
       ],
       "tint": "#fff0f0"
     },
+    "crop_lettuce": {
+      "to": [
+        "wild_lettuce",
+        "carrot_patch"
+      ]
+    },
+    "wild_lettuce": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#b0f0b0"
+    },
+    "crop_pepper": {
+      "to": [
+        "wild_pepper",
+        "wild_tomato"
+      ]
+    },
+    "wild_pepper": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#ff8060"
+    },
+    "crop_beetroot": {
+      "to": [
+        "wild_beetroot",
+        "carrot_patch"
+      ]
+    },
+    "wild_beetroot": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#d080a0"
+    },
+    "crop_rice": {
+      "to": [
+        "wild_rice",
+        "wild_wheat"
+      ]
+    },
+    "wild_rice": {
+      "to": [
+        "flax",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#f0e080"
+    },
     "crop_yarrow": {
       "to": [
         "wild_yarrow",
@@ -550,6 +606,38 @@
         "animal_boar"
       ],
       "tint": "#a0a0a0"
+    },
+    "animal_owl": {
+      "to": [
+        "animal_crow"
+      ],
+      "tint": "#b09070"
+    },
+    "animal_turtle": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#557a3a",
+      "scale": 0.85
+    },
+    "animal_pig": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#f0a0b0"
+    },
+    "animal_alpaca": {
+      "to": [
+        "animal_deer"
+      ],
+      "tint": "#f0e8d8"
+    },
+    "animal_bee": {
+      "to": [
+        "animal_crow"
+      ],
+      "tint": "#e8c040",
+      "scale": 0.5
     },
     "clutter_grass_tuft_a": {
       "to": [

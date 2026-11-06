@@ -83519,6 +83519,193 @@
      "loop": false
     }
    }
+  },
+  {
+   "key": "lettuce",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "lettuce_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pepper",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pepper_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beetroot",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beetroot_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rice",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rice_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "salad",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rice_bowl",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "truffle_stew",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    }
+   }
   }
  ]
 }

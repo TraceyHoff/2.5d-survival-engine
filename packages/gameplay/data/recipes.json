@@ -303,5 +303,8 @@
     ,{"key": "cooling_brew", "station": "campfire", "seconds": 3, "ingredients": [{"item": "salt", "count": 1}, {"item": "honey", "count": 1}], "output": {"item": "cooling_brew", "count": 1}}
     ,{"key": "medicated_bandage", "station": "workbench", "seconds": 3, "ingredients": [{"item": "bandage", "count": 1}, {"item": "antiseptic", "count": 1}], "output": {"item": "medicated_bandage", "count": 1}}
     ,{"key": "paint_brush", "station": "none", "seconds": 2, "ingredients": [{"item": "wood", "count": 1}, {"item": "fiber", "count": 2}], "output": {"item": "paint_brush", "count": 1}}
+    ,{"key": "salad", "station": "none", "seconds": 2, "ingredients": [{"item": "lettuce", "count": 1}, {"item": "tomato", "count": 1}, {"item": "carrot", "count": 1}], "output": {"item": "salad", "count": 1}}
+    ,{"key": "rice_bowl", "station": "campfire", "seconds": 4, "ingredients": [{"item": "rice", "count": 1}, {"item": "fish", "count": 1}], "output": {"item": "rice_bowl", "count": 1}}
+    ,{"key": "truffle_stew", "station": "campfire", "seconds": 6, "ingredients": [{"item": "truffle", "count": 1}, {"item": "potato", "count": 1}, {"item": "onion", "count": 1}], "output": {"item": "truffle_stew", "count": 1}}
   ]
 }

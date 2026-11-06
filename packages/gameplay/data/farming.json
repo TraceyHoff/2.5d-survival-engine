@@ -547,6 +547,66 @@
       "wild": [
         "wild_hay"
       ]
+    },
+    {
+      "seed": "lettuce_seeds",
+      "key": "lettuce",
+      "type": "crop",
+      "growSeconds": 420,
+      "stages": 4,
+      "becomes": "crop_lettuce",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "wild_lettuce"
+      ]
+    },
+    {
+      "seed": "pepper_seeds",
+      "key": "pepper",
+      "type": "crop",
+      "growSeconds": 600,
+      "stages": 4,
+      "becomes": "crop_pepper",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "wild_pepper"
+      ]
+    },
+    {
+      "seed": "beetroot_seeds",
+      "key": "beetroot",
+      "type": "crop",
+      "growSeconds": 660,
+      "stages": 4,
+      "becomes": "crop_beetroot",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "wild_beetroot"
+      ]
+    },
+    {
+      "seed": "rice_seeds",
+      "key": "rice",
+      "type": "crop",
+      "growSeconds": 720,
+      "stages": 4,
+      "becomes": "crop_rice",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "wild_rice"
+      ]
     }
   ]
 }

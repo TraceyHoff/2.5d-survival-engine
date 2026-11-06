@@ -11,7 +11,7 @@ const setup = (): { w: World; p: Entity; id: (k: string) => number } => {
 const tame = (w: World, p: Entity, a: Entity, item: number): void => { G.addItem(w, p, item, 50); for (let i = 0; i < 40 && !w.has(a, G.Pet); i++) { G.offerTreat(w, p, a, item); w.step(1 / 20); } };
 
 describe("pets (ADR-145)", () => {
-  it("pets.json: 13 species incl. dachshund, cats, parrot, crow, chicken, rabbit, ferret; 6 craftable treats", () => {
+  it("pets.json: 17 species incl. dachshund, cats, parrot, crow, chicken, rabbit, ferret, fox, owl, turtle, squirrel; 6 craftable treats", () => {
     const keys = G.PET_SPECIES.map((s) => s.key);
     for (const k of ["dog_dachshund", "cat_tabby", "cat_siamese", "parrot", "crow", "chicken", "rabbit", "ferret"]) expect(keys).toContain(k);
     expect(G.PET_TREATS.length).toBe(6);

@@ -4819,7 +4819,19 @@
     "build_curing_box": 4817,
     "build_salt_barrel": 4818,
     "hay": 4819,
-    "hay_seeds": 4820
+    "hay_seeds": 4820,
+    "beetroot": 4821,
+    "beetroot_seeds": 4822,
+    "lettuce": 4823,
+    "lettuce_seeds": 4824,
+    "pepper": 4825,
+    "pepper_seeds": 4826,
+    "rice": 4827,
+    "rice_bowl": 4828,
+    "rice_seeds": 4829,
+    "salad": 4830,
+    "truffle": 4831,
+    "truffle_stew": 4832
   },
   "sounds": {
     "amb_rain": 1,
