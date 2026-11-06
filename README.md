@@ -165,30 +165,13 @@ This is the inventory for the art/assets bot: everything new that still needs de
 ### Creatures with dedicated art already (do not redo unless improving)
 - **Bee** (`animal_bee`) and **owl** (`animal_owl`) — unique runtime-painted pixels, idle + walk, 8 directions × 4 frames (`apps/client/src/task34-art.ts`; keys `pets_bee`, `pets_owl`). Verified numerically, not yet eyeballed live — the user is the judge of "beautiful".
 - **Apiary** (`decor_apiary`) — unique runtime-painted stacked-hive art, 2 rotations × 4 damage stages. Its build-menu icon (`build_apiary`) is a dedicated stacked-hive tile on `items_build` frame 286 (no longer shares the salt barrel's frame 224).
+- **Pig** (`animal_pig`) — shipped: dedicated `nature_critters_c_*` sheets (idle / walk / run / attack / hit / death / swim, 8 directions). Round pink farm pig with a disk snout; not a tinted boar (the boar keeps tusks and bristles).
+- **Alpaca** (`animal_alpaca`) — shipped: dedicated `nature_critters_c_*` sheets (same animation set, 8 directions). Tall cream long-neck woolly camelid; not a tinted deer (the deer keeps antlers).
+- **Turtle** (`animal_turtle`) — shipped: dedicated `nature_critters_c_*` sheets (same animation set, 8 directions). Sage dome shell with scute plates, stubby legs, and a yellow beak; not a tinted green boar. The death pose flips onto a yellow plastron.
+- Other roster animals already ship unique packed sheets (not tinted copies): fox, squirrel, bear, bison, cow, deer / red deer / stag / elk / moose, duck, goat, goose, hare, sheep, snake, turkey, wolf, plus the original 13 pets (5 dogs, 3 cats, parrot, crow, chicken, rabbit, ferret) and the chicken farm animal. Wild `beehive` is a stacked hive on `items_nodes`, distinct from `tree_stump`. Fallback tints in `sprite_fallbacks.json` apply only if a pack key is missing.
 
 ### Creatures still reusing other animals' sheets (need dedicated sprites + animations)
-| Creature | Currently drawn as | Task added |
-|---|---|---|
-| Fox (pet, scout) | wolf, tint `#ff9050`, scale 0.7 | 32 |
-| Turtle (pet, tank guard) | boar, tint `#557a3a`, scale 0.85 | 32 |
-| Squirrel (pet, forager) | rabbit, tint `#c07040`, scale 0.75 | 32 |
-| Pig (farm, truffle) | boar, tint `#f0a0b0` | 32 |
-| Alpaca (farm, wool) | deer, tint `#f0e8d8` | 32 |
-| Bear | boar, tint `#705038`, scale 1.5 | base roster |
-| Bison | boar, tint `#604028`, scale 1.6 | base roster |
-| Cow (farm, milk) | boar, tint `#b09070`, scale 1.5 | base roster |
-| Deer / red deer / stag / elk / moose | boar (deer family), various tints/scales | base roster |
-| Duck (farm, egg) | chicken, tint `#a0c090`, scale 0.9 | base roster |
-| Goat (farm, milk) | deer, tint `#e0d8c8`, scale 0.8 | base roster |
-| Goose (farm, egg) | chicken, scale 1.2 | base roster |
-| Hare | rabbit, tint `#e0d0b0`, scale 1.2 | base roster |
-| Sheep (farm, wool) | boar, tint `#f0f0e8`, scale 0.9 | base roster |
-| Snake | rabbit, tint `#80a050`, scale 0.6 | base roster |
-| Turkey (farm, egg) | chicken, tint `#a07050`, scale 1.4 | base roster |
-| Wolf (hostile) | boar, tint `#a0a0a0` | base roster |
-| Wild beehive (`beehive`) | tree stump, tint `#e0b040` | base roster |
-
-All of the above need the standard animation frame structure the real sheets have (idle / walk / run / attack / hit / death, 8 directions). The original 13 pets (5 dogs, 3 cats, parrot, crow, chicken, rabbit, ferret) and the chicken farm animal use their own sheets.
+None remaining — every animal key resolves to its own packed sprite when the pack is present.
 
 ### Crops & plants (need dedicated sprites + growth stages)
 - **Lettuce** (Task 32) — shipped: unique `wild_lettuce` (idle + depleted), `crop_lettuce_0`–`crop_lettuce_3`, `crop_lettuce`, and dedicated `lettuce` / `lettuce_seeds` icons on `nature_icons`. Loose-leaf ruffled lime head, not cabbage's tight concentric rings (cabbage keeps frames 68 / 15). Replaces the ADR-257 runtime-painted `crops_task256` placeholder under the same keys.

@@ -1,4 +1,4 @@
-"""ADR-110 animals: 16 species x 8 facings, anims idle(1) walk(4) run(=walk @12fps) attack(2) hit(1) death(2) swim(2).
+"""ADR-110 animals: 19 species x 8 facings, anims idle(1) walk(4) run(=walk @12fps) attack(2) hit(1) death(2) swim(2).
 Every frame is trimmed to its own alpha box and bucketed by 16-rounded size into shared pages named
 nature_critters_<w>x<h> (cold tier); sprites address them through per-facing dirFrames (no mirroring in the renderer)."""
 import math, os, zlib
@@ -17,6 +17,10 @@ palette.RAMPS.update({
     "duck_green": ["#8ee0a0", "#3ea86a", "#2a7a52", "#1c5040"],
     "turkey":    ["#c09070", "#8a5a40", "#603c30", "#3e2624"],
     "snake":     ["#c8e878", "#86c04a", "#5a9440", "#3a6a36"],
+    "fur_pink":  ["#f4c8c4", "#e09088", "#c06060", "#8a4040"],
+    "shell":     ["#c4d86c", "#7a9844", "#5a7034", "#3c4c24"],
+    "plastron":  ["#f0dca8", "#d4b86e", "#a88848", "#6e5828"],
+    "turtle_skin": ["#c8e070", "#86b048", "#5a8038", "#3c5828"],
 })
 import beasts
 from beasts import Canvas, Rig, circle, capsule_pts, DIR8_PHI, _eye, _star
@@ -35,6 +39,8 @@ SPECS = {
   "animal_goat":     dict(frame=(56, 56), feet=48, fur="cloth_cream", belly="snow", muzzle="snow", L=7.5, rb=5.4, hb=10.0, leg=7.0, lx=2.8, legw=1.4, head=(0, 8.5, 15.0), hr=4.4, snout=2.6, ears="deer", tail="short", horns="goat", beard="cloth_cream", eye=1.2, neck=True),
   "animal_bear":     dict(frame=(72, 64), feet=56, fur="fur_brown", belly="hide", muzzle="hide", L=9.5, rb=8.4, hb=10.0, leg=5.6, lx=4.2, legw=2.5, head=(0, 11.5, 13.0), hr=6.2, snout=3.4, ears="round", tail="short", hump=True, hoof="fur_dark", eye=1.2),
   "animal_bison":    dict(frame=(80, 72), feet=62, fur="fur_brown", belly="fur_brown", muzzle="fur_dark", face="fur_dark", shag="fur_dark", legfur="fur_dark", L=11, rb=8.6, hb=11.5, leg=6.5, lx=4.2, legw=2.3, head=(0, 13.5, 11.5), hr=6.2, snout=3.6, ears="tri_small", tail="tuft", horns="bison", hornc="fur_black", hump=True, beard="fur_dark", eye=1.1),
+  "animal_pig":      dict(frame=(56, 48), feet=42, fur="fur_pink", belly="flower_pink", muzzle="flower_pink", L=8.2, rb=7.4, hb=7.8, leg=4.0, lx=3.4, legw=2.1, head=(0, 10.2, 8.5), hr=5.2, snout=4.0, ears="tri_small", tail="curl", pigsnout=True, eye=1.2, pinknose=True, hoof="flower_pink"),
+  "animal_alpaca":   dict(frame=(64, 80), feet=70, fur="cloth_cream", belly="snow", muzzle="cloth_cream", wool="wool", face="cloth_cream", L=6.8, rb=5.6, hb=14.0, leg=11.0, lx=2.6, legw=1.3, head=(0, 8.5, 26.0), hr=3.8, snout=2.0, ears="deer", tail="puff", eye=1.3, neck=True, hoof="hide"),
 }
 BIRDS = {  # body, wing, head ramp, neck length, beak ramp, extras
   "animal_duck":   dict(body="hide", wing="fur_brown", head="duck_green", neck=1.5, beak="pumpkin", feet="pumpkin", size=0.85),
@@ -146,8 +152,81 @@ def snake(key, d, anim, fi):
     if flat: rig.add(99, lambda: [_star(cv, (hc[0] + math.cos(a) * 4, hc[1] - 5 + math.sin(a)), 1.4, 1) for a in (0, 2.1, 4.2)])
     rig.draw(); return cv.final()
 
+
+def turtle(key, d, anim, fi):
+    """Cute dome-shelled turtle: unique silhouette, not a tinted boar."""
+    W, H, feet = 48, 48, 40
+    cv = Canvas(W, H, seed=zlib.crc32(key.encode()) % 997 + fi * 3 + d * 17 + ord(anim[0])); rig = Rig(cv, DIR8_PHI[d], W / 2, feet, 1.0)
+    extend = bob = rock = retract = 0.0; step = [0, 0, 0, 0]; lift = [0, 0, 0, 0]
+    eyes = "open"; stars = False; flipped = False
+    if anim == "idle":
+        bob = 0.25; extend = 1.0
+    elif anim in ("walk", "run"):
+        t = fi / 4 * 2 * math.pi; bob = abs(math.sin(t)) * 0.45; rock = math.sin(t) * 0.55; extend = 1.0
+        s = math.sin(t) * 2.2; step = [s, -s, -s, s]
+        lift = [max(0, math.cos(t)) * 1.4, max(0, -math.cos(t)) * 1.4, max(0, -math.cos(t)) * 1.4, max(0, math.cos(t)) * 1.4]
+    elif anim == "swim":
+        t = fi / 2 * 2 * math.pi; extend = 1.5; bob = 0.2; s = math.sin(t) * 2.8; step = [s, -s, -s, s]
+    elif anim == "attack":
+        extend = [0.35, 3.6][min(fi, 1)]; eyes = "squint"
+    elif anim == "hit":
+        retract = 0.72; extend = 0.15; eyes = "squint"; bob = -0.35
+    elif anim == "death":
+        if fi == 0:
+            retract = 0.35; eyes = "squint"; bob = 1.4
+        else:
+            flipped = True; eyes = "x"; stars = True; retract = 0.15
+    swim = anim == "swim"; by = rock
+    shell_z = (5.4 + bob) if not flipped else 3.2
+    if swim: shell_z = 3.6 + [0, 0.3][fi % 2]
+    for i, (sx, fy) in enumerate([(-1, 1), (1, 1), (-1, -1), (1, -1)]):
+        if flipped:
+            hip = (sx * 5.0, fy * 3.6 + by, shell_z + 1.0)
+            foot = (sx * (6.2 + retract), fy * 4.4 + step[i] * 0.25 + by, shell_z + 4.6)
+        else:
+            z = (0.85 + lift[i]) * (1 - retract) + retract * 2.0
+            hip = (sx * 5.2, fy * 3.8 + by, shell_z - 1.15)
+            foot = (sx * (5.8 * (1 - retract * 0.45)), fy * 4.2 + step[i] * (1 - retract) + by, z)
+        (hp, hv), (fp, fv) = rig.proj(*hip), rig.proj(*foot)
+        def lg(hp=hp, fp=fp):
+            cv.part(capsule_pts(hp[0], hp[1], fp[0], fp[1], 2.0 * (1 - retract * 0.3), 2.35), "turtle_skin", lw=0.75, shade=0.28, hl=0.18)
+            cv.part(circle(fp, 2.1, 1.4, wob=0.04), "turtle_skin", lw=0.55, shade=0.3, hl=0.2)
+        rig.add((hv + fv) / 2 - 0.4, lg)
+    (tp, tv) = rig.proj(0, -7.2 * (1 - retract * 0.55) + by, 2.0 if not flipped else shell_z + 1.4)
+    (tb, _) = rig.proj(0, -5.0 + by, shell_z - 0.8)
+    rig.add(tv, lambda: cv.part(capsule_pts(tb[0], tb[1], tp[0], tp[1], 1.35, 0.7), "turtle_skin", lw=0.6, shade=0.3, hl=0.15))
+    (sc, sv) = rig.proj(0, by, shell_z)
+    def shell():
+        if flipped:
+            cv.part(circle(sc, 9.2, 7.2, wob=0.03, seed=2), "plastron", lw=1.05, shade=0.22, hl=0.18)
+            for j, (dx, dy, rw, rh) in enumerate(((-2.2, -1.2, 3.2, 2.6), (2.2, -1.2, 3.2, 2.6), (0, 1.6, 3.6, 2.8), (-3.4, 1.8, 2.4, 2.2), (3.4, 1.8, 2.4, 2.2))):
+                cv.part(circle((sc[0] + dx, sc[1] + dy), rw, rh, wob=0.04, seed=j + 4), "plastron", lw=0.55, shade=0.28, hl=0.12)
+        else:
+            cv.part(circle(sc, 9.0, 7.0, wob=0.04, seed=1), "shell", lw=1.1, shade=0.24, hl=0.16)
+            for j, (dx, dy, rw, rh) in enumerate(((0, -0.4, 3.4, 2.8), (0, -3.4, 2.8, 2.2), (0, 2.6, 3.0, 2.4), (-3.6, -0.6, 2.8, 2.6), (3.6, -0.6, 2.8, 2.6), (-3.2, 2.2, 2.4, 2.2), (3.2, 2.2, 2.4, 2.2))):
+                cv.part(circle((sc[0] + dx, sc[1] + dy - 0.6), rw, rh, wob=0.05, seed=j + 8), "shell", lw=0.65, shade=0.3, hl=0.14)
+    rig.add(sv, shell)
+    hx = 0; hy = (7.4 + extend * 2.4) * (1 - retract * 0.75) + by; hz = shell_z + (0.55 if not flipped else 2.8)
+    if flipped: hy = 6.0 + by
+    (hc, hv) = rig.proj(hx, hy, hz); (nb, nv) = rig.proj(0, 5.0 * (1 - retract * 0.5) + by, shell_z + 0.2); fwd = rig.nv(0, 1)
+    rig.add((nv + hv) / 2, lambda: cv.part(capsule_pts(nb[0], nb[1], hc[0], hc[1], 2.4, 2.1), "turtle_skin", lw=0.8, shade=0.25, hl=0.16))
+    def head():
+        cv.part(circle(hc, 3.3, 2.9, wob=0.04), "turtle_skin", lw=0.9, shade=0.22, hl=0.18)
+        if fwd > -0.35:
+            for side in (-1, 1):
+                a = math.radians(side * 42); vis = rig.nv(math.sin(a), math.cos(a))
+                if vis > 0.05: _eye(cv, rig, 1.0, (hx + 2.4 * math.sin(a), hy + 2.4 * math.cos(a), hz + 0.8), max(0.55, vis) * 1.05, eyes)
+        if fwd > -0.4:
+            (bp, _) = rig.proj(hx, hy + 3.6, hz - 0.3)
+            cv.part(circle(bp, 1.8, 1.1, wob=0), "cloth_yellow", lw=0.55, shade=0.3, hl=0.2)
+    rig.add(hv + 0.5, head)
+    if swim: _ripple(cv, rig, 0, by, 12, fi)
+    if stars: rig.add(99, lambda: [_star(cv, (hc[0] + math.cos(a) * 5, hc[1] - 6 + math.sin(a) * 1.2), 1.5, 1) for a in (0, 2.1, 4.2)])
+    rig.draw(); return cv.final()
+
 def draw(key, d, anim, i):
     if key == "animal_snake": return snake(key, d, anim, i), (24, 32)
+    if key == "animal_turtle": return turtle(key, d, anim, i), (24, 40)
     if key in BIRDS: return bird(key, d, anim, i), (24, 42)
     fi = FI_MAP[anim][i]
     sp = SPECS[key]; beasts.SPECS[key] = sp
@@ -205,6 +284,7 @@ def group(keys, name):
 
 def _pivot(key):
     if key == "animal_snake": return (24, 32)
+    if key == "animal_turtle": return (24, 40)
     if key in BIRDS: return (24, 42)
     return (SPECS[key]["frame"][0] / 2, SPECS[key]["feet"])
 

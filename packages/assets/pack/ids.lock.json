@@ -4868,7 +4868,10 @@
     "crop_rice_3": 4866,
     "wild_beetroot": 4867,
     "wild_pepper": 4868,
-    "wild_rice": 4869
+    "wild_rice": 4869,
+    "animal_alpaca": 4870,
+    "animal_pig": 4871,
+    "animal_turtle": 4872
   },
   "sounds": {
     "amb_rain": 1,

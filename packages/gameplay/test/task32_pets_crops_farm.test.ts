@@ -429,16 +429,19 @@ describe("Task 32: new farm animals", () => {
 
 describe("Task 32: art wiring", () => {
   it("every new animal resolves to a real pack sprite through the fallback chain (no placeholder)", () => {
-    // Task 34: owl + bee have their OWN art now (task34 fragment) — no crow reuse, no tint, no scale;
-    // turtle = green boar at 0.85; pig = pink boar; alpaca = cream deer (the long-neck quadruped, same pattern as goat -> deer)
+    // Task 34: owl + bee have their OWN art now (task34 fragment) — no crow reuse, no tint, no scale.
+    // Turtle, pig, and alpaca now ship dedicated nature_critters_c sheets (no tinted boar/deer).
     expect(resolveSprite("animal_owl", has)).toMatchObject({ key: "animal_owl", scale: 1 });
     expect(resolveSprite("animal_owl", has)!.tint).toBe(0);
-    expect(resolveSprite("animal_turtle", has)).toMatchObject({ key: "animal_boar", scale: 0.85 });
-    expect(resolveSprite("animal_pig", has)).toMatchObject({ key: "animal_boar", scale: 1 });
-    expect(resolveSprite("animal_alpaca", has)).toMatchObject({ key: "animal_deer", scale: 1 });
+    expect(resolveSprite("animal_turtle", has)).toMatchObject({ key: "animal_turtle", scale: 1 });
+    expect(resolveSprite("animal_turtle", has)!.tint).toBe(0);
+    expect(resolveSprite("animal_pig", has)).toMatchObject({ key: "animal_pig", scale: 1 });
+    expect(resolveSprite("animal_pig", has)!.tint).toBe(0);
+    expect(resolveSprite("animal_alpaca", has)).toMatchObject({ key: "animal_alpaca", scale: 1 });
+    expect(resolveSprite("animal_alpaca", has)!.tint).toBe(0);
     expect(resolveSprite("animal_bee", has)).toMatchObject({ key: "animal_bee", scale: 1 });
     expect(resolveSprite("animal_bee", has)!.tint).toBe(0);
-    // the reused sheets animate like the originals: crow/boar/deer sheets carry idle+walk+run+attack+hit+death
+    // each of these keys now points at its own packed sheet
     for (const kind of ["animal_owl", "animal_turtle", "animal_pig", "animal_alpaca", "animal_bee"]) {
       expect(resolveSprite(kind, has)).toBeDefined();
     }
