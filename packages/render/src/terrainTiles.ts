@@ -179,7 +179,7 @@ export class TileTerrain {
    *  with: 1 + season once every page is resident, else 0 (legacy tile_* art while streaming). */
   private groundMode(atlas: AtlasManager): number {
     const g = this.groundArt ? this.ground(atlas) : null; if (!g) return 0;
-    const s = Math.max(0, Math.min(2, this.groundSeason | 0)); atlas.groundPinSeason = (["summer", "fall", "winter"] as const)[s]!; // ADR-251: pinned at 1x on the next rebuild
+    const s = Math.max(0, Math.min(3, this.groundSeason | 0)); atlas.groundPinSeason = (["summer", "fall", "winter", "spring"] as const)[s]!; // ADR-251: pinned at 1x on the next rebuild
     if (s === this.heldSeason && this.pendSeason >= 0) { this.pend.forEach((id) => atlas.releaseSprite(id)); this.pend = []; this.pendSeason = -1; }
     if (s !== this.pendSeason && s !== this.heldSeason) { this.pend.forEach((id) => atlas.releaseSprite(id)); this.pend = g.pageSprites(s); this.pend.forEach((id) => atlas.retainSprite(id)); this.pendSeason = s; }
     const ready = (ids: readonly number[]): boolean => { let ok = true; for (const id of ids) if (atlas.pageInfo(id).state !== "resident") { atlas.streamNear(id, true); ok = false; } return ok; };

@@ -26,7 +26,7 @@ export const gaugeFrac = (c: number): number => Math.max(0, Math.min(1, (c - GAU
 export function tempBand(c: number): "cold" | "mild" | "hot" { return c < 8 ? "cold" : c > 32 ? "hot" : "mild"; }
 /** Gauge track: blue (freezing) → green (mild) → orange/red (hot), positioned on the same GAUGE_MIN..GAUGE_MAX scale. */
 export const GAUGE_GRADIENT = `linear-gradient(90deg,#5B8FE0 0%,#8FD0F0 ${Math.round(gaugeFrac(0) * 100)}%,#9BD36A ${Math.round(gaugeFrac(12) * 100)}%,#F4D35A ${Math.round(gaugeFrac(26) * 100)}%,#F08A3C ${Math.round(gaugeFrac(32) * 100)}%,#D9423A 100%)`;
-export const SEASON_LABEL = ["Summer", "Fall", "Winter"] as const;
+export const SEASON_LABEL = ["Summer", "Fall", "Winter", "Spring"] as const;
 
 /** Air temperature (deg C) the server model gives at `days` (continuous, server-tick day count). */
 export function hudAirTemp(w: World, days: number, weatherKind?: number): number {

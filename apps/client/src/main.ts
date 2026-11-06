@@ -89,7 +89,7 @@ let ctx: CanvasRenderingContext2D | null = null;
 let debugCanvas = canvas;
 let iso: IsoView | undefined;
 const WEATHERS = ["clear", "rain", "storm", "snow", "fog", "overcast", "heat", "blizzard", "windy"];
-const SEASONS = ["summer", "fall", "winter"]; // ADR-239 ?season= view override (name or 0..3 fractional blend)
+const SEASONS = ["summer", "fall", "winter", "spring"]; // ADR-239 ?season= view override (name or 0..3 fractional blend)
 const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
 const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
 const sq = params.get("season"); const si = sq ? (SEASONS.indexOf(sq === "autumn" ? "fall" : sq) >= 0 ? SEASONS.indexOf(sq === "autumn" ? "fall" : sq) : Number.isFinite(Number(sq)) ? Number(sq) : -1) : -1;

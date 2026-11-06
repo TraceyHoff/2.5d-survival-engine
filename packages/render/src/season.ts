@@ -1,5 +1,5 @@
 /**
- * ADR-239: the ONE place the renderer reads the season (Summer -> Fall -> Winter) and turns it into visuals.
+ * ADR-239: the ONE place the renderer reads the season (Summer -> Fall -> Winter -> Spring) and turns it into visuals.
  * - `readSeason(world)`: a host override (client: seasonAtDays on the server-tick day count, ADR-115 style) or the
  *   world's own Season env singleton; undefined without seasons (renders as summer = the original art, unchanged).
  * - `seasonVisual`: blended weights -> shader/CPU amounts (fall recolour, winter frost, ground snow floor, ice).
@@ -27,17 +27,17 @@ export function readSeason(world: World): SeasonInfo | undefined {
 }
 
 export interface SeasonVisual {
-  summer: number; fall: number; winter: number;
+  summer: number; fall: number; winter: number; spring: number;
   /** ground snow floor 0..1 (winter snowpack; weather snow adds on top) */ snow: number;
   /** water ice cover 0..1 */ ice: number;
-  /** dominant season (0 summer, 1 fall, 2 winter) — picks `<key>_<season>` art */ art: number;
+  /** dominant season (0 summer, 1 fall, 2 winter, 3 spring) — picks `<key>_<season>` art */ art: number;
 }
-export const SUMMER_VISUAL: SeasonVisual = Object.freeze({ summer: 1, fall: 0, winter: 0, snow: 0, ice: 0, art: 0 });
+export const SUMMER_VISUAL: SeasonVisual = Object.freeze({ summer: 1, fall: 0, winter: 0, spring: 0, snow: 0, ice: 0, art: 0 });
 export function seasonVisualOf(s: SeasonInfo | undefined): SeasonVisual {
   if (!s) return SUMMER_VISUAL;
-  const [su, fa, wi] = s.weights; const w = wi ?? 0;
+  const [su, fa, wi, sp] = s.weights; const w = wi ?? 0;
   const art = s.blend >= 0.5 ? s.next : s.index;
-  return { summer: su ?? 0, fall: fa ?? 0, winter: w, snow: 0.82 * smooth(0.15, 0.85, w), ice: smooth(0.3, 0.9, w), art };
+  return { summer: su ?? 0, fall: fa ?? 0, winter: w, spring: sp ?? 0, snow: 0.82 * smooth(0.15, 0.85, w), ice: smooth(0.3, 0.9, w), art };
 }
 export function seasonVisual(world: World): SeasonVisual { return seasonVisualOf(readSeason(world)); }
 const smooth = (a: number, b: number, x: number): number => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -47,7 +47,7 @@ export interface SeasonClassRule { re: RegExp; flags: number }
 /** First matching rule wins. Evergreens: snow only (stay green in fall); deciduous: recolour + snow; props/buildings: snow. */
 export const SEASON_CLASS_RULES: SeasonClassRule[] = [
   { re: /^(icon_|held_|item_|fx_|tile_|char|body_|hair|wear|ui_|floor|foundation|stairs|road|path)/, flags: 0 },
-  { re: /(_fall|_autumn|_winter|_summer)$/, flags: 0 }, // explicit season art: no procedural pass
+  { re: /(_fall|_autumn|_winter|_summer|_spring)$/, flags: 0 }, // explicit season art: no procedural pass
   { re: /^(tree_pine|pine_)/, flags: SEASON_SNOWCAP },
   { re: /^(tree_stump)/, flags: SEASON_SNOWCAP },
   { re: /^(tree|oak_tree|birch|willow|bush|berry_bush|blueberry_bush|fiber_grass|flowers|reeds|hedge|shrub|fern|grass_)/, flags: SEASON_FOLIAGE | SEASON_SNOWCAP },
@@ -61,9 +61,9 @@ export function seasonClassOf(key: string | undefined, rules: readonly SeasonCla
 }
 
 /** ADR-246: explicit per-season art for keys that are themselves season art without twins: [summer, fall, winter]. */
-export const SEASON_ALIASES: Readonly<Record<string, readonly (string | undefined)[]>> = { tree_autumn: [undefined, undefined, "tree_winter"] };
+export const SEASON_ALIASES: Readonly<Record<string, readonly (string | undefined)[]>> = { tree_autumn: [undefined, undefined, "tree_winter", undefined] };
 /** Suffixes tried for `<key>_<season>` art (first hit wins). */
-export const SEASON_SUFFIXES: readonly (readonly string[])[] = [["summer"], ["fall", "autumn"], ["winter"]];
+export const SEASON_SUFFIXES: readonly (readonly string[])[] = [["summer"], ["fall", "autumn"], ["winter"], ["spring"]];
 interface SpriteIds { ids: { sprites: { tryId(k: string): number | undefined } }; sprite(id: number): { key: string } }
 
 /**
@@ -79,17 +79,17 @@ export class SeasonArt {
   variant(sid: number, season: number): number {
     let v = this.vars.get(sid);
     if (!v) {
-      v = new Int32Array(3).fill(-1); const k = this.keyOf(sid);
-      if (k) for (let s = 0; s < 3; s++) for (const suf of SEASON_SUFFIXES[s]!) { const id = this.reg.ids.sprites.tryId(`${k}_${suf}`); if (id !== undefined) { v[s] = id; break; } }
+      v = new Int32Array(SEASON_SUFFIXES.length).fill(-1); const k = this.keyOf(sid);
+      if (k) for (let s = 0; s < SEASON_SUFFIXES.length; s++) for (const suf of SEASON_SUFFIXES[s]!) { const id = this.reg.ids.sprites.tryId(`${k}_${suf}`); if (id !== undefined) { v[s] = id; break; } }
       const al = k ? SEASON_ALIASES[k] : undefined; // ADR-246: e.g. tree_autumn (maple) has no own winter art -> tree_winter
-      if (al) for (let s = 0; s < 3; s++) { const a = al[s]; if (v[s]! < 0 && a) { const id = this.reg.ids.sprites.tryId(a); if (id !== undefined) v[s] = id; } }
+      if (al) for (let s = 0; s < SEASON_SUFFIXES.length; s++) { const a = al[s]; if (v[s]! < 0 && a) { const id = this.reg.ids.sprites.tryId(a); if (id !== undefined) v[s] = id; } }
       this.vars.set(sid, v);
     }
     return v[season] ?? -1;
   }
   /** Sprite to draw + class flags for the current season: the variant (no procedural flags) when it exists. */
   resolve(sid: number, vis: SeasonVisual): { sid: number; flags: number } {
-    const v = vis.art > 0 || vis.fall + vis.winter > 0 ? this.variant(sid, vis.art) : -1;
+    const v = vis.art > 0 || vis.fall + vis.winter + vis.spring > 0 ? this.variant(sid, vis.art) : -1;
     return v >= 0 ? { sid: v, flags: 0 } : { sid, flags: this.flags(sid) };
   }
 }

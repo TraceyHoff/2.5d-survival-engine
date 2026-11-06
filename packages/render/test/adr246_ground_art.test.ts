@@ -3,6 +3,7 @@ import { GROUND_PRIORITY, GroundArt, blobReduce, groundHash, groundLayers, groun
   seasonVisualOf, TileId, VfxLayer, WEATHER_FX, WeatherFx, WeatherKindId, weatherFxLevels } from "../src/index.js";
 import { seasonFromDays } from "@engine/core";
 import { gtSnow } from "../src/terrainTiles.js";
+import { GROUND_SEASON_SUFFIX, groundSideKey } from "../src/groundArt.js";
 
 const grid = (rows: string[]) => { const m: Record<string, number> = { "~": 1, s: 2, g: 3, d: 4, r: 5, n: 6, f: 7, w: 8, m: 9, ".": 0 };
   return (x: number, y: number): number => m[rows[y]?.[x] ?? "."] ?? 0; };
@@ -80,3 +81,23 @@ describe("ADR-246 weather fx sprites", () => {
     const k = new WeatherFx(); for (let i = 0; i < 50; i++) k.update(v, (x) => ids[x], WeatherKindId.Clear, { snow: 0, wind: 0 }, 1, { x: 0, y: 0 }, view, 0.1, rnd); expect(k.counts()).toEqual({ snow: 0, blizzard: 0, haze: 0 });
   });
 });
+
+describe("ADR-260 spring ground keys", () => {
+  it("season 3 requests exact `_spring` keys for bases, edges, grazed grass, water and sides", () => {
+    expect(GROUND_SEASON_SUFFIX[3]).toBe("_spring");
+    const t = grid(["sgg", "sdg", "~~~"]); const v = ["", "_b", "_c", "_d", "_e", "_f"][groundHash(1, 1) % 6];
+    const L = groundLayers(t, 1, 1, 3).map((l) => l.key);
+    expect(L[0]).toBe(`gt_dirt${v}_spring`); expect(L).toContain("gt_grass_edge_3_spring");
+    expect(groundLayers(t, 1, 0, 3, undefined, [], undefined, () => true)[0]!.key).toBe("gt_grass_grazed_spring");
+    expect(groundLayers(t, 1, 2, 3).map((l) => l.key)).toEqual(["gt_water_spring"]);
+    expect(groundLayers(grid(["w"]), 0, 0, 3)[0]!.key).toBe("gt_water_shallow_spring");
+    expect(groundSideKey("grass", 3, 1)).toBe("gt_side_grass_low_spring");
+  });
+  it("loader uses exact spring art when present and only falls back to the unsuffixed key when missing", () => {
+    const keys = ["gt_grass", "gt_water", "gt_grass_spring", "gt_dirt"]; const atl = ["p0", "p0", "s0", "p0"];
+    const reg = { ids: { sprites: { tryId: (k: string) => { const i = keys.indexOf(k); return i < 0 ? undefined : i; } } }, sprite: (id: number) => ({ key: keys[id]!, atlas: { key: atl[id]! } }) };
+    const g = new GroundArt(reg); expect(g.id("gt_grass_spring")).toBe(2); expect(g.id("gt_dirt_spring")).toBe(3); expect(g.id("gt_water_spring")).toBe(1);
+    expect(g.pageSprites(3).map((i) => atl[i])).toContain("s0");
+  });
+});
+

@@ -1124,8 +1124,8 @@ export class AtlasManager {
   /** Resident layers the budget planner charges for (shelf count of the last pack; >= the real MaxRects count). */
   private planLayers = 0; private packedLayers = 0;
   /** ADR-251: season whose gt_<season>_p* pages are pinned at 1x (TileTerrain sets the drawn one; the others may halve). */
-  groundPinSeason: "summer" | "fall" | "winter" = "summer";
-  private groundPinOk(key: string): boolean { const m = /^gt_(summer|fall|winter)_/.exec(key); return !m || m[1] === this.groundPinSeason; }
+  groundPinSeason: "summer" | "fall" | "winter" | "spring" = "summer";
+  private groundPinOk(key: string): boolean { const m = /^gt_(summer|fall|winter|spring)_/.exec(key); return !m || m[1] === this.groundPinSeason; }
   /**
    * Pack whole atlas images into array layers: MaxRects (best short side fit) across layers, largest first, rects
    * padded by a 2px gutter and rounded to 4px so side arrays (>> sideShift <= 2) stay texel-exact. Only placement

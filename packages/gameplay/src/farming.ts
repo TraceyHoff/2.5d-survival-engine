@@ -151,7 +151,8 @@ export const LATE_FALL_DAYS = 1;
 /** Task 28: below this ambient temperature (40°F) outdoor crops/plants die. */
 export const FROST_KILL_F = 40;
 export const FROST_KILL_C = (FROST_KILL_F - 32) * 5 / 9;
-/** True while crops are dormant: the final LATE_FALL_DAYS days of fall, and all of winter. */
+/** True while crops are dormant: the final LATE_FALL_DAYS days of fall, and all of winter. ADR-260: growth resumes at the
+ * first tick of Spring (season 3) and continues through Summer and early/mid Fall; frost-killed crops stay dead. */
 export function isCropDormant(world: World): boolean {
   const s = seasonAt(world);
   if (s.index === SeasonId.Winter) return true;

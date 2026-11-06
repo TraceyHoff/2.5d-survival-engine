@@ -2425,7 +2425,7 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - `stateVfx` is not consumed.
 - About 120 other dead fallbacks remain.
 
-## ADR-239: Seasons (Summer → Fall → Winter) with seasonal weather, visuals and a HUD temperature gauge
+## ADR-239: Seasons (Summer → Fall → Winter; Spring added by ADR-260) with seasonal weather, visuals and a HUD temperature gauge
 
 **Context.** The world had one look all year, the weather could roll snow at any time, and temperature only affected survival out of sight. The request was three seasons that change the look of the world and everything in it, weather that matches each season (no summer snow), and a temperature gauge in the vitals panel with realistic seasonal values.
 
@@ -2997,3 +2997,18 @@ spawn guarantee on Art & Assets landing painted pack sheets.
 - Append `Act.Attack` (bit 8) to the demo hold bits; Interact keeps `Act.Gather` (bit 5), Primary uses Attack. Only Attack may select melee creatures. If both controls are down, safe hand interaction wins. The dedicated Primary tool-gather fallback remains. Existing clients must update alongside the host for the new Primary mapping.
 
 **Validation:** ADR-258 UI, multiplayer and authoritative hand tests; existing tutorial, menu navigation, local/P2P, server gameplay/recruitment and input/network package regressions; locked TypeScript 5.9.3 typecheck.
+
+## ADR-260: Spring is a first-class season after Winter
+
+**Context.** ADR-239 ran Summer → Fall → Winter → Summer, treating the winter→summer blend window as the thaw. Players asked for a real Spring with its own tiles, and for world plants to start growing again when it arrives.
+
+**Decision.**
+- Year = Summer → Fall → Winter → Spring → Summer. `SeasonId.Spring = 3` (0/1/2 unchanged, so saves and networked `Season` data keep their meaning); `SEASON_COUNT = 4`, `SeasonInfo.weights` has four entries. Every season keeps `lengthDays` (3); the `blendDays` tail still blends visuals, temperature and weather into the next season (Winter→Spring, Spring→Summer). New games still start in Summer.
+- `environment.json` `seasons.spring`: mean 12.2 °C, range 6.1–20 °C (43–68 °F; above the 40 °F frost-kill line before weather offsets), weather rain / overcast / clear / windy / light fog. The loader rejects snow, blizzard and heat in spring; snow only appears while blending out of winter and is re-rolled once Spring is current.
+- Growth: `isCropDormant` stays true for the last fall day and all of winter, and is false from the first Spring tick, so planted crops, saplings and wild farmables resume `Crop` growth in Spring. Frost-killed crops stay dead (they are already empty soil). Resource-node regrowth has no season gate, so there is no Spring "instant forest".
+- Visuals: `SeasonVisual.spring` weight; winter frost / bare canopy / snowcap follow the winter weight and fade as Spring takes over. `<key>_spring` sprite variants are used when the registry has them.
+- Ground art: `GROUND_SEASON_SUFFIX[3] = "_spring"`; ground pages / residency include season 3 and `atlasManager.groundPinSeason` accepts `spring` (`gt_spring_*` atlas pages). HUD / `?season=` override know the 4th season ("Spring").
+
+**Art convention (for Art & Assets).** Spring tiles use the same keys as summer plus `_spring`: `gt_<mat><variant>_spring` (variants `"", _b.._f`), `gt_<mat>_edge_<mask>_spring` (blob-47), `gt_shore_<mask>_spring` / `gt_bank_<mask>_spring`, `gt_water_spring` / `gt_water_shallow_spring` (thaw water), `gt_grass_grazed_spring`, `gt_side_<mat>[_low]_spring`; plant leaf-out as `<sprite>_spring` (e.g. `tree_oak_spring`). Put them on `gt_spring_*` atlas pages so season pinning works. Until they land, the loader's emergency fallback draws the unsuffixed key; no fall/winter/summer art was copied or renamed as spring art.
+
+**Validation:** `adr260_spring` (cycle order, wrap, blends, spring table, no snow/heat rolls), Task 28 spring growth tests, ADR-246 spring ground keys; updated ADR-239 cycle tests; locked TypeScript 5.9.3 typecheck.

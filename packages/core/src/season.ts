@@ -1,5 +1,5 @@
 /**
- * ADR-239 seasons: a Summer -> Fall -> Winter cycle derived from the day clock (TimeOfDay), so it is server-authoritative,
+ * ADR-239 seasons: a Summer -> Fall -> Winter -> Spring cycle (ADR-259/260 adds Spring) derived from the day clock (TimeOfDay), so it is server-authoritative,
  * persisted (the clock's epoch + `offsetDays` in world meta) and replicated (Season + TimeOfDay are networked env
  * components) with no per-tick state. `lengthDays` = in-game days per season (0 = seasons off: always summer);
  * `offsetDays` shifts the cycle (admin / dev jump, tests); `blendDays` = the tail of each season over which visuals and
@@ -12,13 +12,13 @@ import type { World } from "./world.js";
 export const Season = defineComponent("Season", { lengthDays: "u16", offsetDays: "i32", blendDays: "f32" }, { networked: true });
 
 /** Season ids (stable, renderer / HUD contract). */
-export const enum SeasonId { Summer = 0, Fall = 1, Winter = 2 }
-export const SEASON_NAMES = ["summer", "fall", "winter"] as const;
+export const enum SeasonId { Summer = 0, Fall = 1, Winter = 2, Spring = 3 }
+export const SEASON_NAMES = ["summer", "fall", "winter", "spring"] as const;
 export type SeasonName = (typeof SEASON_NAMES)[number];
-export const SEASON_COUNT = 3;
+export const SEASON_COUNT = 4;
 
 export interface SeasonInfo {
-  /** Current season 0 summer, 1 fall, 2 winter. */
+  /** Current season 0 summer, 1 fall, 2 winter, 3 spring. */
   index: number;
   /** Season it blends into. */
   next: number;
@@ -26,13 +26,13 @@ export interface SeasonInfo {
   blend: number;
   /** Days into the current season (fractional) and its length. */
   into: number; lengthDays: number;
-  /** Weights per season (sum 1): [summer, fall, winter]. */
-  weights: [number, number, number];
+  /** Weights per season (sum 1): [summer, fall, winter, spring]. */
+  weights: [number, number, number, number];
   /** Whole cycles (years) since the epoch. */
   year: number;
 }
 
-const OFF: SeasonInfo = { index: 0, next: 0, blend: 0, into: 0, lengthDays: 0, weights: [1, 0, 0], year: 0 };
+const OFF: SeasonInfo = { index: 0, next: 0, blend: 0, into: 0, lengthDays: 0, weights: [1, 0, 0, 0], year: 0 };
 
 function hasSeason(world: World): boolean {
   return world.isAlive(world.environment) && world.isRegistered(Season) && world.has(world.environment, Season);
@@ -40,7 +40,7 @@ function hasSeason(world: World): boolean {
 
 /** Pure season math from a (fractional) day position. */
 export function seasonFromDays(days: number, lengthDays: number, blendDays: number): SeasonInfo {
-  if (!(lengthDays > 0)) return { ...OFF, weights: [1, 0, 0] };
+  if (!(lengthDays > 0)) return { ...OFF, weights: [1, 0, 0, 0] };
   const cycle = lengthDays * SEASON_COUNT;
   const p = ((days % cycle) + cycle) % cycle;
   const index = Math.min(SEASON_COUNT - 1, Math.floor(p / lengthDays));
@@ -49,15 +49,15 @@ export function seasonFromDays(days: number, lengthDays: number, blendDays: numb
   const b = Math.max(0, Math.min(lengthDays, blendDays));
   let blend = 0;
   if (b > 0 && into > lengthDays - b) { const x = (into - (lengthDays - b)) / b; blend = x * x * (3 - 2 * x); }
-  const weights: [number, number, number] = [0, 0, 0]; weights[index] = 1 - blend; weights[next] = weights[next]! + blend;
+  const weights: [number, number, number, number] = [0, 0, 0, 0]; weights[index] = 1 - blend; weights[next] = weights[next]! + blend;
   return { index, next, blend, into, lengthDays, weights, year: Math.floor(days / cycle) };
 }
 
 /** Season at `tick` (default now). Always summer when the world has no Season or lengthDays 0. */
 export function seasonAt(world: World, tick = world.tick): SeasonInfo {
-  if (!hasSeason(world)) return { ...OFF, weights: [1, 0, 0] };
+  if (!hasSeason(world)) return { ...OFF, weights: [1, 0, 0, 0] };
   const s = world.env(Season); const tod = timeOfDay(world, tick);
-  if (tod.dayLengthTicks <= 0) return { ...OFF, weights: [1, 0, 0] };
+  if (tod.dayLengthTicks <= 0) return { ...OFF, weights: [1, 0, 0, 0] };
   return seasonFromDays(tod.day + tod.t + s.offsetDays, s.lengthDays, s.blendDays);
 }
 
@@ -66,7 +66,7 @@ export function seasonAt(world: World, tick = world.tick): SeasonInfo {
  * day clock (ADR-115): the client World's own tick is not the server's.
  */
 export function seasonAtDays(world: World, days: number): SeasonInfo {
-  if (!hasSeason(world)) return { ...OFF, weights: [1, 0, 0] };
+  if (!hasSeason(world)) return { ...OFF, weights: [1, 0, 0, 0] };
   const s = world.env(Season); return seasonFromDays(days + s.offsetDays, s.lengthDays, s.blendDays);
 }
 

@@ -139,7 +139,7 @@ export function seasonalBaseTemp(env: EnvironmentTuning, si: SeasonInfo, time: T
   const curve = -Math.cos(2 * Math.PI * (time.t - 0.04)); // coldest just before dawn-ish, warmest early afternoon
   const noise = dailyNoise(time.day + time.t);
   let t = 0, lo = 0, hi = 0;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < st.seasons.length; i++) {
     const wgt = si.weights[i]!; if (wgt <= 0) continue; const s = st.seasons[i]!;
     t += wgt * (s.meanTemp + s.dayNightAmplitude * curve + s.dailyVariation * noise); lo += wgt * s.tempRange[0]; hi += wgt * s.tempRange[1];
   }
@@ -159,7 +159,7 @@ export function seasonalTemperature(env: EnvironmentTuning, si: SeasonInfo, time
   let t = seasonalBaseTemp(env, si, time, bandDelta) + seasonalWeatherDef(env, si, kind).tempOffset * weather.intensity;
   if (kind === WeatherKind.Heat) {
     let hlo = 0, hhi = 0, hw = 0;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < st.seasons.length; i++) {
       const wgt = si.weights[i]!; const range = st.seasons[i]!.heatWaveRange; if (wgt <= 0 || !range) continue;
       hlo += wgt * range[0]; hhi += wgt * range[1]; hw += wgt;
     }

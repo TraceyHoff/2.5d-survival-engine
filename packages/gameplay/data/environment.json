@@ -239,7 +239,7 @@
     ]
   },
   "seasons": {
-    "$comment": "ADR-239. Summer -> Fall -> Winter, lengthDays in-game days each (0 = seasons off). The last blendDays of a season blend visuals, temperature and the weather table into the next. Temperature = blended (meanTemp + dayNightAmplitude * day curve + dailyVariation * per-day noise), clamped to tempRange, + weather tempOffset * intensity + bandScale * (biome band temp - baseTemp) - altitude lapse. Task 23: tempRange is the season's range in deg C (summer 70-88F, fall 36-69F, winter 0-35F); rain/storm may cool below it, heat waves clamp into heatWaveRange (summer 89-100F). Season weather entries reference environment.weather kinds (effects come from there) and may override durationSeconds / intensity / windSpeed / tempOffset. Snow kinds are rejected in summer, and snow/blizzard never roll while the seasonal base temperature is at or above freezing (0C / 32F). There is no spring season: the year runs Summer -> Fall -> Winter -> Summer, and the winter->summer blendDays window is the spring thaw.",
+    "$comment": "ADR-239. Summer -> Fall -> Winter -> Spring, lengthDays in-game days each (0 = seasons off). The last blendDays of a season blend visuals, temperature and the weather table into the next. Temperature = blended (meanTemp + dayNightAmplitude * day curve + dailyVariation * per-day noise), clamped to tempRange, + weather tempOffset * intensity + bandScale * (biome band temp - baseTemp) - altitude lapse. Task 23: tempRange is the season's range in deg C (summer 70-88F, fall 36-69F, winter 0-35F, spring 43-68F); rain/storm may cool below it, heat waves clamp into heatWaveRange (summer 89-100F). Season weather entries reference environment.weather kinds (effects come from there) and may override durationSeconds / intensity / windSpeed / tempOffset. Snow kinds are rejected in summer and spring (heat waves too in spring), and snow/blizzard never roll while the seasonal base temperature is at or above freezing (0C / 32F). The year runs Summer -> Fall -> Winter -> Spring -> Summer (Spring = season 3; spring 43-68F, rain/overcast/clear/windy/light fog; crops and wild plants resume growth at the start of spring).",
     "lengthDays": 3,
     "blendDays": 0.75,
     "startSeason": "summer",
@@ -338,6 +338,44 @@
           "windSpeed": [
             0,
             3
+          ]
+        }
+      ]
+    },
+    "spring": {
+      "meanTemp": 12.2,
+      "dayNightAmplitude": 4.5,
+      "dailyVariation": 2,
+      "tempRange": [
+        6.1,
+        20
+      ],
+      "weather": [
+        {
+          "kind": "rain",
+          "weight": 32,
+          "tempOffset": -1.5
+        },
+        {
+          "kind": "overcast",
+          "weight": 22
+        },
+        {
+          "kind": "clear",
+          "weight": 26,
+          "tempOffset": 0
+        },
+        {
+          "kind": "windy",
+          "weight": 12
+        },
+        {
+          "kind": "fog",
+          "weight": 8,
+          "tempOffset": -1,
+          "intensity": [
+            0.2,
+            0.5
           ]
         }
       ]

@@ -47,7 +47,7 @@ export function overrideDays(w: World, days: number, ov: HudOverrides): number {
   const L = seasonAtDays(w, 0).lengthDays; const day = Math.floor(days), t = ov.hours !== undefined ? ov.hours / 24 : days - day;
   if (ov.season === undefined || !(L > 0)) return day + t;
   const s = seasonAtDays(w, day); const base = day - Math.floor(s.into); // start of the current season (whole days)
-  const target = Math.floor(((ov.season % 3) + 3) % 3);
+  const target = Math.floor(((ov.season % 4) + 4) % 4);
   return base + (((target - s.index) % 3) + 3) % 3 * L + Math.floor(L / 2) + t;
 }
 export function mountHud(world: () => World, player: () => Entity | undefined, ov: HudOverrides = {}, onCharacter?: () => void): { destroy(): void } {
@@ -149,7 +149,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       const night = h < 6 || h >= 19; if (ui) { const u = ui.url(night ? "ic_moon" : "ic_sun"); if (u && clockIcon.dataset["k"] !== String(night)) { clockIcon.src = u; clockIcon.dataset["k"] = String(night); } }
     } catch { setText("clock", clockText, ""); setText("weather", weatherText, ""); }
     try { // ADR-239 season + temperature
-      const days = dayCount(), si = ov.season !== undefined ? Math.floor(((ov.season % 3) + 3) % 3) : seasonAtDays(w, days).index;
+      const days = dayCount(), si = ov.season !== undefined ? Math.floor(((ov.season % 4) + 4) % 4) : seasonAtDays(w, days).index;
       // Task 25: season is a custom icon (was the ☀/🍂/❄ text emoji).
       if (seasonIcon.dataset["k"] !== String(si)) { seasonIcon.dataset["k"] = String(si); seasonIcon.src = `${base}icons/${SEASON_ICON[si] ?? "ic_sun.png"}`; }
       setAttr("seasonTitle", seasonText, "title", `${SEASON_LABEL[si] ?? ""}${ov.season !== undefined ? " (view override ?season=)" : ""}`);

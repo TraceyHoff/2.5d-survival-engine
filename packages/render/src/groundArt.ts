@@ -36,8 +36,8 @@ export function blobReduce(m: number): number {
   if (m & 64 && m & (4 | 8)) m &= ~64; if (m & 128 && m & (1 | 8)) m &= ~128;
   return m;
 }
-/** Season art index (SeasonVisual.art): 0 summer, 1 fall, 2 winter -> key suffix. */
-export const GROUND_SEASON_SUFFIX = ["", "_fall", "_winter"] as const;
+/** Season art index (SeasonVisual.art): 0 summer, 1 fall, 2 winter, 3 spring -> key suffix (ADR-260: `_spring`). */
+export const GROUND_SEASON_SUFFIX = ["", "_fall", "_winter", "_spring"] as const;
 
 /** Layer kinds (bottom -> top within one cell). */
 export const enum GroundLayerKind { Base = 0, Edge = 1, Shore = 2, Water = 3, Ice = 4, Leaves = 5 }
@@ -56,7 +56,7 @@ export function groundLayers(tileAt: (x: number, y: number) => number, x: number
   const h = hash ?? groundHash(x, y), v = GROUND_VARIANTS[h % 6]!, suf = GROUND_SEASON_SUFFIX[season] ?? "";
   if (mat === "water") {
     if (season === 2) { out.push({ key: `gt_ice${v}`, kind: GroundLayerKind.Ice }); return out; } // winter: static, untinted ice
-    out.push({ key: id === TileId.ShallowWater ? "gt_water_shallow" : "gt_water", kind: GroundLayerKind.Water });
+    out.push({ key: (id === TileId.ShallowWater ? "gt_water_shallow" : "gt_water") + (season === 3 ? "_spring" : ""), kind: GroundLayerKind.Water }); // ADR-260: spring thaw water (gt_water_spring)
     if (season === 1 && (h % 100) < (!tint || tint(x, y) >= 0.3 ? LEAF_NEAR : LEAF_FAR) * 100)
       out.push({ key: `gt_water_leaves_${"abc"[(h >> 3) % 3]}`, kind: GroundLayerKind.Leaves }); // after the tint (own instance)
     return out;
@@ -93,7 +93,7 @@ export class GroundArt {
   constructor(private reg: Reg) {
     this.available = reg.ids.sprites.tryId("gt_grass") !== undefined && reg.ids.sprites.tryId("gt_water") !== undefined;
     if (!this.available) return;
-    for (let s = 0; s < 3; s++) {
+    for (let s = 0; s < GROUND_SEASON_SUFFIX.length; s++) {
       const by = new Map<string, number>();
       const add = (k: string): void => { const id = this.id(k); if (id < 0) return; let a: string; try { a = reg.sprite(id).atlas.key; } catch { return; } if (!by.has(a)) by.set(a, id); };
       // every key the season can draw (bases, a full edge/shore sample, water/ice/leaves)
@@ -101,7 +101,7 @@ export class GroundArt {
       for (const m of GROUND_PRIORITY) for (let k = 1; k < 256; k++) if (blobReduce(k) === k) { add(`gt_${m}_edge_${k}${GROUND_SEASON_SUFFIX[s]}`); }
       for (let k = 1; k < 256; k++) if (blobReduce(k) === k) { add(`gt_shore_${k}${GROUND_SEASON_SUFFIX[s]}`); add(`gt_bank_${k}${GROUND_SEASON_SUFFIX[s]}`); }
       for (const m of GROUND_PRIORITY) { add(groundSideKey(m, s, 0)); add(groundSideKey(m, s, 1)); } // ADR-251 height-drop faces
-      if (s === 2) for (const v of GROUND_VARIANTS) add(`gt_ice${v}`); else { add("gt_water"); add("gt_water_shallow"); }
+      if (s === 2) for (const v of GROUND_VARIANTS) add(`gt_ice${v}`); else { const ws = s === 3 ? "_spring" : ""; add(`gt_water${ws}`); add(`gt_water_shallow${ws}`); }
       if (s === 1) for (const c of "abc") add(`gt_water_leaves_${c}`);
       add(`gt_grass_grazed${GROUND_SEASON_SUFFIX[s]}`); // ADR-256: grazed lawn atlas (gt_grazed)
       this.pages[s] = [...by.values()];
@@ -112,10 +112,10 @@ export class GroundArt {
     let v = this.ids.get(key); if (v !== undefined) return v;
     const t = (k: string): number => this.reg.ids.sprites.tryId(k) ?? -1;
     v = t(key);
-    if (v < 0 && /_(fall|winter)$/.test(key)) v = t(key.replace(/_(fall|winter)$/, ""));
+    if (v < 0 && /_(fall|winter|spring)$/.test(key)) v = t(key.replace(/_(fall|winter|spring)$/, ""));
     if (v < 0 && key.startsWith("gt_grass_grazed")) { // ADR-256: placeholders point at ungrazed grass (+ season)
       const u = key.replace("gt_grass_grazed", "gt_grass"); v = t(u);
-      if (v < 0 && /_(fall|winter)$/.test(u)) v = t("gt_grass");
+      if (v < 0 && /_(fall|winter|spring)$/.test(u)) v = t("gt_grass");
     }
     if (v < 0 && key.startsWith("gt_ice")) v = t("gt_water_winter");
     if (v < 0 && key.startsWith("gt_side_") && key.includes("_low")) v = this.id(key.replace("_low", "")); // lower level -> top face

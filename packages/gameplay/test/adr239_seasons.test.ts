@@ -1,4 +1,4 @@
-// ADR-239: Summer -> Fall -> Winter cycle, seasonal weather tables (never snow in summer) and seasonal temperatures.
+// ADR-239 (+ADR-260 Spring): Summer -> Fall -> Winter -> Spring cycle, seasonal weather tables (never snow in summer) and seasonal temperatures.
 import { describe, expect, it } from "vitest";
 import { Season, seasonAt, seasonFromDays, setSeason, setTimeOfDay, timeOfDay, TimeOfDay, Weather, World } from "@engine/core";
 import { WeatherKind, isSnowing } from "../src/defs.js";
@@ -14,20 +14,20 @@ describe("ADR-239 season cycle", () => {
     const w = makeWorld(); const s = w.env(Season);
     expect(s.lengthDays).toBe(L); expect(seasonAt(w).index).toBe(0);
   });
-  it("Summer -> Fall -> Winter -> Summer over 3 x lengthDays, weights always sum to 1", () => {
+  it("Summer -> Fall -> Winter -> Spring -> Summer over 4 x lengthDays, weights always sum to 1", () => {
     const seq: number[] = [];
-    for (let d = 0; d < 3 * L * 2; d += 0.05) {
+    for (let d = 0; d < 4 * L * 2; d += 0.05) {
       const si = seasonFromDays(d, L, st.blendDays);
-      expect(si.weights[0] + si.weights[1] + si.weights[2]).toBeCloseTo(1, 9);
+      expect(si.weights[0] + si.weights[1] + si.weights[2] + si.weights[3]).toBeCloseTo(1, 9);
       if (seq.at(-1) !== si.index) seq.push(si.index);
     }
-    expect(seq).toEqual([0, 1, 2, 0, 1, 2]);
+    expect(seq).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
   });
   it("transitions blend smoothly (no step larger than a small fraction per in-game hour)", () => {
     let prev = seasonFromDays(0, L, st.blendDays).weights, maxStep = 0;
-    for (let d = 0; d < 3 * L; d += 1 / 24) {
+    for (let d = 0; d < 4 * L; d += 1 / 24) {
       const w = seasonFromDays(d, L, st.blendDays).weights;
-      for (let i = 0; i < 3; i++) maxStep = Math.max(maxStep, Math.abs(w[i]! - prev[i]!)); prev = w;
+      for (let i = 0; i < 4; i++) maxStep = Math.max(maxStep, Math.abs(w[i]! - prev[i]!)); prev = w;
     }
     expect(maxStep).toBeLessThan(0.1);
   });
@@ -36,13 +36,14 @@ describe("ADR-239 season cycle", () => {
     setTimeOfDay(w, 12, 0); expect(seasonAt(w).index).toBe(0);
     steps(w, 200 * L); expect(seasonAt(w).index).toBe(1);
     steps(w, 200 * L); expect(seasonAt(w).index).toBe(2);
+    steps(w, 200 * L); expect(seasonAt(w).index).toBe(3);
     steps(w, 200 * L); expect(seasonAt(w).index).toBe(0);
     const h = timeOfDay(w).hours; setSeason(w, 2, 1);
     expect(seasonAt(w).index).toBe(2); expect(Math.floor(seasonAt(w).into)).toBe(1); expect(timeOfDay(w).hours).toBeCloseTo(h, 6);
   });
   it("lengthDays 0 = seasons off (always summer)", () => {
     expect(seasonFromDays(123.4, 0, 0).index).toBe(0);
-    const w = new World({ seed: 1, maxEntities: 16 }); expect(seasonAt(w).weights).toEqual([1, 0, 0]);
+    const w = new World({ seed: 1, maxEntities: 16 }); expect(seasonAt(w).weights).toEqual([1, 0, 0, 0]);
   });
 });
 
@@ -66,12 +67,12 @@ describe("ADR-239 seasonal weather", () => {
     expect(st.seasons[0].weather.some((d) => isSnowing(d.kind))).toBe(false);
     expect(weatherAllowed(env, seasonFromDays(0.5, L, st.blendDays), WeatherKind.Snow)).toBe(false);
   });
-  it("snow still falling when winter turns into summer is re-rolled at once", () => {
+  it("snow still falling when winter turns into spring is re-rolled at once", () => {
     const w = makeWorld({ liveWeather: true, dayLengthTicks: 400 }); setSeason(w, 2, L - 1); setTimeOfDay(w, 23.9);
     Object.assign(w.env(Weather), { kind: WeatherKind.Blizzard, intensity: 1, endsAtTick: w.tick + 1_000_000 });
     let snowInSummer = 0;
-    for (let i = 0; i < 400 * 2; i++) { steps(w, 1); if (worldSeason(w).index === 0 && isSnowing(w.env(Weather).kind)) snowInSummer++; }
-    expect(worldSeason(w).index).toBe(0); expect(snowInSummer).toBe(0);
+    for (let i = 0; i < 400 * 2; i++) { steps(w, 1); if (worldSeason(w).index === 3 && isSnowing(w.env(Weather).kind)) snowInSummer++; }
+    expect(worldSeason(w).index).toBe(3); expect(snowInSummer).toBe(0);
   });
   it("pinned weather (endsAtTick u32 max: admin / ?weather / tests) is left alone", () => {
     const w = makeWorld({ liveWeather: true }); Object.assign(w.env(Weather), { kind: WeatherKind.Snow, endsAtTick: PINNED_WEATHER });

@@ -137,12 +137,12 @@ export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
 export interface ViewOverrides { hours?: number; weather?: number; intensity?: number;
-  /** ADR-239 `?season=`: 0 summer, 1 fall, 2 winter; a fraction blends toward the next season (1.5 = half fall/winter). */ season?: number }
+  /** ADR-239 `?season=`: 0 summer, 1 fall, 2 winter, 3 spring; a fraction blends toward the next season (1.5 = half fall/winter). */ season?: number }
 /** ADR-239: the season to draw: the override, else the replicated Season at the client's server-tick day count. */
 export function viewSeason(net: World, days: number, ov?: number): SeasonInfo {
   if (ov === undefined || !Number.isFinite(ov)) return seasonAtDays(net, days);
-  const p = ((ov % 3) + 3) % 3, index = Math.floor(p), next = (index + 1) % 3, blend = p - index;
-  const weights: [number, number, number] = [0, 0, 0]; weights[index] = 1 - blend; weights[next] = weights[next]! + blend;
+  const p = ((ov % 4) + 4) % 4, index = Math.floor(p), next = (index + 1) % 4, blend = p - index;
+  const weights: [number, number, number, number] = [0, 0, 0, 0]; weights[index] = 1 - blend; weights[next] = weights[next]! + blend;
   return { index, next, blend, into: 0, lengthDays: 1, weights, year: 0 };
 }
 

@@ -122,7 +122,7 @@ export interface VitalsTuning {
 }
 /** ADR-239: one season's climate + weather table (entries are full WeatherDefs: base kind def + season overrides). */
 export interface SeasonDef {
-  readonly key: "summer" | "fall" | "winter"; readonly meanTemp: number; readonly dayNightAmplitude: number; readonly dailyVariation: number;
+  readonly key: "summer" | "fall" | "winter" | "spring"; readonly meanTemp: number; readonly dayNightAmplitude: number; readonly dailyVariation: number;
   readonly tempRange: readonly [number, number]; readonly weather: readonly WeatherDef[];
   /** Task 23: when set, Heat weather clamps into this band (deg C) instead of the season range (summer heat waves 89-100F). */
   readonly heatWaveRange?: readonly [number, number];
@@ -132,8 +132,8 @@ export interface SeasonsTuning {
   readonly lengthDays: number; readonly blendDays: number; readonly startSeason: number;
   /** How much of a biome band's temperature offset (band temp - baseTemp) carries over to seasonal temperatures. */
   readonly bandScale: number;
-  /** [summer, fall, winter]. */
-  readonly seasons: readonly [SeasonDef, SeasonDef, SeasonDef];
+  /** [summer, fall, winter, spring]. */
+  readonly seasons: readonly [SeasonDef, SeasonDef, SeasonDef, SeasonDef];
 }
 export interface EnvironmentTuning {
   readonly dayLengthSeconds: number; readonly startTimeOfDay: number; readonly baseTemp: number; readonly dayNightAmplitude: number;
@@ -313,7 +313,7 @@ export interface RawResource extends RawVisual { key: string; requiredTool: stri
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
 export interface RawSeasonWeather { kind: string; weight: number; durationSeconds?: number[]; intensity?: number[]; tempOffset?: number; windSpeed?: number[] }
 export interface RawSeason { meanTemp: number; dayNightAmplitude: number; dailyVariation: number; tempRange: number[]; heatWaveRange?: number[]; weather: RawSeasonWeather[] }
-export interface RawSeasons { $comment?: string; lengthDays: number; blendDays: number; startSeason?: string; bandScale?: number; summer: RawSeason; fall: RawSeason; winter: RawSeason }
+export interface RawSeasons { $comment?: string; lengthDays: number; blendDays: number; startSeason?: string; bandScale?: number; summer: RawSeason; fall: RawSeason; winter: RawSeason; spring: RawSeason }
 export interface RawPiece extends RawVisual {
   key: string; placement: string; layer?: number; footprint?: { w: number; h: number }; levels?: number; solid?: boolean; hp: number;
   sockets?: { x: number; y: number; z?: number; kind: number }[]; cost?: { resource: string; amount: number }[];
@@ -533,7 +533,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     return { kind: enumOf(WEATHER, w.kind, `${where}.kind`), weight: w.weight, durationSeconds: pair(w.durationSeconds, "durationSeconds"), intensity: pair(w.intensity, "intensity"), tempOffset: w.tempOffset, wetnessPerSec: w.wetnessPerSec, thirstMul: w.thirstMul, staminaRegenMul: w.staminaRegenMul, windSpeed: w.windSpeed ? pair(w.windSpeed, "windSpeed") : [0, 0] };
   });
   if (!weather.some((w) => w.weight > 0)) err("environment.weather: at least one entry needs weight > 0");
-  const SEASON_KEYS = ["summer", "fall", "winter"] as const;
+  const SEASON_KEYS = ["summer", "fall", "winter", "spring"] as const;
   let seasons: SeasonsTuning | undefined;
   if (env.seasons) {
     const rs = env.seasons; const where = "environment.seasons";
@@ -556,10 +556,11 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
         return { ...b, kind, weight: e.weight, durationSeconds: pair(e.durationSeconds, b.durationSeconds), intensity: pair(e.intensity, b.intensity), windSpeed: pair(e.windSpeed, b.windSpeed), tempOffset: e.tempOffset ?? b.tempOffset };
       });
       if (!table.some((t) => t.weight > 0)) err(`${w}.weather: at least one entry needs weight > 0`);
-      if (key === "summer" && table.some((t) => t.weight > 0 && isSnowing(t.kind))) err(`${w}.weather: snow is not allowed in summer`);
+      if ((key === "summer" || key === "spring") && table.some((t) => t.weight > 0 && isSnowing(t.kind))) err(`${w}.weather: snow is not allowed in ${key}`);
+      if (key === "spring" && table.some((t) => t.weight > 0 && t.kind === WeatherKind.Heat)) err(`${w}.weather: heat waves are not allowed in spring`);
       return { key, meanTemp: r.meanTemp, dayNightAmplitude: r.dayNightAmplitude, dailyVariation: r.dailyVariation, tempRange: range, ...(heatWaveRange ? { heatWaveRange } : {}), weather: table };
     });
-    seasons = { lengthDays: rs.lengthDays, blendDays: rs.blendDays, startSeason: Math.max(0, start), bandScale: rs.bandScale ?? 0.35, seasons: defs as unknown as [SeasonDef, SeasonDef, SeasonDef] };
+    seasons = { lengthDays: rs.lengthDays, blendDays: rs.blendDays, startSeason: Math.max(0, start), bandScale: rs.bandScale ?? 0.35, seasons: defs as unknown as [SeasonDef, SeasonDef, SeasonDef, SeasonDef] };
   }
 
   // tiers

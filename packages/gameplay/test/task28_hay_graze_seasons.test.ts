@@ -291,3 +291,21 @@ describe("Task 28: seasonal crop death", () => {
     expect(after.get("berry_bush")).toBe(before.get("berry_bush")); // berry bushes survive
   });
 });
+
+describe("ADR-260: plants start their growth cycle in Spring", () => {
+  it("crops are dormant in late fall and winter, and grow again in spring", () => {
+    const { w } = fresh(); const len = seasonAt(w).lengthDays;
+    setSeason(w, 1, len - 1); expect(G.isCropDormant(w)).toBe(true);
+    setSeason(w, 2, 1); expect(G.isCropDormant(w)).toBe(true);
+    setSeason(w, 3, 0); expect(seasonAt(w).index).toBe(3); expect(G.isCropDormant(w)).toBe(false);
+    setSeason(w, 3, len - 1); expect(G.isCropDormant(w)).toBe(false);
+  });
+  it("a planted crop does not grow across mid-winter ticks and does grow across spring ticks", () => {
+    const { w } = fresh();
+    const bush = cropAt(w, BASE.x + 3, BASE.y, "berry_seeds", 0.1);
+    setSeason(w, 2, 1); for (let i = 0; i < 5; i++) G.cropGrowthSystem(w);
+    expect(w.get(bush, G.Crop)!.growth).toBeCloseTo(0.1, 6);
+    setSeason(w, 3, 0); let prev = w.get(bush, G.Crop)!.growth;
+    for (let i = 0; i < 5; i++) { G.cropGrowthSystem(w); const g = w.get(bush, G.Crop)!.growth; expect(g).toBeGreaterThan(prev); prev = g; }
+  });
+});
