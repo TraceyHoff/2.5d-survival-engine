@@ -83,13 +83,18 @@ describe("Task 28: hay crop", () => {
     const wild = d.resources.get(d.resourceId("wild_hay"))!;
     expect(wild).toMatchObject({ capacity: 2, respawnSeconds: 240 });
     expect(wild.yields).toEqual([{ item: iid("hay"), min: 1, max: 2, chance: 1 }, { item: iid("hay_seeds"), min: 1, max: 1, chance: 0.4 }]);
-    // art: hay reuses the wheat sprites (same 32x32 pixel style) — stage keys resolve to real wild_wheat art
-    const has = (k: string): boolean => k === "wild_wheat" || k === "wild_grain" || k === "flax";
-    expect(resolveSprite("crop_hay_0", has)).toMatchObject({ key: "wild_wheat", scale: 0.35 });
-    expect(resolveSprite("crop_hay_3", has)).toMatchObject({ key: "wild_wheat", scale: 1 });
-    expect(resolveSprite("wild_hay", has)).toMatchObject({ key: "wild_wheat", scale: 1 });
-    expect(resolveIcon("hay", "resource", has)).toBe("wild_grain");
-    expect(resolveIcon("hay_seeds", "resource", has)).toBe("wild_grain");
+    // art: ADR-257 unique hay keys (task256 atlas); pack hit draws itself — no wheat reuse
+    const has = (k: string): boolean =>
+      k === "wild_hay" || k === "crop_hay" || k === "hay" || k === "hay_seeds" || k === "fiber_grass" || k === "flax";
+    expect(resolveSprite("crop_hay_0", has)).toMatchObject({ key: "crop_hay", scale: 0.35 });
+    expect(resolveSprite("crop_hay_3", has)).toMatchObject({ key: "crop_hay", scale: 1 });
+    expect(resolveSprite("wild_hay", has)).toMatchObject({ key: "wild_hay", scale: 1 });
+    expect(resolveIcon("hay", "resource", has)).toBe("hay");
+    expect(resolveIcon("hay_seeds", "resource", has)).toBe("hay_seeds");
+    // emergency fallback (no dedicated art yet) must NOT resolve to wheat
+    const emergency = (k: string): boolean => k === "fiber_grass" || k === "flax" || k === "bush" || k === "wild_wheat";
+    expect(resolveSprite("wild_hay", emergency)!.key).not.toBe("wild_wheat");
+    expect(resolveSprite("crop_hay", emergency)!.key).not.toBe("wild_wheat");
   });
 
   it("hay plants, grows at the 300s rate, matures into crop_hay, and harvest returns hay + its own seeds", () => {

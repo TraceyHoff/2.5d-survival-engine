@@ -1,0 +1,107 @@
+{
+  "$comment": "ADR-257: unique wild lettuce / hay plant sprites. Atlas crops_task256 is declared in nature (dummy nature_icons PNG size) so nature's hay/hay_seeds icons can reference it when nature is loaded alone. Pixels are painted at runtime by apps/client/src/task256-art.ts; view.ts overrides the atlas source. Frames: 0 wild_lettuce, 1 crop_lettuce, 2 wild_lettuce depleted, 3 wild_hay, 4 crop_hay, 5 wild_hay depleted, 6 hay item, 7 hay_seeds item. Wheat keeps dedicated nature_crops frames.",
+  "version": 1,
+  "name": "survivaz-task256",
+  "sprites": [
+    {
+      "key": "wild_lettuce",
+      "category": "resource",
+      "atlas": "crops_task256",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        },
+        "depleted": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.4,
+        "freq": 0.6,
+        "stiffness": 0.55
+      }
+    },
+    {
+      "key": "crop_lettuce",
+      "category": "resource",
+      "atlas": "crops_task256",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.4,
+        "freq": 0.6,
+        "stiffness": 0.55
+      }
+    },
+    {
+      "key": "wild_hay",
+      "category": "resource",
+      "atlas": "crops_task256",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        },
+        "depleted": {
+          "frames": [
+            5
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.7,
+        "freq": 0.85,
+        "stiffness": 0.45
+      }
+    },
+    {
+      "key": "crop_hay",
+      "category": "resource",
+      "atlas": "crops_task256",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.3,
+        "freq": 0.5,
+        "stiffness": 0.7
+      }
+    }
+  ]
+}

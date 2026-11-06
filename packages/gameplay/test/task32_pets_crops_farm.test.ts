@@ -9,6 +9,7 @@
  * - farm animals: pig -> truffle 480s, alpaca -> wool 420s, bee -> honey 360s, rabbit -> wool 480s.
  * Art: every new kind resolves through sprite_fallbacks.json to a real pack sprite (Task 28 pattern);
  * every new item key is itself a real sprite in the nature/base manifest.
+ * ADR-257: wild_lettuce / crop_lettuce / wild_hay / crop_hay are unique task256 keys (wheat already unique).
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -86,6 +87,7 @@ const realSprites = new Set<string>([
   ...manifestKeys("../../assets/pack/manifest.json"),
   ...manifestKeys("../../assets/pack/nature/manifest.nature.json"),
   ...manifestKeys("../../assets/pack/task34/manifest.task34.json"), // Task 34: dedicated bee/owl art
+  ...manifestKeys("../../assets/pack/task256/manifest.task256.json"), // ADR-257: unique lettuce/hay art
 ]);
 const has = (k: string): boolean => realSprites.has(k);
 
@@ -443,10 +445,11 @@ describe("Task 32: art wiring", () => {
   });
 
   it("every new crop and growth stage resolves to a real pack sprite at the stage scales", () => {
-    expect(resolveSprite("crop_lettuce_0", has)).toMatchObject({ key: "carrot_patch", scale: 0.35 });
-    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "carrot_patch", scale: 1 });
-    expect(resolveSprite("wild_lettuce", has)).toMatchObject({ key: "carrot_patch", scale: 1 });
-    expect(resolveSprite("wild_lettuce", has)!.tint).toBeGreaterThan(0); // leafy-green tint
+    // ADR-257: lettuce has unique pack keys (task256); no carrot_patch reuse
+    expect(resolveSprite("crop_lettuce_0", has)).toMatchObject({ key: "crop_lettuce", scale: 0.35 });
+    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce", scale: 1 });
+    expect(resolveSprite("wild_lettuce", has)).toMatchObject({ key: "wild_lettuce", scale: 1 });
+    expect(resolveSprite("wild_lettuce", has)!.tint).toBe(0);
     expect(resolveSprite("crop_pepper_0", has)).toMatchObject({ key: "wild_herbs", scale: 0.35 });
     expect(resolveSprite("crop_pepper_3", has)).toMatchObject({ key: "wild_herbs", scale: 1 });
     expect(resolveSprite("wild_pepper", has)).toMatchObject({ key: "wild_herbs", scale: 1 });

@@ -3,6 +3,16 @@
  "name": "nature",
  "atlases": [
   {
+   "key": "crops_task256",
+   "image": "atlases/nature_icons.png",
+   "ktx2": "atlases/nature_icons.ktx2",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 8,
+   "rows": 4,
+   "$comment": "ADR-257: layout only; pixels painted at runtime by apps/client/src/task256-art.ts (hay icons + wild lettuce/hay live here / task256 fragment)"
+  },
+  {
    "key": "nature_trees",
    "image": "atlases/nature_trees.png",
    "frameW": 96,
@@ -27943,7 +27953,7 @@
   {
    "key": "hay_seeds",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "crops_task256",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -27951,7 +27961,7 @@
    "animations": {
     "idle": {
      "frames": [
-      8
+      7
      ],
      "fps": 1
     }
@@ -28929,7 +28939,7 @@
   {
    "key": "hay",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "crops_task256",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -28937,7 +28947,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      6
      ],
      "fps": 1
     }

@@ -4838,7 +4838,11 @@
     "build_apiary": 4836,
     "gt_grass_grazed": 4837,
     "gt_grass_grazed_fall": 4838,
-    "gt_grass_grazed_winter": 4839
+    "gt_grass_grazed_winter": 4839,
+    "crop_hay": 4840,
+    "crop_lettuce": 4841,
+    "wild_hay": 4842,
+    "wild_lettuce": 4843
   },
   "sounds": {
     "amb_rain": 1,

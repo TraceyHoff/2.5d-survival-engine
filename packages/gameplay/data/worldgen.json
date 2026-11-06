@@ -1,5 +1,5 @@
 {
-  "$comment": "ProceduralGenerator bands (low -> high noise). tile ids are the shared terrain ids (1 water, 2 sand, 3 grass, 4 dirt/forest floor, 5 stone). nodes = resource keys (resolved to ids); nodeChance per tile. temp (deg C baseline) and humidity (0..1) feed world climate (installClimate); gameplay's ClimateModel adds day/night, weather and altitude.",
+  "$comment": "ProceduralGenerator bands (low -> high noise). tile ids are the shared terrain ids (1 water, 2 sand, 3 grass, 4 dirt/forest floor, 5 stone). nodes = resource keys (resolved to ids); nodeChance per tile. temp (deg C baseline) and humidity (0..1) feed world climate (installClimate); gameplay's ClimateModel adds day/night, weather and altitude. ADR-257: wild_lettuce / wild_wheat / wild_hay use dedicated plant keys (unique task256 / nature_crops sprites); grass-band weight \u22652 each.",
   "bands": [
     {
       "max": 0.3,
@@ -75,7 +75,10 @@
         "wild_lettuce",
         "wild_pepper",
         "wild_beetroot",
-        "wild_rice"
+        "wild_rice",
+        "wild_wheat",
+        "wild_hay",
+        "wild_lettuce"
       ],
       "nodeChance": 0.045,
       "temp": 18,

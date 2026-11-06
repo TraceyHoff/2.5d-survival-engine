@@ -2947,3 +2947,39 @@ auto-binds via CSS `[data-icon="build_apiary"]`.
 **Limits.** Side faces stay `gt_side_grass*`. World Apiary piece art still falls back to `salt_barrel` until a
 dedicated piece sprite ships; only the build-menu icon is dedicated.
 
+## ADR-257: Unique wild lettuce / wheat / hay art and every-seed spawn
+
+**Context.** ADR-255 already places every `worldgen.json` node kind (including `wild_lettuce`, `wild_wheat`,
+`wild_hay`) at least once inside `NODE_GUARANTEE_RADIUS` on every seed. Farm lettuce / wheat / hay were still
+drawn by reusing other plants: hay stages and icons pointed at wheat frames, wild lettuce tinted `carrot_patch`.
+The user required each of the three to have **unique assets and distinct sprite keys**, and not to block the
+spawn guarantee on Art & Assets landing painted pack sheets.
+
+**Decision.**
+
+- **Distinct worldgen / plant / sprite keys.** `wild_lettuce`, `wild_wheat`, `wild_hay` (and farm `crop_*`) stay
+  separate resource and plantable ids. Grass-band weight for each is ≥ 2. No key aliases onto another plant.
+- **Unique pack sprites for lettuce and hay.** New optional fragment `pack/task256/manifest.task256.json` declares
+  atlas `crops_task256` and sprites `wild_lettuce`, `crop_lettuce`, `wild_hay`, `crop_hay`. Pixels are painted at
+  runtime by `apps/client/src/task256-art.ts` (Task 34 software-rasterizer → blob URL pattern); `view.ts` merges the
+  sources before `setRegistry`. Silhouettes: butterhead lettuce rosette vs standing straw clump / tied hay bale —
+  never a wheat ear or carrot mound. `hay` / `hay_seeds` inventory icons in the nature manifest retarget onto the
+  same atlas (frames 6–7) so they are no longer wheat frames 64 / 8.
+- **Wheat already unique.** `wild_wheat` / `crop_wheat` keep their dedicated `nature_crops` frames — no change.
+- **Fallbacks.** `sprite_fallbacks.json` emergency chains for hay/lettuce no longer prefer wheat or carrot_patch;
+  last-resort generics (`fiber_grass` / `herb_patch`) remain only for canvas-less / missing-pack environments.
+  When the pack key is present, `resolveSprite` returns the key itself (real art takes over automatically).
+- **Art & Assets.** Real painted sheets can replace the runtime painter later under the same keys; spawn is not
+  gated on that landing.
+
+**Tests.**
+- `packages/gameplay/test/adr257_wild_crops.test.ts` — unique keys; no cross-plant resolve; grass weight ≥ 2;
+  every seed places the three wilds inside `NODE_GUARANTEE_RADIUS`.
+- `apps/client/test/task256_art.test.ts` — painted cells are non-empty and lettuce ≠ hay.
+- Updated `task28_hay_graze_seasons` / `task32_pets_crops_farm` art expectations.
+
+**Limits.**
+- Runtime-painted placeholders, not final Art pack sheets (same honesty as Task 34).
+- Pepper / beetroot / rice still use tinted fallbacks (out of scope).
+- Task 36 shovel / flowing water / underground bases unchanged.
+

@@ -24,6 +24,8 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   // Task 34: generated bee / owl / apiary art (atlases painted at runtime by apps/client/src/task34-art.ts; the
   // fragment carries layout only, no PNG files). Resident: the painter runs before setRegistry, so no stream pool.
   { name: "task34", url: "pack/task34/manifest.task34.json", optional: true },
+  // ADR-257: unique wild lettuce / hay plant art (atlases painted at runtime by apps/client/src/task256-art.ts).
+  { name: "task256", url: "pack/task256/manifest.task256.json", optional: true },
   // ADR-242: Art's PvP/clan drop (raid fx, clan banners/gates, nameplates, loot beams) and the stalls drop (stall art,
   // sale coins). Both repeat keys the building pack already serves; mergeManifests keeps building's (first wins).
   { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true, dropClanPalettes: true },

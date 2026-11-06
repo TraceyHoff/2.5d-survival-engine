@@ -337,12 +337,11 @@
     "crop_lettuce": {
       "to": [
         "wild_lettuce",
-        "carrot_patch"
+        "wild_herbs"
       ]
     },
     "wild_lettuce": {
       "to": [
-        "carrot_patch",
         "wild_herbs",
         "bush"
       ],
@@ -1543,15 +1542,17 @@
     },
     "crop_hay": {
       "to": [
-        "crop_wheat",
-        "wild_wheat"
+        "wild_hay",
+        "fiber_grass"
       ]
     },
     "wild_hay": {
       "to": [
-        "wild_wheat",
-        "flax"
-      ]
+        "fiber_grass",
+        "flax",
+        "bush"
+      ],
+      "tint": "#d4b45a"
     },
     "apiary": {
       "to": [
@@ -1732,8 +1733,8 @@
     "roasted_wild_onion": "onion",
     "canteen": "water_flask",
     "water_bottle": "water_flask",
-    "hay": "wild_grain",
-    "hay_seeds": "wild_grain"
+    "hay": "fiber_grass",
+    "hay_seeds": "fiber_grass"
   },
   "categoryIcons": {
     "resource": "fiber",
