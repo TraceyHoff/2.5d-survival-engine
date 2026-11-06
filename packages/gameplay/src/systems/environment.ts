@@ -270,21 +270,28 @@ export function exposureSystem(world: World, dt: number): void {
   const defs = gameplayDefs(world); const env = defs.environment; const vt = defs.vitals;
   const w = world.env(Weather); const wdef = weatherDef(env, w.kind as WeatherKind);
   const tf = world.store(Transform); const ex = world.store(Exposure);
+  // Task 29: hoisted per-run invariants. Without a ClimateRes the ambient temperature is the same
+  // everywhere (seasonalTemperature ignores position), so compute it once instead of per entity
+  // (~3.7us a call: gameplayDefs + env + timeOfDay + worldSeason + seasonalTemperature).
+  const hasClimate = !!world.getResource(ClimateRes);
+  const ambient0 = hasClimate ? undefined : ambientTemperature(world);
+  const hasRoomHeat = world.isRegistered(RoomHeat);
+  const emitters = world.getResource(EmitterIndexRes);
   const expires = world.tick + EXPOSURE_EVERY * 2 + 1;
   for (const e of world.query([Exposure, Transform])) {
     const idx = entityIndex(e); const s = ex.slot(idx); const ts = tf.slot(idx);
     const x = tf.data.x[ts]!, y = tf.data.y[ts]!, z = tf.data.z[ts]!;
-    const heat = heatAt(world, x, y, z);
+    const heat = emitters?.sampleField(EmitterKind.Heat, x, y, z) ?? 0;
     const sh = shelterAt(world, x, y, z, w.windDir);
     // Task 24: inside a fully enclosed room the fire's heat is not instant — the room itself warms over
     // minutes (RoomHeat, eased toward the live fire heat; walls occlude, so only fires in the same room
     // count) and cools back down when the fire goes out. Outdoors the instant heat still applies as before.
     const enclosed = sh.exposure === 0;
-    const prevHeat = world.isRegistered(RoomHeat) ? (world.getField(e, RoomHeat, "heat") ?? 0) : 0;
+    const prevHeat = hasRoomHeat ? (world.getField(e, RoomHeat, "heat") ?? 0) : 0;
     const roomHeat = approachRoomHeat(prevHeat, enclosed ? Math.min(heat, FIRE_HEAT_MAX_C) : 0, dt);
     // Write on any change (at equilibrium approachRoomHeat returns the current value exactly, so this stops
     // on its own). A fixed epsilon here would freeze the tail: the per-call delta shrinks with the value.
-    if (world.isRegistered(RoomHeat) && roomHeat !== prevHeat) {
+    if (hasRoomHeat && roomHeat !== prevHeat) {
       if (world.has(e, RoomHeat)) world.setField(e, RoomHeat, "heat", roomHeat);
       else world.add(e, RoomHeat, { heat: roomHeat });
     }
@@ -292,7 +299,7 @@ export function exposureSystem(world: World, dt: number): void {
     if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
-    const ambient = ambientTemperature(world, x, y);
+    const ambient = ambient0 ?? ambientTemperature(world, x, y);
     // Task 23: clothing insulation pulls felt toward the comfort band — it warms in the cold and shades in the heat
     // (a fur coat no longer cooks its wearer in a heat wave); higher tiers insulate more (items.json).
     const ins = ex.data.insulation[s]!;

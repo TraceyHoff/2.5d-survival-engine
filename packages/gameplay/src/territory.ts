@@ -27,15 +27,22 @@ export function tamedOwnerTribe(world: World, e: Entity): number {
 }
 
 /** Nearest living zombie within `range` of (x, y) that stands inside `tribe`'s claim. */
-export function nearestClaimHostile(world: World, x: number, y: number, range: number, tribe: number): Entity | undefined {
+// Task 29: `zombies` is an optional prebuilt list of living zombies (built once per system run
+// by petSystem); scanning it with exact distances gives the same nearest hostile as the radius
+// query without sweeping every entity in the village. Callers without a list keep the old path.
+export function nearestClaimHostile(world: World, x: number, y: number, range: number, tribe: number, zombies?: readonly Entity[]): Entity | undefined {
   if (!tribe) return undefined;
   let best: Entity | undefined; let bd = Infinity;
-  for (const z of installSpatialIndex(world).queryRadius(x, y, range)) {
-    if (!world.has(z, Zombie) || world.has(z, Dead)) continue;
-    const t = world.get(z, Transform); if (!t) continue;
-    const d = Math.hypot(t.x - x, t.y - y); if (d > range || d >= bd) continue;
-    if (!inClaim(world, tribe, t.x, t.y)) continue;
+  const consider = (z: Entity): void => {
+    const t = world.get(z, Transform); if (!t) return;
+    const d = Math.hypot(t.x - x, t.y - y); if (d > range || d >= bd) return;
+    if (!inClaim(world, tribe, t.x, t.y)) return;
     best = z; bd = d;
+  };
+  if (zombies) { for (const z of zombies) { if (!world.isAlive(z) || world.has(z, Dead)) continue; consider(z); } }
+  else for (const z of installSpatialIndex(world).queryRadius(x, y, range)) {
+    if (!world.has(z, Zombie) || world.has(z, Dead)) continue;
+    consider(z);
   }
   return best;
 }

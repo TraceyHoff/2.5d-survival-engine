@@ -11,7 +11,6 @@
 import { LootSource, tagLootSource } from "./loot_labels.js";
 import { lootBagInit } from "./loot_despawn.js";
 import { defineCommand, DEFAULT_TICK_HZ, entityIndex, PlayerId, Transform, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
-import { installSpatialIndex } from "@engine/world";
 import raw from "../data/pets.json";
 import {
   Anim, Animal, AnimalSkills, AnimState, BuildPiece, Container, ContainerViewers, Dead, Health, Inventory, LootBag, Pet, PET_NAME_MAX, PetBrain, PetCmd, PetGuard, PetStatus, PetStatusComp, PieceOwner,
@@ -298,7 +297,6 @@ function troughId(world: World): number {
 /** LootBag.despawnAtTick of a permanent cache (e.g. the sandbox pet-corner crate): pets never eat from or loot those. */
 export const PERMANENT_BAG = 0xffffffff;
 // ---- system ---------------------------------------------------------------------------------------------
-const hostile = (world: World, e: Entity): boolean => world.has(e, Zombie);
 const valid = (world: World, e: Entity): boolean => !!e && world.isAlive(e) && !world.has(e, Dead) && world.has(e, Health) && world.has(e, Transform);
 export function grantXp(world: World, pet: Entity, amount: number): void {
   const p = world.get(pet, Pet)!; let xp = p.xp + Math.max(0, Math.round(amount)); let level = p.level; let up = false;
@@ -328,39 +326,48 @@ function eatFrom(world: World, pet: Entity, from: Entity, source: number): boole
   setAnim(world, pet, Anim.Eat); emit(world, PetAte, { pet, item: f.item, source }); return true;
 }
 /** Owned food sources within `r` of (x, y): loot bags (any open bag or one the owner dropped) and the owner's pet troughs. */
-function foodSources(world: World, pet: Entity, x: number, y: number): { e: Entity; d: number; source: number }[] {
-  const p = world.get(pet, Pet)!; const out: { e: Entity; d: number; source: number }[] = []; const tid = troughId(world);
-  const ownerE = playerEntity(world, p.owner); const tribe = ownerE !== undefined ? world.getField(ownerE, Tribe, "id") ?? 0 : 0;
-  for (const e of installSpatialIndex(world).queryRadius(x, y, Math.max(T.groundSearchRange, T.troughRange))) {
-    if (!world.isAlive(e) || !world.has(e, Container) || e === pet) continue; const t = world.get(e, Transform); if (!t) continue; const d = Math.hypot(t.x - x, t.y - y);
-    if (world.has(e, LootBag)) {
-      const o = world.getField(e, LootBag, "owner") ?? 0; if (world.getField(e, LootBag, "despawnAtTick") === PERMANENT_BAG) continue; // caches/crates are not "the ground"
-      if (d <= T.groundSearchRange && (o === 0 || o === p.owner) && edibleSlot(world, e, p.species)) out.push({ e, d, source: 1 });
-    } else if (world.getField(e, BuildPiece, "type") === tid && d <= T.troughRange) {
-      const own = world.getField(e, TroughOwner, "player") || (world.isRegistered(PieceOwner) ? world.getField(e, PieceOwner, "player") ?? 0 : 0);
-      const ok = own === p.owner || (tribe !== 0 && world.getField(e, Tribe, "id") === tribe);
-      if (ok && edibleSlot(world, e, p.species)) out.push({ e, d, source: 2 });
-    }
+// Task 29: bags + troughs for this run (built once in petSystem); same result as the radius
+// scan — same distance caps, ownership and edibility checks, same (d, e) sort.
+function foodSources(world: World, pet: Entity, x: number, y: number, ownerE: Entity | undefined, bags: readonly Entity[], troughs: readonly Entity[], owner: number, species: number): { e: Entity; d: number; source: number }[] {
+  const out: { e: Entity; d: number; source: number }[] = [];
+  const tribe = ownerE !== undefined ? world.getField(ownerE, Tribe, "id") ?? 0 : 0;
+  for (const e of bags) {
+    if (!world.isAlive(e) || e === pet) continue; const t = world.get(e, Transform); if (!t) continue; const d = Math.hypot(t.x - x, t.y - y);
+    const o = world.getField(e, LootBag, "owner") ?? 0; if (world.getField(e, LootBag, "despawnAtTick") === PERMANENT_BAG) continue; // caches/crates are not "the ground"
+    if (d <= T.groundSearchRange && (o === 0 || o === owner) && edibleSlot(world, e, species)) out.push({ e, d, source: 1 });
+  }
+  for (const e of troughs) {
+    if (!world.isAlive(e) || e === pet) continue; const t = world.get(e, Transform); if (!t) continue; const d = Math.hypot(t.x - x, t.y - y);
+    if (d > T.troughRange) continue;
+    const own = world.getField(e, TroughOwner, "player") || (world.isRegistered(PieceOwner) ? world.getField(e, PieceOwner, "player") ?? 0 : 0);
+    const ok = own === owner || (tribe !== 0 && world.getField(e, Tribe, "id") === tribe);
+    if (ok && edibleSlot(world, e, species)) out.push({ e, d, source: 2 });
   }
   return out.sort((a, b) => a.d - b.d || a.e - b.e);
 }
-function pickupTarget(world: World, pet: Entity, x: number, y: number): Entity | undefined {
-  const p = world.get(pet, Pet)!; let best: Entity | undefined, bd = Infinity;
-  for (const e of installSpatialIndex(world).queryRadius(x, y, T.pickupRange)) {
-    if (!world.isAlive(e) || !world.has(e, LootBag) || !world.has(e, Container)) continue; const o = world.getField(e, LootBag, "owner") ?? 0;
-    if (o !== p.owner) continue; // only fetch what the owner dropped
+// Task 29: loot bags for this run (built once in petSystem). Scanning them directly beats a
+// spatial radius query over every piece/animal/node in the village (~10us per pet per tick).
+function pickupTarget(world: World, pet: Entity, x: number, y: number, bags: readonly Entity[], owner: number): Entity | undefined {
+  let best: Entity | undefined, bd = Infinity;
+  for (const e of bags) {
+    if (!world.isAlive(e)) continue; const o = world.getField(e, LootBag, "owner") ?? 0;
+    if (o !== owner) continue; // only fetch what the owner dropped
+    const t = world.get(e, Transform)!; const d = Math.hypot(t.x - x, t.y - y);
+    if (d > T.pickupRange || d >= bd) continue;
     if (!listSlots(world, e).some((s) => s.item && s.count && canAddItem(world, pet, s.item, 1) > 0)) continue;
-    const t = world.get(e, Transform)!; const d = Math.hypot(t.x - x, t.y - y); if (d < bd) { bd = d; best = e; }
+    bd = d; best = e;
   }
   return best;
 }
-function threatNear(world: World, pet: Entity, x: number, y: number, r: number): Entity | undefined {
-  const p = world.get(pet, Pet)!; let best: Entity | undefined, bd = Infinity;
-  const aggro = (aggroOf.get(world)?.get(p.owner) ?? []).filter((a) => world.tick - a.tick < sec(15) && valid(world, a.attacker));
+// Task 29: living zombies for this run (built once in petSystem); same nearest-hostile result
+// as the radius scan (exact distance + the same tie-break), without scanning the village.
+function threatNear(world: World, pet: Entity, x: number, y: number, r: number, zombies: readonly Entity[], owner: number): Entity | undefined {
+  let best: Entity | undefined, bd = Infinity;
+  const aggro = (aggroOf.get(world)?.get(owner) ?? []).filter((a) => world.tick - a.tick < sec(15) && valid(world, a.attacker));
   const consider = (e: Entity): void => { const t = world.get(e, Transform)!; const d = Math.hypot(t.x - x, t.y - y); if (d <= r && (d < bd || (d === bd && best !== undefined && e < best))) { bd = d; best = e; } };
-  for (const a of aggro) if (!(world.has(a.attacker, Pet) && petOwnerId(world, a.attacker) === p.owner)) consider(a.attacker);
+  for (const a of aggro) if (!(world.has(a.attacker, Pet) && petOwnerId(world, a.attacker) === owner)) consider(a.attacker);
   if (best !== undefined) return best;
-  for (const e of installSpatialIndex(world).queryRadius(x, y, r)) if (e !== pet && valid(world, e) && hostile(world, e)) consider(e);
+  for (const e of zombies) if (e !== pet && world.isAlive(e) && !world.has(e, Dead) && world.has(e, Health)) consider(e);
   return best;
 }
 /** Move pet toward (gx, gy) at `speed` tiles/s; returns true if it moved. */
@@ -409,56 +416,86 @@ export function petSystem(world: World, dt: number): void {
       .add(bag, LootBag, lootBagInit(world, petOwnerId(world, e), "petDeath", LootSource.Animal));
     moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Animal); indexEntity(world, bag);
   }
-  for (const e of [...world.query([Pet, Transform], [Dead])].sort((a, b) => a - b)) {
-    const p = world.get(e, Pet)!; if (!world.has(e, AnimalSkills)) ensureAnimalSkills(world, e); // Task 15: legacy/loaded pets
-    const st = petStatsWithSkills(world, e, p.species, p.level);
+  // Task 29: per-run lookup lists — the old code ran a spatial radius query (over every piece /
+  // animal / node in the village) per pet per tick for threats, pickups and food, plus a PlayerId
+  // query per pet for its owner. Players / zombies / bags are few; scan those lists with exact
+  // distances instead. Troughs are built lazily (only when a pet is hungry) with exactly the old
+  // predicate: Container + BuildPiece type pet_trough.
+  // The lists/stores below are only consumed by the pet loop, so build them only when a pet exists:
+  // the old per-pet helpers never ran a query in a pet-less world, and worlds without PlayerId
+  // registered (persist restores) must not throw here. The isRegistered guards mirror playerEntity.
+  const pets = [...world.query([Pet, Transform], [Dead])].sort((a, b) => a - b);
+  if (pets.length === 0) return;
+  // Task 29: hoisted component stores (see animalAISystem — world.get() copies per call).
+  const petStore = world.store(Pet); const brainStore = world.store(PetBrain); const tfStore = world.store(Transform); const hpStore = world.store(Health); const anStore = world.store(Animal);
+  const playersById = new Map<number, Entity>();
+  if (world.isRegistered(PlayerId)) for (const p of world.query([PlayerId, Transform], [Dead])) playersById.set(world.getField(p, PlayerId, "id")!, p);
+  const zombies: Entity[] = world.isRegistered(Zombie) ? [...world.query([Zombie, Transform], [Dead])].sort((a, b) => a - b) : [];
+  const bags: Entity[] = world.isRegistered(LootBag) && world.isRegistered(Container) ? [...world.query([LootBag, Container, Transform])].sort((a, b) => a - b) : [];
+  let troughs: Entity[] | undefined;
+  const getTroughs = (): Entity[] => {
+    if (!troughs) { const tid = troughId(world); troughs = world.isRegistered(Container) && world.isRegistered(BuildPiece) ? [...world.query([Container, Transform])].filter((e) => world.getField(e, BuildPiece, "type") === tid).sort((a, b) => a - b) : []; }
+    return troughs;
+  };
+  for (const e of pets) {
+    // Task 29: store-direct snapshot at loop top — same staleness as the old world.get() copies
+    // (later setFields in this iteration do not change these locals).
+    const ei = entityIndex(e);
+    const pSlot = petStore.slot(ei); const pD = petStore.data;
+    const pSpecies = pD.species[pSlot]!; const pLevel = pD.level[pSlot]!; const pOwner = pD.owner[pSlot]!; const pCmd = pD.cmd[pSlot]!;
+    const pStayX = pD.stayX[pSlot]!; const pStayY = pD.stayY[pSlot]!; const pFullness = pD.fullness[pSlot]!; const pHp = pD.hp[pSlot]!; const pLoyalty = pD.loyalty[pSlot]!;
+    if (!world.has(e, AnimalSkills)) ensureAnimalSkills(world, e); // Task 15: legacy/loaded pets
+    const st = petStatsWithSkills(world, e, pSpecies, pLevel);
     if (!world.has(e, PetBrain)) world.add(e, PetBrain, { nextEat: now, nextStarve: now + sec(10) });
     if (!world.has(e, Animal) || !world.has(e, AnimState)) continue; // husbandrySystem restores these after a load
     if (!world.has(e, ContainerViewers)) world.add(e, ContainerViewers);
     // Health is not persistent: rebuild from Pet.hp / level once after a load
-    const h = world.get(e, Health);
-    if (!h) { world.add(e, Health, { hp: Math.max(1, p.hp || st.maxHp), max: st.maxHp }); }
-    else if (h.max !== st.maxHp) world.set(e, Health, { max: st.maxHp, hp: Math.min(h.hp, st.maxHp) });
-    const hp = world.getField(e, Health, "hp")!; if (Math.abs(hp - p.hp) >= 0.5) world.setField(e, Pet, "hp", hp);
-    const b = world.get(e, PetBrain)!; const t = world.get(e, Transform)!;
-    const ownerE = playerEntity(world, p.owner);
+    const hSlot = hpStore.slot(ei);
+    if (hSlot < 0) { world.add(e, Health, { hp: Math.max(1, pHp || st.maxHp), max: st.maxHp }); }
+    else if (hpStore.data.max[hSlot]! !== st.maxHp) world.set(e, Health, { max: st.maxHp, hp: Math.min(hpStore.data.hp[hSlot]!, st.maxHp) });
+    const hp = world.getField(e, Health, "hp")!; if (Math.abs(hp - pHp) >= 0.5) world.setField(e, Pet, "hp", hp);
+    const bSlot = brainStore.slot(ei); const bD = brainStore.data;
+    const bTarget = bD.target[bSlot]!; const bNextEat = bD.nextEat[bSlot]!; const bNextStarve = bD.nextStarve[bSlot]!; const bNextAttack = bD.nextAttack[bSlot]!;
+    const tSlot = tfStore.slot(ei); const tfD = tfStore.data; const tx = tfD.x[tSlot]!; const ty = tfD.y[tSlot]!; const tz = tfD.z[tSlot]!;
+    const anSlot = anStore.slot(ei); const anD = anStore.data;
+    const ownerE = playersById.get(pOwner);
     // hunger (Task 14: frozen while the pet's owner is still loading in)
     const ownerPending = ownerE !== undefined && pendingReady(world, ownerE);
-    const fullness = ownerPending ? p.fullness : Math.max(0, p.fullness - (T.hungerPerMinute / 60) * dt); if (Math.abs(fullness - p.fullness) > 1e-6) world.setField(e, Pet, "fullness", fullness);
-    if (!ownerPending && fullness <= 0 && now >= b.nextStarve) {
+    const fullness = ownerPending ? pFullness : Math.max(0, pFullness - (T.hungerPerMinute / 60) * dt); if (Math.abs(fullness - pFullness) > 1e-6) world.setField(e, Pet, "fullness", fullness);
+    if (!ownerPending && fullness <= 0 && now >= bNextStarve) {
       world.setField(e, PetBrain, "nextStarve", now + sec(10));
       const cur = world.getField(e, Health, "hp")!; if (cur > 1) world.setField(e, Health, "hp", Math.max(1, cur - T.starveHpPerTenSeconds));
-      world.setField(e, Pet, "loyalty", Math.max(0, p.loyalty - T.starveLoyaltyPerTenSeconds));
-    } else if (!ownerPending && fullness > 50 && now >= b.nextStarve) { // well fed: slow regen
+      world.setField(e, Pet, "loyalty", Math.max(0, pLoyalty - T.starveLoyaltyPerTenSeconds));
+    } else if (!ownerPending && fullness > 50 && now >= bNextStarve) { // well fed: slow regen
       world.setField(e, PetBrain, "nextStarve", now + sec(10)); const cur = world.getField(e, Health, "hp")!; if (cur < st.maxHp) world.setField(e, Health, "hp", Math.min(st.maxHp, cur + 1));
     }
     const ot = ownerE !== undefined ? world.get(ownerE, Transform) : undefined;
-    const stay = p.cmd === PetCmd.Stay;
+    const stay = pCmd === PetCmd.Stay;
     // Task 14: a guarding pet anchors on its guard target (live position for entities, fixed point for locations).
-    let guard = p.cmd === PetCmd.Guard; let gAnchor = guard ? guardAnchor(world, e) : undefined;
+    let guard = pCmd === PetCmd.Guard; let gAnchor = guard ? guardAnchor(world, e) : undefined;
     if (guard && !gAnchor) { // guard target destroyed / died / assignment lost: end guarding cleanly, back to Follow
       world.set(e, Pet, { cmd: PetCmd.Follow }); if (world.has(e, PetGuard)) world.remove(e, PetGuard); guard = false;
     }
-    const ax = guard && gAnchor ? gAnchor.x : stay ? p.stayX : ot?.x ?? p.stayX, ay = guard && gAnchor ? gAnchor.y : stay ? p.stayY : ot?.y ?? p.stayY;
+    const ax = guard && gAnchor ? gAnchor.x : stay ? pStayX : ot?.x ?? pStayX, ay = guard && gAnchor ? gAnchor.y : stay ? pStayY : ot?.y ?? pStayY;
     let moved = false; let run = false; let busy = false; let fighting = false; let eating = false;
     // defend
     if (!busy) {
-      let target = b.target as Entity;
-      const guardR = T.defendRange; const leash = Math.hypot(t.x - ax, t.y - ay) > T.leashRange;
+      let target = bTarget as Entity;
+      const guardR = T.defendRange; const leash = Math.hypot(tx - ax, ty - ay) > T.leashRange;
       if (!valid(world, target) || leash) {
-        const found = leash ? undefined : threatNear(world, e, ax, ay, guardR);
+        const found = leash ? undefined : threatNear(world, e, ax, ay, guardR, zombies, pOwner);
         // Task 14: territory defense — a hostile inside the owner's claim near the pet is a defend target too,
         // even when it is beyond the anchor's defend range (the pet, not the anchor, is near the intruder).
         let terr: Entity | undefined;
-        if (found === undefined && !leash) { const tribe = ownerE !== undefined ? world.getField(ownerE, Tribe, "id") ?? 0 : 0; if (tribe) terr = nearestClaimHostile(world, t.x, t.y, guardR, tribe); }
+        if (found === undefined && !leash) { const tribe = ownerE !== undefined ? world.getField(ownerE, Tribe, "id") ?? 0 : 0; if (tribe) terr = nearestClaimHostile(world, tx, ty, guardR, tribe, zombies); }
         target = (found ?? terr ?? 0) as Entity;
       }
-      if (target !== b.target) world.setField(e, PetBrain, "target", target);
+      if (target !== bTarget) world.setField(e, PetBrain, "target", target);
       if (target && valid(world, target)) {
-        busy = true; fighting = true; const tt = world.get(target, Transform)!; const d = Math.hypot(tt.x - t.x, tt.y - t.y);
+        busy = true; fighting = true; const tt = world.get(target, Transform)!; const d = Math.hypot(tt.x - tx, tt.y - ty);
         if (d <= st.attackRange + 0.4) {
-          world.set(e, Transform, { facing: Math.atan2(tt.y - t.y, tt.x - t.x) });
-          if (now >= b.nextAttack) {
+          world.set(e, Transform, { facing: Math.atan2(tt.y - ty, tt.x - tx) });
+          if (now >= bNextAttack) {
             const before = world.getField(target, Health, "hp") ?? 0; const thp = world.getField(target, Health, "max") ?? before;
             applyDamage(world, target, st.damage, e); setAnim(world, e, Anim.Attack); world.setField(e, PetBrain, "nextAttack", now + sec(T.attackCooldownSeconds));
             const after = world.getField(target, Health, "hp") ?? 0;
@@ -470,10 +507,10 @@ export function petSystem(world: World, dt: number): void {
     }
     // eat
     const hungry = fullness < T.eatBelow;
-    if (!busy && hungry && now >= b.nextEat) { // ADR-145: defence beats dinner (a hungry pet still fights back)
+    if (!busy && hungry && now >= bNextEat) { // ADR-145: defence beats dinner (a hungry pet still fights back)
       if (eatFrom(world, e, e, 0)) { world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); busy = true; eating = true; }
       else {
-        const src = foodSources(world, e, t.x, t.y)[0];
+        const src = foodSources(world, e, tx, ty, ownerE, bags, getTroughs(), pOwner, pSpecies)[0];
         if (src) {
           const sxy = world.get(src.e, Transform)!; busy = true;
           if (src.d <= (src.source === 2 ? TROUGH_REACH : 1.0)) { if (eatFrom(world, e, src.e, src.source)) { world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); eating = true; } }
@@ -483,9 +520,9 @@ export function petSystem(world: World, dt: number): void {
     }
     // fetch dropped items (follow only — guarding and staying pets hold their post)
     if (!busy && !stay && !guard && ownerE !== undefined) {
-      const bag = pickupTarget(world, e, t.x, t.y);
+      const bag = pickupTarget(world, e, tx, ty, bags, pOwner);
       if (bag !== undefined) {
-        busy = true; const bt = world.get(bag, Transform)!; const d = Math.hypot(bt.x - t.x, bt.y - t.y);
+        busy = true; const bt = world.get(bag, Transform)!; const d = Math.hypot(bt.x - tx, bt.y - ty);
         if (d <= 0.9) {
           for (const s of listSlots(world, bag)) if (s.item && s.count) { const n = Math.min(s.count, canAddItem(world, e, s.item, s.count)); if (n > 0) { const moved1 = moveSlotTuples(world, bag, e, [{ slot: s.slot, count: n }]); if (moved1) break; } }
         } else moved = step(world, e, bt.x, bt.y, st.walk * 1.3, dt, 0.5) || moved;
@@ -493,14 +530,17 @@ export function petSystem(world: World, dt: number): void {
     }
     // follow / stay / guard return (guarding pets walk back — never teleport, so fences still contain them)
     if (!busy) {
-      const d = Math.hypot(ax - t.x, ay - t.y);
+      const d = Math.hypot(ax - tx, ay - ty);
       if (guard) { if (d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2); }
       else if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, teleportSpot(world, ot)); }
       else if (!stay && ot && d > T.followDistance) { run = d > T.runDistance; moved = step(world, e, ax, ay, run ? st.run : st.walk, dt, T.followDistance * 0.7); }
-      else if (!stay && ot && d > WALLED_STOP && walledOff(world, t.x, t.y, ax, ay, t.z ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-215: close but through a wall: go round
+      else if (!stay && ot && d > WALLED_STOP && walledOff(world, tx, ty, ax, ay, tz ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-215: close but through a wall: go round
       else if (stay && d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2);
     }
-    world.set(e, Animal, { homeX: ax, homeY: ay, state: moved ? (run ? 2 : 1) : 0 });
+    // Task 29: only write Animal when something changed — the old unconditional write marked every
+    // pet's Animal changed every tick, spamming replication Change records for stationary pets.
+    const aState = moved ? (run ? 2 : 1) : 0;
+    if (anD.homeX[anSlot]! !== ax || anD.homeY[anSlot]! !== ay || anD.state[anSlot]! !== aState) world.set(e, Animal, { homeX: ax, homeY: ay, state: aState });
     animAt(world, e, moved ? (run ? Anim.Run : Anim.Walk) : !busy && stay ? Anim.Sit : Anim.Idle);
     // Task 14: visible activity status (written only when it changes, so replicas are not spammed every tick)
     const status = fighting ? PetStatus.Fight : eating ? PetStatus.Eat : guard ? (moved ? PetStatus.Return : PetStatus.Guard) : stay ? PetStatus.Stay : moved ? PetStatus.Follow : PetStatus.Idle;

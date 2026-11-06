@@ -7,7 +7,7 @@
 import { LootSource, tagLootSource } from "./loot_labels.js";
 import { lootBagInit } from "./loot_despawn.js";
 import { Pet } from "./components.js";
-import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, entityIndex, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
 import { Zombie } from "./components.js";
 import { Anim, AnimState, Animal, Tamed, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
@@ -97,39 +97,56 @@ const THREATS: number[] = []; const THREAT_LIST_MAX = 48;
 export function animalAISystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const index = installSpatialIndex(world); const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; const defs = animalDefs();
+  // Task 29: hoisted component stores + chase limit. world.get() copies the component into a fresh
+  // object per call (~0.8us for Animal alone); the loops below read store data directly instead.
+  const aStore = world.store(Animal); const tfStore = world.store(Transform);
+  const chaseLimit = populationData().ai.tuning?.chaseLimitTiles ?? 18;
   const tileBlocked: TileBlocked = (tx, ty) => unwalk.has(populationTile(world, tx, ty));
   for (const e of [...world.query([Animal, Dead])].sort((x, y) => x - y)) {
-    const a = world.get(e, Animal)!;
-    if (a.state !== AnimalState.Dead) {
+    const as = aStore.slot(entityIndex(e)); const aD = aStore.data;
+    if (aD.state[as]! !== AnimalState.Dead) {
       dropAnimalLoot(world, e); world.setField(e, Animal, "state", AnimalState.Dead);
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(ANIMAL_CORPSE_SECONDS / dt)); if (world.has(e, AnimState)) setAnim(world, e, Anim.Die);
-    } else if (world.tick >= a.thinkAt) world.destroy(e);
+    } else if (world.tick >= aD.thinkAt[as]!) world.destroy(e);
   }
+  // Task 29: Health/AnimState are only read by the main loop below; resolve them after confirming
+  // there is an animal to process, so a world with no animals (and those components unregistered)
+  // behaves exactly like before (no throw). THREATS is only consumed by that loop, so skipping its
+  // fill here is unobservable.
+  const animals = [...world.query([Animal, Transform], [Dead, Pet])]; // ADR-145: pets are driven by petSystem
+  if (animals.length === 0) return;
+  const hStore = world.store(Health); const anStore = world.store(AnimState);
   // ADR-215: threat candidates (living survivors) gathered once; a short list beats a radius query over every piece
   // and animal in a village. Same set as the radius query (exact distance on the current Transform).
   THREATS.length = 0; let few = true;
-  for (const p of world.query([Survival, Transform], [Dead])) { if (THREATS.length >= 3 * THREAT_LIST_MAX) { few = false; break; } const pt = world.get(p, Transform)!; THREATS.push(p, pt.x, pt.y); }
-  for (const e of world.query([Animal, Transform], [Dead, Pet])) { // ADR-145: pets are driven by petSystem
-    const a = world.get(e, Animal)!; const t = world.get(e, Transform)!; const def = defs[a.kind]; if (!def) continue;
-    const hp = world.get(e, Health); const hurt = !!hp && hp.hp < hp.max; const scared = !!hp && hp.hp <= hp.max * def.fleeHpFrac && hurt;
+  for (const p of world.query([Survival, Transform], [Dead])) { if (THREATS.length >= 3 * THREAT_LIST_MAX) { few = false; break; } const ps = tfStore.slot(entityIndex(p)); THREATS.push(p, tfStore.data.x[ps]!, tfStore.data.y[ps]!); }
+  for (const e of animals) {
+    // Task 29: store-direct snapshot at loop top — same staleness as the old world.get() copies
+    // (later setFields in this iteration do not change these locals).
+    const ei = entityIndex(e); const aSlot = aStore.slot(ei); const aD = aStore.data;
+    const aKind = aD.kind[aSlot]!; const def = defs[aKind]; if (!def) continue;
+    const aState = aD.state[aSlot]!; const aHomeX = aD.homeX[aSlot]!; const aHomeY = aD.homeY[aSlot]!; const aGoalX = aD.goalX[aSlot]!; const aGoalY = aD.goalY[aSlot]!; const aThinkAt = aD.thinkAt[aSlot]!;
+    const tSlot = tfStore.slot(ei); const tfD = tfStore.data; const tx = tfD.x[tSlot]!; const ty = tfD.y[tSlot]!;
+    const hSlot = hStore.slot(ei); const hD = hStore.data; const hp = hSlot >= 0 ? hD.hp[hSlot]! : undefined; const maxHp = hSlot >= 0 ? hD.max[hSlot]! : undefined;
+    const hurt = hp !== undefined && maxHp !== undefined && hp < maxHp; const scared = hurt && hp! <= maxHp! * def.fleeHpFrac;
+    const anSlot = anStore.slot(ei); const anD = anStore.data;
     const aggressive = !!def.attack && def.aggro.mode !== "passive" && !scared;
-    const homeD = Math.hypot(t.x - a.homeX, t.y - a.homeY);
+    const homeD = Math.hypot(tx - aHomeX, ty - aHomeY);
     let threat: { e: Entity; x: number; y: number; d: number } | undefined;
     const tame = world.has(e, Tamed); // ADR-113: domesticated animals neither flee nor attack
     const tr = Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0);
     if (!tame && few) for (let i = 0; i < THREATS.length; i += 3) {
-      const p = THREATS[i]! as Entity, px = THREATS[i + 1]!, py = THREATS[i + 2]!; const ddx = px - t.x, ddy = py - t.y; if (ddx * ddx + ddy * ddy > tr * tr) continue;
-      const d = Math.hypot(px - t.x, py - t.y); if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: px, y: py, d };
+      const p = THREATS[i]! as Entity, px = THREATS[i + 1]!, py = THREATS[i + 2]!; const ddx = px - tx, ddy = py - ty; if (ddx * ddx + ddy * ddy > tr * tr) continue;
+      const d = Math.hypot(px - tx, py - ty); if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: px, y: py, d };
     }
-    else if (!tame) for (const p of index.queryRadius(t.x, t.y, tr)) {
-      if (!world.has(p, Survival) || world.has(p, Dead)) continue; const pt = world.get(p, Transform)!; const d = Math.hypot(pt.x - t.x, pt.y - t.y);
+    else if (!tame) for (const p of index.queryRadius(tx, ty, tr)) {
+      if (!world.has(p, Survival) || world.has(p, Dead)) continue; const pt = world.get(p, Transform)!; const d = Math.hypot(pt.x - tx, pt.y - ty);
       if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: pt.x, y: pt.y, d };
     }
-    let state = a.state, gx = a.goalX, gy = a.goalY;
+    let state = aState, gx = aGoalX, gy = aGoalY;
     // Task 15: chase limit — an engaged animal gives up once it is farther than this from home (tighter than
     // the old 2x leashRange rule when the limit is smaller). Territory defenders below are exempt: they use
     // their own claim-range branch, not this one.
-    const chaseLimit = populationData().ai.tuning?.chaseLimitTiles ?? 18;
     const pressHome = Math.min(def.aggro.leashRange * 2, chaseLimit);
     // Task 15: retaliation — a hurt wild animal engages its recent attacker even outside aggro.range, as long
     // as the attacker is close (within leashRange) and recent (retaliateSeconds). The attacker overrides the
@@ -141,7 +158,7 @@ export function animalAISystem(world: World, dt: number): void {
       if (la && world.tick - la.tick <= gameplayDefs(world).ai.retaliateSeconds * DEFAULT_TICK_HZ) {
         const at = world.get(la.e, Transform);
         if (at && world.has(la.e, Survival) && !world.has(la.e, Dead)) {
-          const d = Math.hypot(at.x - t.x, at.y - t.y);
+          const d = Math.hypot(at.x - tx, at.y - ty);
           if (d <= def.aggro.leashRange) { threat = { e: la.e, x: at.x, y: at.y, d }; retaliating = true; }
         }
       }
@@ -155,14 +172,14 @@ export function animalAISystem(world: World, dt: number): void {
     let territory: { e: Entity; x: number; y: number; d: number } | undefined;
     if (tame) {
       const tribe = tamedOwnerTribe(world, e);
-      if (tribe) { const z = nearestClaimHostile(world, t.x, t.y, TERRITORY_DEFEND_RANGE, tribe); if (z !== undefined) { const zt = world.get(z, Transform)!; territory = { e: z, x: zt.x, y: zt.y, d: Math.hypot(zt.x - t.x, zt.y - t.y) }; } }
+      if (tribe) { const z = nearestClaimHostile(world, tx, ty, TERRITORY_DEFEND_RANGE, tribe); if (z !== undefined) { const zt = world.get(z, Transform)!; territory = { e: z, x: zt.x, y: zt.y, d: Math.hypot(zt.x - tx, zt.y - ty) }; } }
     }
     if (territory) {
       state = AnimalState.Attack; gx = territory.x; gy = territory.y;
       const range = def.attack?.range ?? TERRITORY_BITE.range, damage = def.attack?.damage ?? TERRITORY_BITE.damage, cd = def.attack?.cooldownSeconds ?? TERRITORY_BITE.cooldownSeconds;
       if (territory.d <= range + 0.4) {
-        gx = t.x; gy = t.y;
-        if (world.tick >= a.thinkAt) {
+        gx = tx; gy = ty;
+        if (world.tick >= aThinkAt) {
           applyDamage(world, territory.e, damage, e); animAt(world, e, Anim.Attack);
           world.setField(e, Animal, "thinkAt", world.tick + Math.max(1, Math.round(cd / dt)));
         }
@@ -170,38 +187,45 @@ export function animalAISystem(world: World, dt: number): void {
     } else if (wants && threat && def.attack) {
       state = AnimalState.Attack; gx = threat.x; gy = threat.y;
       if (threat.d <= def.attack.range + 0.4) {
-        gx = t.x; gy = t.y;
-        if (world.tick >= a.thinkAt) {
+        gx = tx; gy = ty;
+        if (world.tick >= aThinkAt) {
           applyDamage(world, threat.e, def.attack.damage, e); animAt(world, e, Anim.Attack);
           world.setField(e, Animal, "thinkAt", world.tick + Math.max(1, Math.round(def.attack.cooldownSeconds / dt)));
         }
       }
     } else if (threat && threat.d <= def.fleeRange && (!aggressive || scared || def.aggro.mode === "passive" || !def.attack)) {
-      state = AnimalState.Flee; const ang = Math.atan2(t.y - threat.y, t.x - threat.x); gx = t.x + Math.cos(ang) * 4; gy = t.y + Math.sin(ang) * 4;
+      state = AnimalState.Flee; const ang = Math.atan2(ty - threat.y, tx - threat.x); gx = tx + Math.cos(ang) * 4; gy = ty + Math.sin(ang) * 4;
     } else if (scared && state === AnimalState.Flee) { /* keep running to the last goal */ }
-    else if (world.tick >= a.thinkAt || state === AnimalState.Flee || state === AnimalState.Attack) {
+    else if (world.tick >= aThinkAt || state === AnimalState.Flee || state === AnimalState.Attack) {
       const rng = world.rngFor("animal.think", e);
       if (rng.next() < 0.5) state = AnimalState.Idle;
-      else { state = AnimalState.Wander; const ang = rng.range(-Math.PI, Math.PI), r = rng.range(1, tame ? Math.min(2.5, def.wanderRadius) : def.wanderRadius); gx = a.homeX + Math.cos(ang) * r; gy = a.homeY + Math.sin(ang) * r; }
+      else { state = AnimalState.Wander; const ang = rng.range(-Math.PI, Math.PI), r = rng.range(1, tame ? Math.min(2.5, def.wanderRadius) : def.wanderRadius); gx = aHomeX + Math.cos(ang) * r; gy = aHomeY + Math.sin(ang) * r; }
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(rng.range(2, 6) * DEFAULT_TICK_HZ));
     }
     let moving = false;
     if (state !== AnimalState.Idle) {
-      const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * swimSpeedMulAt(world, t.x, t.y) * dt;
+      const dx = gx - tx, dy = gy - ty, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * swimSpeedMulAt(world, tx, ty) * dt;
       if (d < 0.1) { if (state !== AnimalState.Attack) state = AnimalState.Idle; }
       else {
         const nav = creatureStep(world, e, gx, gy, sp, 0, tileBlocked, dt); // ADR-215: collide with / path around structures
         if (nav !== undefined) { moving = nav; if (!nav && state !== AnimalState.Attack) state = AnimalState.Idle; }
         else {
-          const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);
+          const nx = tx + (dx / d) * Math.min(sp, d), ny = ty + (dy / d) * Math.min(sp, d);
           if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) { world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); moving = true; }
           else state = AnimalState.Idle;
         }
       }
     }
-    if (world.getField(e, AnimState, "anim") !== Anim.Attack || !moving) animAt(world, e, moving ? (state === AnimalState.Wander ? Anim.Walk : Anim.Run) : state === AnimalState.Attack ? world.getField(e, AnimState, "anim") as Anim : Anim.Idle);
-    if (state !== a.state) world.setField(e, Animal, "state", state);
-    if (gx !== a.goalX || gy !== a.goalY) { world.setField(e, Animal, "goalX", gx); world.setField(e, Animal, "goalY", gy); }
+    // Task 29: store-direct anim write — same rules as animAt/setAnim (never override Hurt, only
+    // write on change, add the component if missing), without the per-call getField/store lookups.
+    const curAnim = anSlot >= 0 ? anD.anim[anSlot]! : undefined;
+    if (curAnim !== Anim.Attack || !moving) {
+      const want = moving ? (state === AnimalState.Wander ? Anim.Walk : Anim.Run) : state === AnimalState.Attack ? (curAnim as Anim) : Anim.Idle;
+      if (anSlot >= 0) { if (curAnim !== Anim.Hurt && curAnim !== want) { anD.anim[anSlot] = want; anD.startTick[anSlot] = world.tick; anStore.markChanged(ei); } }
+      else animAt(world, e, want);
+    }
+    if (state !== aState) world.setField(e, Animal, "state", state);
+    if (gx !== aGoalX || gy !== aGoalY) { world.setField(e, Animal, "goalX", gx); world.setField(e, Animal, "goalY", gy); }
   }
 }
 

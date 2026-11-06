@@ -84,6 +84,14 @@ const cellIndex = (lx: number, ly: number, z: number, layer: number): number => 
 
 export class BuildingGrid {
   private layers = new Map<ChunkKey, StructureLayer>();
+  // Task 29: last chunk layer resolved by at(), keyed by numeric chunk coords. Hot lookups
+  // (A* neighbours, sight-ray crossings, axis moves) walk adjacent tiles, so the same chunk is
+  // hit over and over — without this, every at() built a "cx,cy" string and hashed it. The layer
+  // object is mutated in place by place/remove/writeCells, so a cached reference stays correct;
+  // the only two places a layer enters/leaves the map (layerFor creation, unloadChunk delete)
+  // clear the cache (see below).
+  private cachedLayer: StructureLayer | undefined;
+  private cachedCx = 0; private cachedCy = 0; private cachedValid = false;
   private instances = new Map<number, PieceInstance>();
   private nextId = 1;
   onPlace?: (inst: PieceInstance) => void;
@@ -125,20 +133,39 @@ export class BuildingGrid {
   layer(k: ChunkKey): StructureLayer | undefined { return this.layers.get(k); }
   private layerFor(tx: number, ty: number): StructureLayer {
     const k = chunkKey(tileToChunk(tx), tileToChunk(ty)); let l = this.layers.get(k);
-    if (!l) this.layers.set(k, (l = new StructureLayer(k))); return l;
+    if (!l) { this.layers.set(k, (l = new StructureLayer(k))); this.cachedValid = false; } return l;
   }
   /** Tiles covered by a piece at anchor (tx,ty) with rotation rot (0..3, 90° steps). */
   footprintTiles(pieceId: number, tx: number, ty: number, rot: number): [number, number][] {
     const d = this.pieces.get(pieceId); const odd = rot & 1; const w = odd ? d.footprint.h : d.footprint.w, h = odd ? d.footprint.w : d.footprint.h;
     const out: [number, number][] = []; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out.push([tx + x, ty + y]); return out;
   }
+  /** Chunk layer at (tx, ty) through the 1-entry cache (see cachedLayer above). */
+  private layerAt(tx: number, ty: number): StructureLayer | undefined {
+    const cx = tileToChunk(tx), cy = tileToChunk(ty);
+    if (this.cachedValid && cx === this.cachedCx && cy === this.cachedCy) return this.cachedLayer;
+    const l = this.layers.get(chunkKey(cx, cy)); this.cachedLayer = l; this.cachedCx = cx; this.cachedCy = cy; this.cachedValid = true;
+    return l;
+  }
   /** Occupant id at tile/level/layer (0 = empty). Omit layer to get any (lowest layer first). */
   at(tx: number, ty: number, z: number, layer?: number): number {
-    const l = this.layers.get(chunkKey(tileToChunk(tx), tileToChunk(ty))); if (!l) return 0;
+    const l = this.layerAt(tx, ty);
+    if (!l) return 0;
     const lx = tileToLocal(tx), ly = tileToLocal(ty);
     if (layer !== undefined) return l.cells.get(cellIndex(lx, ly, z, layer)) ?? 0;
     for (let la = 0; la < MAX_LAYERS; la++) { const v = l.cells.get(cellIndex(lx, ly, z, la)); if (v) return v; }
     return 0;
+  }
+  /**
+   * Instance ids occupying layers lo..hi at (tx, ty, z), appended to `out` in layer order.
+   * Task 29: one chunk-layer resolution for the whole layer range — the hot solidCell/stepBlocker
+   * checks used to pay a full at() (chunk + cell lookup) per layer. Empty tiles append nothing.
+   */
+  cellsIn(tx: number, ty: number, z: number, lo: number, hi: number, out: number[]): number[] {
+    const l = this.layerAt(tx, ty); if (!l) return out;
+    const lx = tileToLocal(tx), ly = tileToLocal(ty);
+    for (let la = lo; la <= hi; la++) { const id = l.cells.get(cellIndex(lx, ly, z, la)); if (id) out.push(id); }
+    return out;
   }
   canPlace(pieceId: number, tx: number, ty: number, z: number, rot = 0): PlaceCheck {
     const d = this.pieces.get(pieceId);
@@ -290,5 +317,5 @@ export class BuildingGrid {
   /** Instances anchored in a chunk (for persistence). */
   anchoredIn(k: ChunkKey): PieceInstance[] { return [...(this.layers.get(k)?.anchored ?? [])].map((id) => this.instances.get(id)!); }
   /** Drop all instances anchored in a chunk (on unload). */
-  unloadChunk(k: ChunkKey): void { for (const i of this.anchoredIn(k)) { this.writeCells(i, 0); this.instances.delete(i.id); } this.layers.get(k)?.anchored.clear(); if (!this.layers.get(k)?.cells.size) this.layers.delete(k); }
+  unloadChunk(k: ChunkKey): void { for (const i of this.anchoredIn(k)) { this.writeCells(i, 0); this.instances.delete(i.id); } this.layers.get(k)?.anchored.clear(); if (!this.layers.get(k)?.cells.size) { this.layers.delete(k); this.cachedValid = false; } }
 }

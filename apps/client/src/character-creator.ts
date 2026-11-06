@@ -245,14 +245,30 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
   if (!twoD) return buildGl(); // no 2D (no catalog / construction failed): await GL as before
   let cur: PreviewDriver = twoD; let latestLook = look; let latestFacing = facing; let disposed = false;
   let resolveUpgraded: () => void = () => undefined; const upgraded = new Promise<void>((r) => { resolveUpgraded = r; });
-  void buildGl().then((gl) => {
-    if (!gl) return; // WebGL2 unavailable: stay on Canvas2D (same doll, just the 2D compositor)
-    if (disposed) { gl.dispose(); return; } // the creator closed while GL was building
-    const prev = cur; cur = gl;
-    gl.set(latestLook); gl.facing(latestFacing);
-    prev.dispose(); // removes the 2D canvas (the GL canvas was appended by buildGl)
-    resolveUpgraded();
-  });
+  // Task 29: don't start the WebGL2 build (second GL context + a full atlas rebuild on the main thread)
+  // while the user is making their first choices — the 2D doll is already correct and interactive, and
+  // the GL upgrade is cosmetic. Start it when the browser is idle (3s cap so it still arrives on a busy
+  // main thread), or after 1.2s where requestIdleCallback is unavailable. Closing the creator first
+  // cancels the start entirely instead of building a preview nobody will see.
+  const win = doc.defaultView;
+  const startGl = (): void => {
+    void buildGl().then((gl) => {
+      if (!gl) return; // WebGL2 unavailable: stay on Canvas2D (same doll, just the 2D compositor)
+      if (disposed) { gl.dispose(); return; } // the creator closed while GL was building
+      const prev = cur; cur = gl;
+      gl.set(latestLook); gl.facing(latestFacing);
+      prev.dispose(); // removes the 2D canvas (the GL canvas was appended by buildGl)
+      resolveUpgraded();
+    });
+  };
+  let cancelStart: () => void;
+  if (typeof win?.requestIdleCallback === "function") {
+    const h = win.requestIdleCallback(() => startGl(), { timeout: 3000 });
+    cancelStart = () => win.cancelIdleCallback?.(h);
+  } else {
+    const h = win?.setTimeout?.(startGl, 1200) ?? 0;
+    cancelStart = () => win?.clearTimeout?.(h);
+  }
   return {
     get kind() { return cur.kind; },
     loaded: twoD.loaded!, // build2d always sets loaded (the 2D doll's sheet promise)
@@ -260,7 +276,7 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
     set: (a) => { latestLook = a; cur.set(a); },
     facing: (k) => { latestFacing = k; cur.facing(k); },
     frame: (t) => cur.frame(t),
-    dispose: () => { disposed = true; cur.dispose(); },
+    dispose: () => { disposed = true; cancelStart(); cur.dispose(); },
   };
 }
 /** ADR-240: the creator previews the same doll art as in-game (`charArt` setting; v2s/v2s-all = the v2 sample). */

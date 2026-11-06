@@ -63,9 +63,14 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   if (tx1 !== tx0 || ty1 !== ty0) return solidCell(idx, tx1, ty1, level);
   return false;
 }
+// Task 29: reused scratch for solidCell's layer scan (single-threaded sim; solidCell is a leaf).
+const SOLID_IDS: number[] = [];
 export const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): boolean => {
-  for (let la = 1; la < 4; la++) {
-    const c = idx.cell(tx, ty, level, la); const d = c ? idx.def(c) : undefined;
+  // Task 29: one chunk-layer resolution for layers 1..3 (grid.cellsIn) instead of a full at() per
+  // layer — same checks, same order. Empty tiles (the common case) cost one cells.get trio.
+  SOLID_IDS.length = 0; idx.grid.cellsIn(tx, ty, level, 1, 3, SOLID_IDS);
+  for (const id of SOLID_IDS) {
+    const c = idx.byGrid.get(id) ?? 0; if (!c) continue; const d = idx.def(c);
     // Task 14: an OPEN free-placement gate (garden gate, clan gate) is passable — its DoorState attachment says so.
     // Edge doors were already handled by edgeBlocker; this is the grid-cell half, which used to block open gates too.
     if (d?.solid && d.snap !== "vertex" && !(d.door && idx.doorOpen(c))) return true;
@@ -260,11 +265,22 @@ const ONE_SHOT: ReadonlySet<number> = new Set([Anim.Attack, Anim.Punch, Anim.Hur
  */
 export function animSettleSystem(world: World): void {
   const terrain = world.getResource(TerrainRes);
+  // Task 29: store-direct reads — the old world.get() copies (AnimState + Transform per entity per
+  // tick) were the whole cost of this loop. ONE_SHOT is checked before the Survival store lookup
+  // (most entities are not mid-one-shot), and the water depth is computed inline with the hoisted
+  // shallow radius instead of via inDeepWater's per-call getResource/gameplayDefs.
+  const tfStore = world.store(Transform); const anStore = world.store(AnimState);
+  // Task 29: Survival is only consulted for entities mid-one-shot; in a world where it is not
+  // registered no entity can have it, so the check is simply false (the old code threw here instead).
+  const svStore = world.isRegistered(Survival) ? world.store(Survival) : undefined;
+  const shallowR = terrain ? gameplayDefs(world).movement.shallowRadius : 0;
   for (const e of world.query([AnimState, Transform], [Dead])) {
-    const t = world.get(e, Transform)!; const a = world.get(e, AnimState)!; let cur = a.anim;
-    if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { cur = STANCE_ANIM[stanceMode(world, e)] ?? Anim.Idle; world.set(e, AnimState, { anim: cur, startTick: world.tick }); } // ADR-244: back to the held stance
+    const ei = entityIndex(e); const ts = tfStore.slot(ei); const ans = anStore.slot(ei);
+    const x = tfStore.data.x[ts]!, y = tfStore.data.y[ts]!, z = tfStore.data.z[ts]!;
+    let cur = anStore.data.anim[ans]!;
+    if (ONE_SHOT.has(cur) && svStore?.has(ei) && world.tick - anStore.data.startTick[ans]! >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { cur = STANCE_ANIM[stanceMode(world, e)] ?? Anim.Idle; world.set(e, AnimState, { anim: cur, startTick: world.tick }); } // ADR-244: back to the held stance
     if (!terrain) continue;
-    const wet = (t.z ?? 0) < 0.5 && inDeepWater(world, t.x, t.y); // ADR-181: wading keeps walk anims
+    const wet = z < 0.5 && waterDepthAt(terrain.tileAt, Math.floor(x), Math.floor(y), shallowR) === WaterDepth.Deep; // ADR-181: wading keeps walk anims
     if (wet && SWIM_OVER.has(cur)) world.set(e, AnimState, { anim: Anim.Swim, startTick: world.tick });
     else if (!wet && cur === Anim.Swim) world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick });
   }

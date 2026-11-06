@@ -208,12 +208,17 @@ export class World {
   *query(all: readonly ComponentDef[], none: readonly ComponentDef[] = []): IterableIterator<Entity> {
     const na = all.length, nn = none.length; if (na === 0) return;
     // ADR-212: no per-call map/reduce/every/some closures (hot: dozens of queries per tick)
-    let driver = this.store(all[0]!); for (let j = 1; j < na; j++) { const s = this.store(all[j]!); if (s.size < driver.size) driver = s; }
-    for (let j = 0; j < nn; j++) this.store(none[j]!); // throws on unregistered, as before
+    // Task 29: resolve each component store ONCE per query, not once per entity per component —
+    // store() is a Map lookup, and a 176-entity query was spending ~28us on it alone.
+    const allStores: ComponentStore[] = new Array(na);
+    for (let j = 0; j < na; j++) allStores[j] = this.store(all[j]!);
+    const noneStores: ComponentStore[] = new Array(nn);
+    for (let j = 0; j < nn; j++) noneStores[j] = this.store(none[j]!); // throws on unregistered, as before
+    let driver = allStores[0]!; for (let j = 1; j < na; j++) { const s = allStores[j]!; if (s.size < driver.size) driver = s; }
     outer: for (let k = driver.size - 1; k >= 0; k--) {
       const e = driver.dense[k]!; const i = entityIndex(e);
-      for (let j = 0; j < na; j++) if (!this.store(all[j]!).has(i)) continue outer;
-      for (let j = 0; j < nn; j++) if (this.store(none[j]!).has(i)) continue outer;
+      for (let j = 0; j < na; j++) if (!allStores[j]!.has(i)) continue outer;
+      for (let j = 0; j < nn; j++) if (noneStores[j]!.has(i)) continue outer;
       yield e;
     }
   }

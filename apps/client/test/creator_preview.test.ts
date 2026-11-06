@@ -24,6 +24,9 @@ describe("ADR-114 creator preview (render package sprites)", () => {
     const d = await createPreviewDriver(host, { registry, sources: new Map(), createGl, create2d: mk2d }, {} as never, 1);
     // Task 24: 2D-first — the doll mounts before the WebGL2 build (atlas rebuild + prefetch) finishes…
     expect(d?.kind).toBe("canvas2d"); expect(host.querySelector("canvas")?.dataset["renderer"]).toBe("canvas2d");
+    // Task 29: …and the GL build does not even start until the browser is idle (1.2s fallback here, where
+    // requestIdleCallback is unavailable) — the first choices run without the atlas rebuild competing.
+    expect(createGl).not.toHaveBeenCalled();
     await d!.upgraded; // …then the background WebGL2 build swaps in (same final quality)
     expect(d?.kind).toBe("webgl2"); expect(calls.resize[0]).toEqual([PREVIEW_CSS.w, PREVIEW_CSS.h, 2.625]); expect(host.querySelector("canvas")?.dataset["renderer"]).toBe("webgl2");
     d!.dispose(); expect(calls.disposed).toBe(1);
@@ -33,13 +36,19 @@ describe("ADR-114 creator preview (render package sprites)", () => {
     await tick(); await tick(); expect(d2?.kind).toBe("canvas2d"); // GL failure leaves the driver on Canvas2D
     const gl3 = glStub(); const d3 = await createPreviewDriver(host, { registry, sources: new Map(), mode: "canvas2d", createGl: gl3.createGl, create2d: mk2d }, {} as never, 1);
     expect(d3?.kind).toBe("canvas2d"); expect(gl3.createGl).not.toHaveBeenCalled();
+    // Task 29: closing the creator before the idle start cancels the GL build entirely.
+    const gl4 = glStub(); const d4 = await createPreviewDriver(host, { registry, sources: new Map(), createGl: gl4.createGl, create2d: mk2d }, {} as never, 1);
+    d4!.dispose(); await new Promise((r) => setTimeout(r, 1400)); expect(gl4.createGl).not.toHaveBeenCalled();
   });
   it("creator: live reaction to choices, 8 facings via buttons / gamepad LB-RB / drag, disposed on close", async () => {
     const root = document.createElement("div"); document.body.append(root); const { calls, createGl } = glStub();
     let pad: Gamepad | null = null; const pads = () => [pad];
     const preview: CreatorPreviewSource = { registry, sources: new Map(), createGl };
     const p = showCharacterCreator({ root, catalog: cat, pads, preview }); await tick(); await tick();
-    const wrap = root.querySelector<HTMLElement>("[data-boot=creator]")!; expect(wrap.dataset["preview"]).toBe("webgl2");
+    const wrap = root.querySelector<HTMLElement>("[data-boot=creator]")!;
+    // Task 29: the GL upgrade is deferred until idle (1.2s fallback in jsdom) — wait for it before interacting.
+    for (let i = 0; i < 30 && wrap.dataset["preview"] !== "webgl2"; i++) await new Promise((r) => setTimeout(r, 100));
+    expect(wrap.dataset["preview"]).toBe("webgl2");
     const hairOf = () => (calls.set.at(-1) as { parts: number[] }).parts[slotIndex("hair")]; const h0 = hairOf(); const n0 = calls.set.length;
     root.querySelector<HTMLButtonElement>("[data-action=next-hair]")!.click(); expect(calls.set.length).toBe(n0 + 1); expect(hairOf()).not.toBe(h0); expect([0, 1]).toContain(hairOf());
     const f = () => calls.facing.at(-1)!;

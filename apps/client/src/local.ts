@@ -215,13 +215,22 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   // anything with Health); each fresh view scans only the 3x3 cells around the bot (cell >= sight and hearing range).
   const CELL = 24; let gridTick = -1; const cells = new Map<number, Entity[]>(); const pool: Entity[][] = [];
   const cellKey = (cx: number, cy: number): number => (cx + 0x8000) * 0x10000 + (cy + 0x8000);
+  const seenIds = new Set<Entity>();
   const rebuildGrid = (): void => {
     for (const l of cells.values()) { l.length = 0; pool.push(l); } cells.clear();
     const w = game.world;
-    for (const e of w.query([Transform], [Dead])) {
-      if (!w.has(e, Zombie) && !w.has(e, ResourceNode) && !w.has(e, Animal) && !w.has(e, Health)) continue;
-      const k = cellKey(Math.floor((w.getField(e, Transform, "x") ?? 0) / CELL), Math.floor((w.getField(e, Transform, "y") ?? 0) / CELL));
-      let l = cells.get(k); if (!l) { l = pool.pop() ?? []; cells.set(k, l); } l.push(e);
+    // Task 29: was a full Transform scan (every entity, 4 has-checks each — ~1.2ms per agent tick in a
+    // busy village). Iterate the 4 perceivable kinds directly and dedup (zombies/animals also carry
+    // Health, so they appear in two queries). Same entity set as before — buildAgentView only consumes
+    // `seen` order-independently (filter/length, .some(), distance-sorted nearest), so the new
+    // kind-grouped order changes nothing observable.
+    seenIds.clear();
+    for (const def of [Zombie, ResourceNode, Animal, Health] as const) {
+      for (const e of w.query([def, Transform], [Dead])) {
+        if (seenIds.has(e)) continue; seenIds.add(e);
+        const k = cellKey(Math.floor((w.getField(e, Transform, "x") ?? 0) / CELL), Math.floor((w.getField(e, Transform, "y") ?? 0) / CELL));
+        let l = cells.get(k); if (!l) { l = pool.pop() ?? []; cells.set(k, l); } l.push(e);
+      }
     }
   };
   const nearby = (x: number, y: number): Entity[] => {

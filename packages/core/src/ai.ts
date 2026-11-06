@@ -49,8 +49,11 @@ export const DEFAULT_PERCEPTION: PerceptionConfig = { sightRange: 12, sightConeD
 /** Sight cone + range test (facing in radians). */
 export function canSee(cfg: PerceptionConfig, ax: number, ay: number, facing: number, tx: number, ty: number): boolean {
   const dx = tx - ax, dy = ty - ay, d = Math.hypot(dx, dy); if (d > cfg.sightRange) return false; if (d < 1.5) return true;
-  let a = Math.atan2(dy, dx) - facing; a = Math.atan2(Math.sin(a), Math.cos(a));
-  return Math.abs(a) <= (cfg.sightConeDeg * Math.PI) / 360;
+  // Task 29: same predicate without the per-call atan2/sin/cos — |angle| <= halfCone is exactly
+  // cos(angle) >= cos(halfCone), and cos(angle) is the facing-unit-vector dot product. The only
+  // divergence from the old form is float noise on a target sitting exactly on the cone edge.
+  const cosHalf = Math.cos((cfg.sightConeDeg * Math.PI) / 360);
+  return (dx * Math.cos(facing) + dy * Math.sin(facing)) / d >= cosHalf;
 }
 /** Memory with linear confidence decay: seen/heard things fade after memorySeconds. */
 export class AgentMemory {

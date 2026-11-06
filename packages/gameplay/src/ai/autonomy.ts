@@ -16,6 +16,7 @@ import { bareHandsCan, heldTool } from "../systems/gathering.js";
 import { nearWater } from "../systems/vitals.js";
 import { ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef, type ResourceDef } from "../defs.js";
 import { pieceCost } from "../building/place.js";
+import { StructureIndexRes } from "../building/structure.js";
 import { bumpStat } from "./planner.js";
 import { maxHpOf } from "../building/integrity.js";
 import { resolveAttachment } from "../building/links.js";
@@ -180,8 +181,32 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   // repair: own-base pieces under 60% hp near home (gameplay.repair; the server charges the cost)
   if (hs.repair !== undefined && world.isAlive(hs.repair)) { const p = world.get(hs.repair, Transform); if (p) view.repairTarget = { id: hs.repair, x: p.x, y: p.y }; }
 }
+// Task 29: pieceAt memo. fillAgentSensors asks for the same (type, home, 6) up to 4x per bot view rebuild,
+// and the uncached scan is ~100us in a busy base (a full BuildPiece query + a Transform copy per piece).
+// Results only change when pieces are placed/removed, which bumps StructureIndex.version — tier upgrades
+// neither move nor retype pieces, so they correctly leave the memo alone. Worlds without a
+// StructureIndex (minimal test worlds) skip the memo and just take the cheaper scan. Cached hits are
+// re-validated with isAlive so a piece destroyed outside removePiece never comes back stale.
+const pieceAtMemo = new WeakMap<World, { version: number; map: Map<string, Entity | undefined> }>();
 export function pieceAt(world: World, type: number, x: number, y: number, r: number): Entity | undefined {
-  for (const e of world.query([BuildPiece, Transform])) { if (world.getField(e, BuildPiece, "type") !== type) continue; const p = world.get(e, Transform)!; if (Math.hypot(p.x - x, p.y - y) < r) return e; }
+  const key = `${type}|${x}|${y}|${r}`;
+  const si = world.getResource(StructureIndexRes);
+  let memo: Map<string, Entity | undefined> | undefined;
+  if (si) {
+    let entry = pieceAtMemo.get(world);
+    if (!entry || entry.version !== si.version) { entry = { version: si.version, map: new Map() }; pieceAtMemo.set(world, entry); }
+    memo = entry.map;
+    if (memo.has(key)) { const hit = memo.get(key); if (hit === undefined || world.isAlive(hit)) return hit; memo.delete(key); }
+    if (memo.size > 128) memo.clear();
+  }
+  const bp = world.store(BuildPiece); const tf = world.store(Transform);
+  for (const e of world.query([BuildPiece, Transform])) {
+    const i = entityIndex(e);
+    if (bp.read(i, "type") !== type) continue;
+    const s = tf.slot(i); const dx = tf.data.x[s]! - x, dy = tf.data.y[s]! - y;
+    if (dx * dx + dy * dy < r * r) { memo?.set(key, e); return e; }
+  }
+  memo?.set(key, undefined);
   return undefined;
 }
 export const pieceNear = (world: World, type: number, x: number, y: number, r: number): boolean => pieceAt(world, type, x, y, r) !== undefined;

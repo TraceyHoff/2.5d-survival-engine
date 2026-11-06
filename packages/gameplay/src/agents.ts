@@ -6,7 +6,7 @@
  */
 import { pickSkillNode, treesOf } from "./skills/progression.js";
 import { Progression } from "./components.js";
-import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
+import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, entityIndex, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
 import raw from "../data/agents.json";
 import { Animal, Dead, Health, ResourceNode, Survival, Zombie } from "./components.js";
 import { currentPhaseKey } from "./combat/zombies.js";
@@ -73,15 +73,27 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
   const sv = world.get(self, Survival); const hp = world.get(self, Health);
   const facing = a.bb.num("facing", t.facing);
   const seen: SeenThing[] = [];
+  // Task 29: store-direct reads. The old loop did world.getField x2 + world.has x4-5 per candidate
+  // (each a store() Map lookup + function calls) — ~2.3us/candidate, ~934us for one bot's view in a
+  // busy village. Same predicate and kind order; the kind stores' has() is the same sparse-array
+  // read world.has does, and rnStore.read is what getField does. (ADR-212's no-get() rule still holds.)
+  const tfStore = world.store(Transform);
+  const zStore = world.store(Zombie); const rnStore = world.store(ResourceNode);
+  const anStore = world.store(Animal); const hpStore = world.store(Health);
+  const deadStore = candidates ? world.store(Dead) : undefined;
   for (const e of candidates ?? world.query([Transform], [Dead])) {
-    if (e === self) continue; if (candidates && world.has(e, Dead)) continue; const ox = world.getField(e, Transform, "x"); if (ox === undefined) continue; const o = { x: ox, y: world.getField(e, Transform, "y")! }; // ADR-212: no full-record get() per candidate
-    const kind = world.has(e, Zombie) ? "zombie" : world.has(e, ResourceNode) ? "node" : world.has(e, Animal) ? "animal" : world.has(e, Health) ? "player" : undefined;
-    if (!kind) continue; if (kind === "node" && world.getField(e, ResourceNode, "amount") === 0) continue;
-    const ddx = o.x - t.x, ddy = o.y - t.y; const d = Math.sqrt(ddx * ddx + ddy * ddy); // ADR-212: Math.hypot allocates its rest-args array per call
-    const visible = canSee(a.perception, t.x, t.y, facing, o.x, o.y);
-    if (visible) a.memory.see({ id: e, kind, x: o.x, y: o.y, tick: world.tick });
-    else if (kind === "zombie" && d <= a.perception.hearingRange * 0.5) a.memory.hear({ id: e, kind, x: o.x, y: o.y, tick: world.tick }, 1);
-    if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
+    if (e === self) continue;
+    const idx = entityIndex(e);
+    if (deadStore?.has(idx)) continue;
+    if (!tfStore.has(idx)) continue;
+    const ts = tfStore.slot(idx); const ox = tfStore.data.x[ts]!, oy = tfStore.data.y[ts]!;
+    const kind = zStore.has(idx) ? "zombie" : rnStore.has(idx) ? "node" : anStore.has(idx) ? "animal" : hpStore.has(idx) ? "player" : undefined;
+    if (!kind) continue; if (kind === "node" && rnStore.read(idx, "amount") === 0) continue;
+    const ddx = ox - t.x, ddy = oy - t.y; const d = Math.sqrt(ddx * ddx + ddy * ddy); // ADR-212: Math.hypot allocates its rest-args array per call
+    const visible = canSee(a.perception, t.x, t.y, facing, ox, oy);
+    if (visible) a.memory.see({ id: e, kind, x: ox, y: oy, tick: world.tick });
+    else if (kind === "zombie" && d <= a.perception.hearingRange * 0.5) a.memory.hear({ id: e, kind, x: ox, y: oy, tick: world.tick }, 1);
+    if (visible) seen.push({ id: e, kind, x: ox, y: oy });
   }
   const tod = timeOfDay(world);
   const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((treesOf(world, self) ?? []).some((t) => t.points > 0)) { // ADR-221: per-tree points since ADR-209 (global points is always 0)

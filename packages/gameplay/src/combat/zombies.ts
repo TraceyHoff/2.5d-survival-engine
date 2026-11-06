@@ -92,11 +92,18 @@ function setState(world: World, z: Entity, state: ZState): void {
 }
 const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(ax - bx, ay - by);
 
-/** Nearest living player seen (sight range) or heard (noise x hearing) from (x,y). */
-function acquire(world: World, x: number, y: number, def: ZombieDef): { e: Entity; seen: boolean } | undefined {
-  const R = Math.max(def.sightRange, 24); let best: { e: Entity; seen: boolean; d: number } | undefined;
-  for (const p of installSpatialIndex(world).queryRadius(x, y, R)) {
-    if (!world.has(p, Survival) || world.has(p, Dead)) continue;
+/**
+ * Nearest living player seen (sight range) or heard (noise x hearing) from (x,y).
+ * Task 29: scans the small living-survivors list (built once per system run) instead of a
+ * spatial radius query over every piece/animal/node in the village (~186us -> ~1us per call).
+ * Identical results: the old radius R = max(sightRange, 24) admitted nobody beyond the
+ * seen/heard ranges (sight <= 18, heard <= ~16), and the Dead check is kept so a player who
+ * dies mid-run is still excluded for later zombies in the same tick.
+ */
+function acquire(world: World, x: number, y: number, def: ZombieDef, survivors: readonly Entity[]): { e: Entity; seen: boolean } | undefined {
+  let best: { e: Entity; seen: boolean; d: number } | undefined;
+  for (const p of survivors) {
+    if (world.has(p, Dead)) continue;
     const t = world.get(p, Transform)!; const d = dist(x, y, t.x, t.y);
     const seen = d <= def.sightRange * (isCrouched(world, p) ? STANCE.crouchSightMul : 1); const heard = d <= (world.getField(p, NoiseLevel, "value") ?? 0) * def.hearingMul;
     if (!seen && !heard) continue;
@@ -141,6 +148,11 @@ export function zombieAISystem(world: World, dt: number): void {
   const defs = gameplayDefs(world); const ai = defs.ai; const tf = world.store(Transform); const br = world.store(ZombieBrain);
   const ps = pathsOf(world); const phase = currentPhaseKey(world); const todT = timeOfDay(world).t;
   const avoid = defs.lightAvoid.phases.includes(phase); const sn = snuffsOf(world);
+  // Task 29: living survivors with Transform, sorted for deterministic tie-breaks; rebuilt per
+  // tick (cheap: players are few) and shared by acquire + the despawn check below. Guarded: worlds
+  // without Survival registered (minimal/persist worlds) previously never reached a survivor query
+  // without zombies to think, so an empty list — not a throw — is the faithful answer there.
+  const survivors: Entity[] = world.isRegistered(Survival) ? [...world.query([Survival, Transform], [Dead])].sort((a, b) => a - b) : [];
   if (avoid) lightGrid(world);
   const breakTicks = (piece: Entity): number => pieceHp(world, piece) / 10;
   for (const z of world.query([Zombie, ZombieBrain, Transform, Health], [Dead])) {
@@ -150,13 +162,14 @@ export function zombieAISystem(world: World, dt: number): void {
     // think
     if (world.tick >= br.data.thinkAt[s]!) {
       br.data.thinkAt[s] = world.tick + ai.thinkTicks; br.markChanged(idx);
-      // despawn when no player is near
-      let anyNear = false; for (const p of installSpatialIndex(world).queryRadius(x, y, ai.despawnDistance)) if (world.has(p, Survival)) { anyNear = true; break; }
+      // despawn when no player is near (Task 29: same survivors list as acquire, squared distance)
+      let anyNear = false; const r2 = ai.despawnDistance * ai.despawnDistance;
+      for (const p of survivors) { if (world.has(p, Dead)) continue; const t = world.get(p, Transform)!; const dx = t.x - x, dy = t.y - y; if (dx * dx + dy * dy <= r2) { anyNear = true; break; } }
       const horde = world.has(z, HordeMember); // ADR-121: horde members roam far from players
       if (!anyNear && !horde && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
       const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
       const aggr = horde || zombieAggressive(world, z, todT);
-      let tgt = aggr ? acquire(world, x, y, def) : provoker(world, z, x, y, def, dt);
+      let tgt = aggr ? acquire(world, x, y, def, survivors) : provoker(world, z, x, y, def, dt);
       // Task 15: a zombie that just gave up a chase does not instantly re-acquire the same player next think
       // (they are usually still in sight). Retaliation still breaks the cooldown: hitting the zombie re-engages it.
       const gu = giveUpsOf(world).get(z);

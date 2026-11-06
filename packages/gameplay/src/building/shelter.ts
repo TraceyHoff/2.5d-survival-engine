@@ -25,14 +25,17 @@ export function wallInsulationOf(def: { family?: string; opening?: unknown } | u
   return (WALL_INSULATION_PER_TIER[Math.min(Math.max(tier, 0), WALL_INSULATION_PER_TIER.length - 1)] ?? 1.5) * (hasWindow ? 0.5 : 1);
 }
 
+// Task 29: the 4 edge walls around a tile, as (dx, dy, side) offsets — StructureIndex.tileEdges
+// allocates 4 fresh arrays per call; this table is shared. Same edges, same order.
+const TILE_EDGE_OFFSETS: readonly (readonly [number, number, EdgeSide])[] = [[0, 0, EdgeSide.North], [0, 1, EdgeSide.North], [0, 0, EdgeSide.West], [1, 0, EdgeSide.West]];
 /** Wall insulation around a tile at a level: the 4 edge walls' insulation, averaged over the 4 edges. */
 export function wallInsulationAt(world: World, x: number, y: number, z: number): number {
   const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return 0;
   const level = Math.max(0, Math.round(z / gameplayDefs(world).building.levelHeight));
   const tx = Math.floor(x), ty = Math.floor(y);
   let sum = 0;
-  for (const [ex, ey, side] of StructureIndex.tileEdges(tx, ty)) {
-    const w = idx.edge(ex, ey, level, side); if (!w) continue;
+  for (const [dx, dy, side] of TILE_EDGE_OFFSETS) {
+    const w = idx.edge(tx + dx, ty + dy, level, side); if (!w) continue;
     const d = idx.def(w); if (!d) continue;
     const opening = idx.opening(w); const insert = opening ? idx.def(opening) : undefined;
     const hasWindow = d.opening === SocketKind.Window || insert?.fits === SocketKind.Window;
