@@ -9,7 +9,7 @@
  * - farm animals: pig -> truffle 480s, alpaca -> wool 420s, bee -> honey 360s, rabbit -> wool 480s.
  * Art: every new kind resolves through sprite_fallbacks.json to a real pack sprite (Task 28 pattern);
  * every new item key is itself a real sprite in the nature/base manifest.
- * ADR-257: wild_lettuce / crop_lettuce / wild_hay / crop_hay are unique task256 keys (wheat already unique).
+ * ADR-257 keys now ship as packed nature-pack art (wild + growth stages + icons); wheat already unique.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -445,9 +445,9 @@ describe("Task 32: art wiring", () => {
   });
 
   it("every new crop and growth stage resolves to a real pack sprite at the stage scales", () => {
-    // ADR-257: lettuce has unique pack keys (task256); no carrot_patch reuse
-    expect(resolveSprite("crop_lettuce_0", has)).toMatchObject({ key: "crop_lettuce", scale: 0.35 });
-    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce", scale: 1 });
+    // Dedicated lettuce growth-stage sprites in the nature pack (no carrot_patch, no scaled crop_lettuce stand-in).
+    expect(resolveSprite("crop_lettuce_0", has)).toMatchObject({ key: "crop_lettuce_0", scale: 1 });
+    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce_3", scale: 1 });
     expect(resolveSprite("wild_lettuce", has)).toMatchObject({ key: "wild_lettuce", scale: 1 });
     expect(resolveSprite("wild_lettuce", has)!.tint).toBe(0);
     expect(resolveSprite("crop_pepper_0", has)).toMatchObject({ key: "wild_herbs", scale: 0.35 });

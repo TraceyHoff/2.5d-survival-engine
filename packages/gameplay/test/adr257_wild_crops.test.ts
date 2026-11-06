@@ -42,8 +42,8 @@ describe("ADR-257: unique wild lettuce / wheat / hay", () => {
     expect(resolveSprite("wild_hay", has)).toMatchObject({ key: "wild_hay", tint: 0, scale: 1 });
     expect(resolveSprite("crop_hay", has)).toMatchObject({ key: "crop_hay", tint: 0, scale: 1 });
     expect(resolveSprite("wild_wheat", has)).toMatchObject({ key: "wild_wheat", tint: 0, scale: 1 });
-    expect(resolveSprite("crop_hay_0", has)).toMatchObject({ key: "crop_hay", scale: 0.35 });
-    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce", scale: 1 });
+    expect(resolveSprite("crop_hay_0", has)).toMatchObject({ key: "crop_hay_0", scale: 1 });
+    expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce_3", scale: 1 });
     expect(resolveIcon("hay", "resource", has)).toBe("hay");
     expect(resolveIcon("hay_seeds", "resource", has)).toBe("hay_seeds");
   });

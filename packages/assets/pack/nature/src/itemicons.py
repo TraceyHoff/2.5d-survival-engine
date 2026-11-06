@@ -276,6 +276,76 @@ k('baked_beans', baked_beans); k('roasted_garlic', roasted_garlic); k('willow_te
 # ADR-247 berry_seeds (id 463): appended last so every committed cell keeps its frame index. Same seedbag framing as the
 # *_seeds row (sack, berry emblem, small spilled seeds), berry-red accent; painted solid cel (CEL_KEYS) even on plain rebuilds.
 k('berry_seeds', seedbag, '#c8283a', '#e8cf9a', em_berry(lt('#c8283a', .1)))
+
+def em_lettuce(c):
+    c.ell(16, 17.2, 3.2, 2.4, '#9fd86a', owf=.5)
+    c.poly([(13.4, 17), (16, 13.6), (18.6, 17)], '#b4e46e', owf=.45)
+    c.poly([(14.6, 16.4), (16, 18.8), (17.6, 16.4)], lt('#9fd86a', .15), owf=.4)
+
+def lettuce_head(c):
+    """Loose ruffled lettuce head — not cabbage's three concentric rings."""
+    sh(c, 11)
+    col = '#a8e05a'
+    # outer ruffled leaves (open, overlapping, frilly)
+    c.ell(10.5, 20, 6.4, 5.0, dk(col, .08), shade=.3)
+    c.ell(21.5, 20, 6.4, 5.0, col, shade=.3)
+    c.ell(16, 23.2, 7.6, 4.6, dk(col, .04), shade=.3)
+    c.ell(12.2, 16.2, 5.4, 4.2, col, shade=.3)
+    c.ell(19.8, 16.0, 5.4, 4.2, lt(col, .08), shade=.3)
+    c.ell(16, 14.2, 5.6, 4.4, lt(col, .12), shade=.25)
+    c.ell(16, 18.4, 4.0, 3.2, lt(col, .22), shade=.2)
+    for a, b in (((11, 17), (8.5, 14)), ((21, 17), (23.5, 13.8)), ((13, 23), (14.5, 26)), ((19, 23), (17.8, 26)), ((16, 14), (16, 11.2))):
+        c.line([a, b], .5, lt(col, .4), 180)
+    c.shine(13, 15, .9, 200)
+
+def em_hay(c):
+    c.stroke([(16, 20), (16, 14.2)], .7, '#c9a84a', owf=.4)
+    c.stroke([(16, 19.2), (13.4, 14.4)], .6, '#d4b056', owf=.4)
+    c.stroke([(16, 19.2), (18.6, 14.1)], .6, '#d4b056', owf=.4)
+    c.stroke([(16, 18.4), (14.6, 15.0)], .5, '#e0c46a', owf=.35)
+
+def hay_bale(c):
+    """Tied rectangular hay bale — not a wheat sheaf."""
+    sh(c, 12)
+    col = '#d4b056'
+    c.poly([(6, 22), (8, 13), (25, 12), (26, 22), (24, 24.2), (7, 24.2)], col, shade=.35)
+    c.poly([(8, 13), (16, 10), (25, 12), (16, 15.6)], lt(col, .18), shade=.15, ol=False)
+    for y in (15.4, 17.2, 19.0, 20.8, 22.4):
+        c.line([(8.6, y), (24.4, y - 0.5)], .4, dk(col, .22), 170)
+    for y in (15, 17.2, 19.4, 21.6):
+        c.line([(6.4, y + 0.6), (8.0, y)], .4, dk(col, .18), 150)
+        c.line([(24.6, y - 0.3), (26.0, y + 0.4)], .4, dk(col, .18), 150)
+    c.stroke([(12.2, 12.4), (11.4, 23.6)], 1.05, '#8a5a28')
+    c.stroke([(20.0, 12.1), (19.3, 23.3)], 1.05, '#8a5a28')
+    c.shine(11, 15, .8, 180)
+
+def em_rice(c):
+    c.stroke([(16, 20), (16, 14.4)], .6, '#b8b060', owf=.4)
+    c.stroke([(16, 16.2), (18.6, 18.2)], .55, '#c8c070', owf=.4)
+    for x, y in ((16, 14.4), (18.3, 17.6), (15.1, 16.6)):
+        c.ell(x, y, 1.1, 0.75, '#e8dca0', owf=.45)
+
+def rice_sheaf(c):
+    """Drooping rice panicles — not wheat's upright eared sheaf."""
+    sh(c, 10)
+    col = '#c8c070'
+    top = '#e8dca0'
+    for i in range(6):
+        x0 = 14 + i * 0.7
+        x1 = 9 + i * 2.6
+        y1 = 10 + abs(i - 2.5) * 0.7
+        c.stroke([(x0, 28), (x0 + 0.15, 17), (x1, y1)], 1.0, col, owf=.6)
+        c.stroke([(x1, y1), (x1 + 3.4, y1 + 3.2)], .85, top, owf=.5)
+        for t in (0.2, 0.5, 0.8):
+            c.dot(x1 + 3.4 * t, y1 + 3.2 * t, .45, '#f4ecd0')
+    c.rect(12, 18, 20.5, 21, M['reed'], r=1)
+
+k('lettuce', lettuce_head)
+k('lettuce_seeds', seedbag, '#9fd86a', '#6a5030', em_lettuce)
+k('hay', hay_bale)
+k('hay_seeds', seedbag, '#d4b056', '#c9a84a', em_hay)
+k('rice', rice_sheaf)
+k('rice_seeds', seedbag, '#e8dca0', '#c8c070', em_rice)
 CEL_KEYS = {'berry_seeds'}   # flat fills, one hard shade, hard highlight, binary alpha (assets/tools/cel.py snap)
 REUSED = ('pine_sapling', 'pumpkin')   # already in the base pack
 EQUIP = ('bone_knife', 'bone_axe', 'antler_pickaxe', 'hoe', 'leather_cap', 'leather_jacket', 'leather_trousers', 'wool_sweater', 'wool_hat', 'fur_vest', 'snakeskin_boots')

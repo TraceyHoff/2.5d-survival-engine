@@ -212,6 +212,53 @@ def mushroom_bed(cv, cx, base, g, ripe, seed):
 
 def cabbage_f(): return rosette("cloth_green")
 
+def lettuce_f(cv, cx, base, g, ripe, seed):
+    """Loose-leaf / butter lettuce: ruffled open lime leaves, not cabbage's tight cloth_green head."""
+    r = rng_(seed)
+    n = int(6 + 7 * g)
+    rr = 5 + 10 * g
+    for i in range(n):
+        a = i / n * 6.283 + r.uniform(-0.12, 0.12)
+        spread = rr * (0.95 if ripe else 0.82)
+        rp = "leaf" if i % 2 else "cloth_green"
+        cv.part(scallop(cx + math.cos(a) * spread * 0.88,
+                        base - 5 - g * 3 + math.sin(a) * spread * 0.42,
+                        rr * 0.58, rr * 0.30, bumps=9, depth=0.28, seed=i + 11),
+                rp, lw=0.7, shade=0.3, hl=0.18, base_col=ramp("leaf")[1] if i % 3 == 0 else None)
+    if g > 0.35:
+        hr = rr * (0.38 if not ripe else 0.48)
+        m = cv.part(circ(cx, base - 6 - hr * 0.25, hr * 1.05, hr * 0.7, wob=0.08, seed=4),
+                    "leaf", lw=0.7, shade=0.22, hl=0.22, base_col=ramp("leaf")[0])
+        for a in (-0.9, -0.15, 0.7):
+            cv.line([(cx, base - 6), (cx + math.sin(a) * hr, base - 6 - hr * 0.85)], ramp("leaf")[2], 0.45, clip=m)
+        for i, ang in enumerate((-2.05, -1.45, -0.95)):
+            leaf(cv, cx + (i - 1) * 1.5, base - 6 - hr * 0.08, 4 + 3.2 * g, ang, "leaf", w=0.44, vein=False)
+
+def hay_f(cv, cx, base, g, ripe, seed):
+    """Tall forage grass: many thin blades, no wheat ears, no flax flowers, no broad leaves. Dries to gold when ripe."""
+    r = rng_(seed)
+    n = 16
+    H = 20
+    for i in range(n):
+        x = cx + (i - (n - 1) / 2) * 1.85 + r.uniform(-0.9, 0.9)
+        y0 = base - 2 + r.uniform(-1.4, 1.4)
+        h = H * g * r.uniform(0.62, 1.18)
+        lean = r.uniform(-7.5, 7.5) * g
+        if ripe:
+            rp = "thatch" if i % 2 else "dry"
+            lean = lean * 1.15
+            h = h * 0.92
+        else:
+            rp = "grass" if i % 3 else "grass_deep"
+        tipx, tipy = x + lean, y0 - h
+        cv.part([(x - 0.65, y0), (tipx, tipy), (x + 0.65, y0)], rp, lw=0.45, shade=0.3, hl=0.25)
+        if g > 0.35 and i % 2 == 0:
+            h2 = h * r.uniform(0.42, 0.7)
+            lean2 = lean * 0.45 + r.uniform(-2.8, 2.8)
+            cv.part([(x - 0.5, y0), (x + lean2, y0 - h2), (x + 0.5, y0)], rp, lw=0.4, shade=0.3, hl=0.25)
+        if ripe and g > 0.7:
+            cv.line([(tipx, tipy), (tipx + lean * 0.22, tipy + 1.3)], ramp(rp)[1], 0.35)
+
 PLANTS = {  # key: (drawer, produce rp for the wild version tint)
     "wheat":    grain("thatch", n=8, H=26),
     "corn":     corn,
@@ -232,6 +279,8 @@ PLANTS = {  # key: (drawer, produce rp for the wild version tint)
     "yarrow":   herbs_f("snow", cluster=True),
     "ginseng":  roots("palmate", "hide", n=2, H=12),
     "aloe":     rosette("metal_teal", spiky=True),
+    "lettuce":  lettuce_f,
+    "hay":      hay_f,
 }
 STAGE_G = [0.12, 0.38, 0.68, 0.9]
 
@@ -240,8 +289,12 @@ def crop(key, stage):
     cv = Canvas(CW, CH, seed=7 + stage); cx, base = CW / 2, CB
     mound(cv, cx, base)
     g = 1.0 if stage == 4 else STAGE_G[stage]
-    if stage == 0: sprout(cv, cx, base, 0.2)
-    else: PLANTS[key](cv, cx, base, g, stage == 4, hash(key) % 1000 if False else sum(map(ord, key)))
+    # Lettuce and hay get their own seedling (not the shared two-leaf sprout used by older crops).
+    if stage == 0 and key not in ("lettuce", "hay"):
+        sprout(cv, cx, base, 0.2)
+    else:
+        gg = 0.22 if stage == 0 else g
+        PLANTS[key](cv, cx, base, gg, stage == 4, hash(key) % 1000 if False else sum(map(ord, key)))
     return cv.final()
 
 def farm_soil():
@@ -310,7 +363,7 @@ def sapling(key, stage):
     return cv.final()
 
 # ------------------------------------------------------------------ wild plants (resource nodes)
-WILD = ["wheat", "corn", "potato", "carrot", "tomato", "pumpkin", "squash", "beans", "cabbage", "garlic", "hemp", "mushroom", "yarrow", "ginseng", "aloe"]
+WILD = ["wheat", "corn", "potato", "carrot", "tomato", "pumpkin", "squash", "beans", "cabbage", "garlic", "hemp", "mushroom", "yarrow", "ginseng", "aloe", "lettuce", "hay"]
 
 def wild(key, full=True):
     cv = Canvas(CW, CH, seed=17); cx, base = CW / 2, CB

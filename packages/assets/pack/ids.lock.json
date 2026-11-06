@@ -4842,7 +4842,15 @@
     "crop_hay": 4840,
     "crop_lettuce": 4841,
     "wild_hay": 4842,
-    "wild_lettuce": 4843
+    "wild_lettuce": 4843,
+    "crop_hay_0": 4844,
+    "crop_hay_1": 4845,
+    "crop_hay_2": 4846,
+    "crop_hay_3": 4847,
+    "crop_lettuce_0": 4848,
+    "crop_lettuce_1": 4849,
+    "crop_lettuce_2": 4850,
+    "crop_lettuce_3": 4851
   },
   "sounds": {
     "amb_rain": 1,

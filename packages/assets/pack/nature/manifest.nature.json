@@ -86,7 +86,7 @@
    "frameW": 44,
    "frameH": 64,
    "columns": 16,
-   "rows": 6,
+   "rows": 7,
    "pages": [
     {
      "scale": 2,
@@ -27953,7 +27953,7 @@
   {
    "key": "hay_seeds",
    "category": "item",
-   "atlas": "crops_task256",
+   "atlas": "nature_icons",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -27961,7 +27961,7 @@
    "animations": {
     "idle": {
      "frames": [
-      7
+      100
      ],
      "fps": 1
     }
@@ -28939,7 +28939,7 @@
   {
    "key": "hay",
    "category": "item",
-   "atlas": "crops_task256",
+   "atlas": "nature_icons",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -28947,7 +28947,7 @@
    "animations": {
     "idle": {
      "frames": [
-      6
+      99
      ],
      "fps": 1
     }
@@ -83541,7 +83541,7 @@
    "animations": {
     "idle": {
      "frames": [
-      68
+      97
      ],
      "fps": 1
     }
@@ -83558,7 +83558,7 @@
    "animations": {
     "idle": {
      "frames": [
-      15
+      98
      ],
      "fps": 1
     }
@@ -83643,7 +83643,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      101
      ],
      "fps": 1
     }
@@ -83660,7 +83660,7 @@
    "animations": {
     "idle": {
      "frames": [
-      8
+      102
      ],
      "fps": 1
     }
@@ -83716,6 +83716,283 @@
      "fps": 1
     }
    }
+  },
+  {
+   "key": "crop_lettuce_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_lettuce_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_lettuce_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_lettuce_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_lettuce",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      89
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_lettuce",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      91
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hay_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hay_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hay_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hay_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hay",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      94
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_hay",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      95
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
   }
+
  ]
 }
