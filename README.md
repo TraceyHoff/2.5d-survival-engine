@@ -158,6 +158,54 @@ Work lands in gated batches: each batch starts only after the previous batch's C
 - **Task 22:** recruitable AI humans. **Task 23:** seasons, character sheet. **Task 24:** flame-heated rooms, cold damage. **Task 25:** dye system, custom icons, 3-minute despawn. **Task 26:** black-pixel hair fix, Full as default preset. **Task 27:** random name generator. **Task 28:** bot homesteading, salt storage, hay and grazing. **Task 29:** performance sweep (−46% sim time). **Task 30:** fur armor, frozen food, wall/door fixes, bot fire refuelling. **Task 31:** wetness, cold/flu, care cure, Wardrobe panel. **Task 32:** fox/owl/turtle/squirrel pets, 4 crops, pig/alpaca/bee/rabbit farm animals. **Task 33:** craftable-first crafting, death clears afflictions, safe spawn radius, disease rebalance, Recently Crafted. **Task 34:** unique bee/owl art, pet favourite treats, buildable Apiary (bees deposit honey; never lost when full).
 - **Queued next:** **Task 35** — seeded world generation (map layout, resource and animal spawns differ each playthrough, respecting safe zones), more varied terrain heights, ledges more visible from the camera angle. **Task 36** — shovel terrain editing (±25 tiles), realistic flowing water, underground bases (dark, 60°F below 3 tiles, growable with light + water).
 
+## New creatures, items & art — status for the art pass
+
+This is the inventory for the art/assets bot: everything new that still needs dedicated artwork, sprites or animations, and what it currently borrows. **How to read it:** *dedicated* = unique art already ships; *reuses X* = the animal/item is drawn as an existing sheet with a tint/scale (see `packages/gameplay/data/sprite_fallbacks.json` — real art in the pack takes over from a fallback automatically, so shipping a real sprite for a key fixes it everywhere); *generic icon* = the HUD/inventory icon falls back to a category icon. **How new art ships:** dedicated pack sprites go through the pack pipeline (`src/build.py` + regenerate `packages/assets/pack/ids.lock.json` with `write-lock-pack.ts`); the snapshot push route carries text only, so binary PNGs can never be pushed directly — embed as base64 data URIs in a `.ts` file (Task 25 pattern) or paint at runtime in code (Task 34 pattern, `apps/client/src/task34-art.ts`).
+
+### Creatures with dedicated art already (do not redo unless improving)
+- **Bee** (`animal_bee`) and **owl** (`animal_owl`) — unique runtime-painted pixels, idle + walk, 8 directions × 4 frames (`apps/client/src/task34-art.ts`; keys `pets_bee`, `pets_owl`). Verified numerically, not yet eyeballed live — the user is the judge of "beautiful".
+- **Apiary** (`decor_apiary`) — unique runtime-painted stacked-hive art, 2 rotations × 4 damage stages. Its build-menu icon (`build_apiary`) still borrows the salt barrel's atlas tile (items manifest frame 224) and needs a real icon.
+
+### Creatures still reusing other animals' sheets (need dedicated sprites + animations)
+| Creature | Currently drawn as | Task added |
+|---|---|---|
+| Fox (pet, scout) | wolf, tint `#ff9050`, scale 0.7 | 32 |
+| Turtle (pet, tank guard) | boar, tint `#557a3a`, scale 0.85 | 32 |
+| Squirrel (pet, forager) | rabbit, tint `#c07040`, scale 0.75 | 32 |
+| Pig (farm, truffle) | boar, tint `#f0a0b0` | 32 |
+| Alpaca (farm, wool) | deer, tint `#f0e8d8` | 32 |
+| Bear | boar, tint `#705038`, scale 1.5 | base roster |
+| Bison | boar, tint `#604028`, scale 1.6 | base roster |
+| Cow (farm, milk) | boar, tint `#b09070`, scale 1.5 | base roster |
+| Deer / red deer / stag / elk / moose | boar (deer family), various tints/scales | base roster |
+| Duck (farm, egg) | chicken, tint `#a0c090`, scale 0.9 | base roster |
+| Goat (farm, milk) | deer, tint `#e0d8c8`, scale 0.8 | base roster |
+| Goose (farm, egg) | chicken, scale 1.2 | base roster |
+| Hare | rabbit, tint `#e0d0b0`, scale 1.2 | base roster |
+| Sheep (farm, wool) | boar, tint `#f0f0e8`, scale 0.9 | base roster |
+| Snake | rabbit, tint `#80a050`, scale 0.6 | base roster |
+| Turkey (farm, egg) | chicken, tint `#a07050`, scale 1.4 | base roster |
+| Wolf (hostile) | boar, tint `#a0a0a0` | base roster |
+| Wild beehive (`beehive`) | tree stump, tint `#e0b040` | base roster |
+
+All of the above need the standard animation frame structure the real sheets have (idle / walk / run / attack / hit / death, 8 directions). The original 13 pets (5 dogs, 3 cats, parrot, crow, chicken, rabbit, ferret) and the chicken farm animal use their own sheets.
+
+### Crops & plants (need dedicated sprites + growth stages)
+- **Lettuce, pepper, beetroot, rice** (Task 32, kinds 37–40, 4 growth stages each) — crop sprites derive from the plant sprite scaled per stage; beetroot currently falls back to `wild_beetroot` → `carrot_patch` / wild herbs / bush (tint `#d080a0`). Lettuce/pepper/rice wild seed nodes likewise need their own wild-plant art. All other crops (wheat, corn, potato, carrot, tomato, pumpkin, squash, beans, cabbage, onion, garlic, cotton, flax, hemp, herbs, mushroom, yarrow, ginseng, aloe, berry bushes, trees, fruit trees) share the same fallback pattern — seed icons fall back to `wild_grain`, produce icons to generic fruit/vegetable art (see `sprite_fallbacks.json` `icons`).
+- **Hay** (Task 28) — its sprite reuses the wheat sheaf art (nature manifest frames 64 / 8 for hay / hay_seeds); its icon falls back to `wild_grain`. Needs its own hay bale / seed art.
+- **Grazed bare grass** — no visual yet (Task 28 honest cut): a grazed tile looks identical to ungrazed grass for 180s until it regrows.
+
+### Building pieces (need dedicated sprites)
+- **Salt barrel** (tier 1, wood), **curing box** (tier 2, stone), **cold store** (tier 3, metal) — Task 28 salt storage. All three share atlas cells with other storage (`barrel_storage` / `storage_box` / `large_chest`); each needs its own sprite.
+- **Apiary** — dedicated runtime-painted art (above), but its build-menu icon still borrows frame 224.
+- **Salt-flat deposits** (Task 28, salt source on sand near water) — no dedicated deposit art listed; check `salt_flat` in the pieces data.
+
+### New items & icons (need dedicated icons)
+- **Task 32 items (ids 478–489):** lettuce, lettuce_seeds, pepper, pepper_seeds, beetroot, beetroot_seeds, rice, rice_seeds, salad, rice_bowl, truffle, truffle_stew — plus honey, honey_cake, honey_tea, salt, salt_brew, salted_fish (Task 28/32). Their inventory icons use the generic food fallback (berries) — no dedicated icons yet. **Task 32 resources (ids 87–94):** the 8 new resources behind these items.
+- **Task 25's 39 custom HUD/menu icons** (`apps/client/src/game-icons-data.ts`, embedded as base64 data URIs) already ship as custom pixel art — do not redo unless improving. The 🔒 lock badges, tutorial text emoji and the `menu.ts` 🌡 label are still emoji and could use real icons.
+- **Seeds in general:** every crop's seed icon falls back to `wild_grain`; every sapling icon falls back to `sticks` (except pine → `icon_pine_sapling`). Dedicated seed/sapling icons would fix dozens of items at once.
+- **Meats:** raw/cooked venison, poultry, small game and prime cut all fall back to `raw_meat` / `cooked_meat`. **Milk** falls back to `water_flask`; **wool** to `cotton`; **maple syrup** to `honey`.
+
 ## Repository layout
 
 | Path | Contents |
@@ -200,6 +248,7 @@ You are picking up the 2.5d survival engine (repo `TraceyHoff/2.5d-survival-engi
 - **Next — the queue, in order, one batch at a time. Each starts only after the previous batch's CI + Pages are BOTH green (confirmed from the jobs endpoint, never the runs list):**
   1. **Task 35 (gate MET — start here):** world randomly generates with a seed each playthrough (map layout, resource spawns, animal spawns differ each time) but respects the safe zones (Task 33: 20-tile radius around installed spawn points, no aggressive spawns/targeting inside; hordes exempt); more varied terrain heights; ledges of varying terrain heights hidden by the camera angle made more easily seen.
   2. **Task 36 (queued after Task 35):** players/AI humans use a shovel in the hotbar to raise/lower terrain; max terrain height 25 tiles above ground and 25 below; realistic flowing water (dig rivers that flow, elevated bases, pits/walls around bases); underground bases are dark until players make light sources, temperature stays 60°F year-round below 3 tiles underground, plants grow underground with continuous light + water + their other requirements.
+- **Art pass (separate from Tasks 35/36):** the user wants the arts/assets bot to replace the borrowed/reused artwork. The full inventory is in the README section "New creatures, items & art — status for the art pass" above — every creature, crop, piece and item still drawn from another sheet or a generic icon, with its current fallback target. Read that section first; `packages/gameplay/data/sprite_fallbacks.json` is the source of truth for what reuses what.
 
 ### How work gets done here (hard-won rules — follow them)
 - **Verify first, then commit locally, then ask the user for push approval — never push without the user tapping "Yes, push it" AND the separate snapshot approval card.** Pushes go through `/opt/hatch/bin/github push-files --owner TraceyHoff --repo 2.5d-survival-engine --branch main --message <msg> --source-dir ~/workspace/work/survival-engine --paths-file <file>`. The paths manifest must be NUL-delimited AND end with a trailing NUL. Keep any single snapshot comfortably under ~5 MB. The snapshot route carries **UTF-8 text files only — no binary PNGs** (embed art as base64 data URIs in a `.ts` file, or paint it in code as Task 34 does).
