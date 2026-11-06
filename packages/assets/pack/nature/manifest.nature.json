@@ -27941,6 +27941,23 @@
    }
   },
   {
+   "key": "hay_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
    "key": "corn_seeds",
    "category": "item",
    "atlas": "nature_icons",
@@ -28894,6 +28911,23 @@
   },
   {
    "key": "wheat",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hay",
    "category": "item",
    "atlas": "nature_icons",
    "anchor": {

@@ -4814,7 +4814,12 @@
     "gt_side_sand_low_winter": 4812,
     "gt_side_snow_low": 4813,
     "gt_side_snow_low_fall": 4814,
-    "gt_side_snow_low_winter": 4815
+    "gt_side_snow_low_winter": 4815,
+    "build_cold_store": 4816,
+    "build_curing_box": 4817,
+    "build_salt_barrel": 4818,
+    "hay": 4819,
+    "hay_seeds": 4820
   },
   "sounds": {
     "amb_rain": 1,
