@@ -450,15 +450,15 @@ describe("Task 32: art wiring", () => {
     expect(resolveSprite("crop_lettuce_3", has)).toMatchObject({ key: "crop_lettuce_3", scale: 1 });
     expect(resolveSprite("wild_lettuce", has)).toMatchObject({ key: "wild_lettuce", scale: 1 });
     expect(resolveSprite("wild_lettuce", has)!.tint).toBe(0);
-    expect(resolveSprite("crop_pepper_0", has)).toMatchObject({ key: "wild_herbs", scale: 0.35 });
-    expect(resolveSprite("crop_pepper_3", has)).toMatchObject({ key: "wild_herbs", scale: 1 });
-    expect(resolveSprite("wild_pepper", has)).toMatchObject({ key: "wild_herbs", scale: 1 });
-    expect(resolveSprite("crop_beetroot_0", has)).toMatchObject({ key: "carrot_patch", scale: 0.35 });
-    expect(resolveSprite("crop_beetroot_3", has)).toMatchObject({ key: "carrot_patch", scale: 1 });
-    expect(resolveSprite("wild_beetroot", has)).toMatchObject({ key: "carrot_patch", scale: 1 });
-    expect(resolveSprite("crop_rice_0", has)).toMatchObject({ key: "flax", scale: 0.35 });
-    expect(resolveSprite("crop_rice_3", has)).toMatchObject({ key: "flax", scale: 1 });
-    expect(resolveSprite("wild_rice", has)).toMatchObject({ key: "flax", scale: 1 });
+    expect(resolveSprite("crop_pepper_0", has)).toMatchObject({ key: "crop_pepper_0", scale: 1 });
+    expect(resolveSprite("crop_pepper_3", has)).toMatchObject({ key: "crop_pepper_3", scale: 1 });
+    expect(resolveSprite("wild_pepper", has)).toMatchObject({ key: "wild_pepper", scale: 1 });
+    expect(resolveSprite("crop_beetroot_0", has)).toMatchObject({ key: "crop_beetroot_0", scale: 1 });
+    expect(resolveSprite("crop_beetroot_3", has)).toMatchObject({ key: "crop_beetroot_3", scale: 1 });
+    expect(resolveSprite("wild_beetroot", has)).toMatchObject({ key: "wild_beetroot", scale: 1 });
+    expect(resolveSprite("crop_rice_0", has)).toMatchObject({ key: "crop_rice_0", scale: 1 });
+    expect(resolveSprite("crop_rice_3", has)).toMatchObject({ key: "crop_rice_3", scale: 1 });
+    expect(resolveSprite("wild_rice", has)).toMatchObject({ key: "wild_rice", scale: 1 });
   });
 
   it("every new item key is itself a real sprite in the pack (icon resolves to itself, never a generic)", () => {

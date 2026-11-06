@@ -83575,7 +83575,7 @@
    "animations": {
     "idle": {
      "frames": [
-      65
+      103
      ],
      "fps": 1
     }
@@ -83592,7 +83592,7 @@
    "animations": {
     "idle": {
      "frames": [
-      11
+      104
      ],
      "fps": 1
     }
@@ -83609,7 +83609,7 @@
    "animations": {
     "idle": {
      "frames": [
-      69
+      105
      ],
      "fps": 1
     }
@@ -83626,7 +83626,7 @@
    "animations": {
     "idle": {
      "frames": [
-      16
+      106
      ],
      "fps": 1
     }
@@ -83983,6 +83983,421 @@
     "depleted": {
      "frames": [
       96
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  }
+,
+  {
+   "key": "crop_pepper_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pepper_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pepper_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      97
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pepper_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      98
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pepper",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      99
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_pepper",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      100
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      101
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beetroot_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beetroot_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beetroot_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      102
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beetroot_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      103
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beetroot",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_beetroot",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      105
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      106
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_rice_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_rice_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_rice_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      107
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_rice_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_rice",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      109
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_rice",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      110
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      111
      ],
      "fps": 1
     }

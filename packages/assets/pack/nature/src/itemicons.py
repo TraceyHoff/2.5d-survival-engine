@@ -346,6 +346,44 @@ k('hay', hay_bale)
 k('hay_seeds', seedbag, '#d4b056', '#c9a84a', em_hay)
 k('rice', rice_sheaf)
 k('rice_seeds', seedbag, '#e8dca0', '#c8c070', em_rice)
+
+def em_pepper(c):
+    c.poly([(14.4, 20.2), (15.6, 15.6), (16.9, 14.2), (18.2, 16.4), (16.8, 20.4)], '#e8402e', owf=.45)
+    c.stroke([(16.9, 14.2), (17.7, 12.7)], .55, '#5fa84a', owf=.4)
+
+def pepper_fruit(c):
+    """Cluster of hanging chilies — not tomato's round fruit + star calyx."""
+    sh(c, 10)
+    def chili(x, y, s, col, lean=1):
+        c.poly([(x - 2.4 * s, y), (x - 3.0 * s, y + 5 * s), (x + lean * 1.6 * s, y + 11 * s),
+                (x + 2.8 * s, y + 5 * s), (x + 2.2 * s, y)], col, shade=.35)
+        c.poly([(x - 2.0 * s, y + 0.4), (x, y - 2.6 * s), (x + 2.0 * s, y + 0.4), (x, y + 1.2)], '#5fa84a', owf=.6)
+        c.shine(x - 1.1 * s, y + 3.2 * s, .6, 190)
+    chili(11.5, 12, 0.85, '#e8402e', lean=-0.6)
+    chili(21.5, 13.5, 0.72, '#f08a2c', lean=0.8)
+    chili(16.5, 10.5, 1.0, '#d02838', lean=0.15)
+
+def em_beet(c):
+    c.ell(16, 18.2, 2.6, 2.2, '#c02860', owf=.45)
+    c.stroke([(16, 16.2), (14.6, 13.4)], .5, '#4a7a38', owf=.4)
+    c.stroke([(16, 16.2), (17.5, 13.2)], .5, '#4a7a38', owf=.4)
+
+def beetroot_bulb(c):
+    """Round magenta beet with leafy tops — not onion's yellow teardrop."""
+    sh(c, 11)
+    col = '#c02860'
+    c.ell(16, 20.5, 8.2, 7.0, col, shade=.35)
+    c.poly([(16, 27.2), (13.6, 25.2), (16, 30.2), (18.4, 25.2)], dk(col, .08), shade=.25)
+    c.ell(13.2, 18.4, 2.4, 2.0, lt(col, .25), owf=.35)
+    for x1, y1, col_l in ((11.5, 8.5, '#5a8a38'), (16, 6.8, '#6aa044'), (20.8, 8.8, '#4a7a38')):
+        c.stroke([(16, 14.2), (x1, y1)], .85, col_l, owf=.55)
+        c.poly([(x1, y1), (x1 - 2.4, y1 + 1.6), (x1 - 0.4, y1 + 3.2), (x1 + 2.2, y1 + 1.2)], col_l, owf=.55)
+    c.shine(12.6, 18.2, .8, 180)
+
+k('pepper', pepper_fruit)
+k('pepper_seeds', seedbag, '#e8402e', '#f08a2c', em_pepper)
+k('beetroot', beetroot_bulb)
+k('beetroot_seeds', seedbag, '#c02860', '#8a1848', em_beet)
 CEL_KEYS = {'berry_seeds'}   # flat fills, one hard shade, hard highlight, binary alpha (assets/tools/cel.py snap)
 REUSED = ('pine_sapling', 'pumpkin')   # already in the base pack
 EQUIP = ('bone_knife', 'bone_axe', 'antler_pickaxe', 'hoe', 'leather_cap', 'leather_jacket', 'leather_trousers', 'wool_sweater', 'wool_hat', 'fur_vest', 'snakeskin_boots')

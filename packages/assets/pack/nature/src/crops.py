@@ -259,6 +259,80 @@ def hay_f(cv, cx, base, g, ripe, seed):
         if ripe and g > 0.7:
             cv.line([(tipx, tipy), (tipx + lean * 0.22, tipy + 1.3)], ramp(rp)[1], 0.35)
 
+
+def pepper_f(cv, cx, base, g, ripe, seed):
+    """Compact pepper bush with hanging tapered chilies — not tomato's staked round fruit."""
+    r = rng_(seed)
+    for i in range(int(5 + 7 * g)):
+        a = -math.pi / 2 + r.uniform(-1.25, 1.25)
+        x = cx + r.uniform(-9, 9) * g
+        leaf(cv, x, base - 2 - g * 2, (5 + 11 * g) * r.uniform(0.7, 1.05), a,
+             "leaf" if i % 2 else "grass_deep", w=0.40)
+    if g > 0.7:
+        peppers = [(-6, 8, 0.85, -0.4), (5.5, 7, 0.75, 0.5), (0, 11, 1.0, 0.1), (3, 5, 0.65, -0.2)]
+        n_show = 1 if g < 0.85 else (2 if not ripe else 4)
+        for i, (dx, up, s, lean) in enumerate(peppers[:n_show]):
+            x = cx + dx * g
+            y = base - 3 - up * g
+            rp = ("cherry" if i % 2 == 0 else "orange") if ripe else "cloth_green"
+            tipx, tipy = x + lean * 4 * s, y + 7.2 * s
+            cv.part([(x - 2.2 * s, y), (x + 2.0 * s, y), (tipx, tipy)], rp, lw=0.55, shade=0.3, hl=0.22)
+            cv.part(circ(x, y - 0.4, 1.3 * s, 0.8 * s, wob=0), "grass_deep", lw=0.4, shade=0.3, hl=0.2)
+
+
+def beetroot_f(cv, cx, base, g, ripe, seed):
+    """Purple beet bulbs with broad veined greens — not carrot feathers or onion tubes."""
+    r = rng_(seed)
+    n = 2 if g < 0.7 else 3
+    for i in range(n):
+        x = cx + (i - (n - 1) / 2) * 8 + r.uniform(-0.8, 0.8)
+        y = base - 1.5 + (i % 2) * 1.2
+        if g > 0.55:
+            br = 2.0 + (1.6 if ripe else 0.6) * g
+            cv.part(circ(x, y - 0.4, br, br * 0.82, wob=0.06, seed=i + 2), "beet", lw=0.65, shade=0.3, hl=0.22)
+            if ripe:
+                cv.part([(x - 1.1, y + br * 0.5), (x, y + br * 1.15), (x + 1.1, y + br * 0.5)],
+                        "beet", lw=0.45, shade=0.3, hl=0.2)
+        for j, a in enumerate((-0.7, -0.15, 0.55)):
+            L = (6 + 12 * g) * r.uniform(0.85, 1.05)
+            ang = -math.pi / 2 + a + r.uniform(-0.08, 0.08)
+            leaf(cv, x, y - 1.5, L, ang, "grass_deep" if j % 2 else "leaf", w=0.34, vein=True)
+            if g > 0.5:
+                lx = x + math.cos(ang) * L * 0.15
+                ly = y - 1.5 + math.sin(ang) * L * 0.15
+                tx = x + math.cos(ang) * L * 0.85
+                ty = y - 1.5 + math.sin(ang) * L * 0.85
+                cv.line([(lx, ly), (tx, ty)], ramp("beet")[2], 0.45)
+
+
+def rice_f(cv, cx, base, g, ripe, seed):
+    """Clumping rice with drooping grain panicles — not wheat's upright ears or flax flowers."""
+    r = rng_(seed)
+    n = 7
+    H = 28
+    for i in range(n):
+        x = cx + (i - (n - 1) / 2) * 3.0 + r.uniform(-0.8, 0.8)
+        y0 = base - 2 + r.uniform(-1.2, 1.2)
+        h = H * g * r.uniform(0.82, 1.05)
+        lean = r.uniform(-2.2, 2.2) * g
+        rp = "thatch" if ripe else "cloth_green"
+        stem(cv, x, y0, x + lean, y0 - h, rp, 0.75)
+        leaf(cv, x + lean * 0.25, y0 - h * 0.45, 6 + 3 * g, -0.25 if i % 2 else -2.9, rp, w=0.18, vein=False)
+        if g > 0.58:
+            tx, ty = x + lean, y0 - h
+            side = 1 if i % 2 else -1
+            drop = 5.5 * g * (1.15 if ripe else 0.9)
+            px = tx + side * (4.5 + 2.0 * g)
+            py = ty + drop
+            cv.line([(tx, ty), (tx + side * 1.6, ty + 1.2), (px, py)], ramp(rp)[2], 0.7)
+            head_rp = "dry" if ripe else "grass"
+            for t in (0.25, 0.45, 0.65, 0.85):
+                gx = tx + (px - tx) * t + r.uniform(-0.4, 0.4)
+                gy = ty + (py - ty) * t
+                cv.part(circ(gx, gy, 1.15, 0.75, wob=0.05),
+                        head_rp if ripe or g > 0.85 else "grass", lw=0.4, shade=0.3, hl=0.2)
+
+
 PLANTS = {  # key: (drawer, produce rp for the wild version tint)
     "wheat":    grain("thatch", n=8, H=26),
     "corn":     corn,
@@ -281,6 +355,9 @@ PLANTS = {  # key: (drawer, produce rp for the wild version tint)
     "aloe":     rosette("metal_teal", spiky=True),
     "lettuce":  lettuce_f,
     "hay":      hay_f,
+    "pepper":   pepper_f,
+    "beetroot": beetroot_f,
+    "rice":     rice_f,
 }
 STAGE_G = [0.12, 0.38, 0.68, 0.9]
 
@@ -290,7 +367,7 @@ def crop(key, stage):
     mound(cv, cx, base)
     g = 1.0 if stage == 4 else STAGE_G[stage]
     # Lettuce and hay get their own seedling (not the shared two-leaf sprout used by older crops).
-    if stage == 0 and key not in ("lettuce", "hay"):
+    if stage == 0 and key not in ("lettuce", "hay", "pepper", "beetroot", "rice"):
         sprout(cv, cx, base, 0.2)
     else:
         gg = 0.22 if stage == 0 else g
@@ -363,7 +440,7 @@ def sapling(key, stage):
     return cv.final()
 
 # ------------------------------------------------------------------ wild plants (resource nodes)
-WILD = ["wheat", "corn", "potato", "carrot", "tomato", "pumpkin", "squash", "beans", "cabbage", "garlic", "hemp", "mushroom", "yarrow", "ginseng", "aloe", "lettuce", "hay"]
+WILD = ["wheat", "corn", "potato", "carrot", "tomato", "pumpkin", "squash", "beans", "cabbage", "garlic", "hemp", "mushroom", "yarrow", "ginseng", "aloe", "lettuce", "hay", "pepper", "beetroot", "rice"]
 
 def wild(key, full=True):
     cv = Canvas(CW, CH, seed=17); cx, base = CW / 2, CB

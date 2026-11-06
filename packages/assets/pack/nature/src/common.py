@@ -27,6 +27,7 @@ palette.RAMPS.update({
     "raspberry":  ["#ff9ab8", "#f04878", "#c02c5c", "#841e44"],
     "blackberry": ["#a890c8", "#5c4680", "#3c2c5c", "#261c3e"],
     "wool":       ["#ffffff", "#f6f0e6", "#ddd0c0", "#b0a090"],
+    "beet":       ["#f4a0c4", "#c02860", "#8a1848", "#541030"],
 })
 
 K = 1
