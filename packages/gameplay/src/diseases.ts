@@ -4,8 +4,8 @@
  * system, the Boil action and transmission. Rolls happen at call sites, gated on isAuthority; contracting and
  * curing themselves are deterministic writes.
  */
-import { entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, DamageCause, Diseases, Fuel, Health, MAX_DISEASES, Animal, Survival, Worn, Zombie } from "./components.js";
+import { DEFAULT_TICK_HZ, entityIndex, Transform, type Entity, type World } from "@engine/core";
+import { BuildPiece, CraftingStation, DamageCause, Diseases, Exposure, Fuel, Health, MAX_DISEASES, Animal, Survival, Worn, Zombie } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { secondsToTicks, StationKind, WearSlot, type DiseaseDef } from "./defs.js";
 import { Damaged } from "./events.js";
@@ -67,6 +67,53 @@ export function cureDiseasesForItem(world: World, e: Entity, item: number): stri
 /** Combined walk-speed multiplier from active diseases (1 = healthy); multiplied into speedMultiplier. */
 export function diseaseMoveMul(world: World, e: Entity): number {
   let m = 1; for (const d of activeDiseases(world, e)) m *= d.moveMul; return m;
+}
+
+/**
+ * Task 31: HUD / character-sheet icon per condition, reusing the game's own custom pixel-art icons
+ * (Task 25) — no new art needed: a water drop for wet, a snowflake for a cold, a thermometer for flu fever.
+ */
+export const WET_ICON = "ic_thirst.png";
+export function diseaseIcon(key: string): string {
+  if (key === "common_cold") return "ic_snowflake.png";
+  if (key === "influenza") return "ic_temp.png";
+  return "ic_health.png";
+}
+
+/** Task 31: care cure — staying dry, fed, hydrated and warm for this long cures a cold or the flu. */
+export const CARE_CURE_SECONDS = 240;
+/** Wetness at or below this counts as dry for the care cure (and for the sheet's "dry" state). */
+export const CARE_DRY_MAX = 0.05;
+/** Task 31: seconds of untreated cold before it develops into flu. Care (240s) beats it when started promptly. */
+export const FLU_AFTER_SECONDS = 300;
+
+/** Care-cure state for an entity: whether it is sick, seconds of care still needed, and which conditions are unmet. */
+export interface CareStatus { sick: boolean; secondsLeft: number; missing: string[] }
+/** Pure read: the four care conditions (dry, fed, hydrated, warm) and how much care time is still owed. */
+export function careStatus(world: World, e: Entity): CareStatus {
+  const defs = gameplayDefs(world); const vt = defs.vitals;
+  const sick = hasDisease(world, e, "common_cold") || hasDisease(world, e, "influenza");
+  const wet = world.getField(e, Exposure, "wetness") ?? 0;
+  const sv = world.get(e, Survival);
+  const body = sv?.bodyTemp ?? vt.bodyTempNormal;
+  const missing: string[] = [];
+  if (wet > CARE_DRY_MAX) missing.push("dry");
+  if ((sv?.hunger ?? 0) <= vt.lowNeedsThreshold) missing.push("fed");
+  if ((sv?.thirst ?? 0) <= vt.lowNeedsThreshold) missing.push("hydrated");
+  if (body < vt.hypothermiaBelow) missing.push("warm");
+  const care = world.getField(e, Diseases, "careTicks") ?? 0;
+  return { sick, secondsLeft: Math.max(0, CARE_CURE_SECONDS - care / DEFAULT_TICK_HZ), missing };
+}
+/** Tick the cold was contracted (derived from its expiry: untilTick minus its duration), or undefined. */
+export function coldContractedTick(world: World, e: Entity): number | undefined {
+  const defs = gameplayDefs(world); const idx = defs.diseaseIndex("common_cold"); if (idx < 0) return undefined;
+  if (!world.has(e, Diseases)) return undefined;
+  const st = world.store(Diseases); const s = st.slot(entityIndex(e)); if (s < 0) return undefined;
+  const slot = diseaseSlot(world, e, idx); if (slot < 0) return undefined;
+  const until = st.data.untilTick[s * MAX_DISEASES + slot]!;
+  const dur = defs.diseases[idx]!.durationSeconds;
+  if (until === 0 || dur <= 0) return undefined;
+  return until - dur * DEFAULT_TICK_HZ;
 }
 /** True when the entity wears a mask item in the Accessory slot (blocks transmission in both directions). */
 export function wearsMask(world: World, e: Entity): boolean {

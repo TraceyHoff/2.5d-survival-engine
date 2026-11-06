@@ -4967,7 +4967,7 @@
     ,{"key": "cloth_mask", "name": "Cloth Mask", "category": "clothing", "maxStack": 1, "weight": 0.1, "tier": 1, "wear": {"slot": "accessory", "insulation": 0.5}, "mask": true}
     ,{"key": "charcoal_tonic", "name": "Charcoal Tonic", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 10, "health": 2}, "cures": ["food_poisoning"]}
     ,{"key": "salt_brew", "name": "Salt Brew", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 15, "health": 2}, "cures": ["dysentery"]}
-    ,{"key": "honey_tea", "name": "Honey Tea", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 15, "health": 5}, "cures": ["common_cold"]}
+    ,{"key": "honey_tea", "name": "Honey Tea", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 15, "health": 5}, "cures": ["common_cold", "influenza"]}
     ,{"key": "cooling_brew", "name": "Cooling Brew", "category": "food", "maxStack": 10, "weight": 0.3, "food": {"hunger": 0, "thirst": 20, "health": 2}, "cures": ["heatstroke"]}
     ,{"key": "medicated_bandage", "name": "Medicated Bandage", "category": "food", "maxStack": 10, "weight": 0.2, "food": {"hunger": 0, "thirst": 0, "health": 10}, "cures": ["wound_infection"]}
     ,{"key": "paint_brush", "name": "Paint Brush", "category": "tool", "maxStack": 1, "weight": 0.3, "tool": {"kind": "brush", "tier": 1}, "tier": 1, "family": "brush", "durability": 200}

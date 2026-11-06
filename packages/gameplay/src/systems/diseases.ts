@@ -11,7 +11,7 @@ import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks, type GameDefs } from "../defs.js";
 import { ConsumeFail, ConsumeFailed, emit } from "../events.js";
 import { readSlots, slotItem, writeSlots } from "../inventory.js";
-import { contractDisease, cureDisease, ensureDiseases, hasDisease, activeDiseases, nearLitCampfire, wearsMask } from "../diseases.js";
+import { contractDisease, cureDisease, ensureDiseases, hasDisease, activeDiseases, nearLitCampfire, wearsMask, CARE_CURE_SECONDS, FLU_AFTER_SECONDS, careStatus, coldContractedTick } from "../diseases.js";
 import { pendingReady } from "../ready.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -119,6 +119,32 @@ export function diseaseSystem(world: World, dt: number): void {
     } else {
       world.setField(e, Diseases, "coldTicks", 0);
       world.setField(e, Diseases, "heatTicks", 0);
+    }
+    // Task 31: an untreated cold develops into flu after FLU_AFTER_SECONDS; the care clock restarts for the flu.
+    if (hasDisease(world, e, "common_cold")) {
+      const contracted = coldContractedTick(world, e);
+      if (contracted !== undefined && world.tick - contracted >= secondsToTicks(FLU_AFTER_SECONDS, dt)) {
+        cureDisease(world, e, "common_cold");
+        world.setField(e, Diseases, "careTicks", 0);
+        contractDisease(world, e, "influenza", dt);
+      }
+    }
+    // Task 31: care cure — continuous dry + fed + hydrated + warm time cures a cold or the flu (240s).
+    // Any broken condition resets the clock (the four must hold the whole time); item cures still work too.
+    const sick = hasDisease(world, e, "common_cold") || hasDisease(world, e, "influenza");
+    if (sick) {
+      if (careStatus(world, e).missing.length === 0) {
+        const care = (world.getField(e, Diseases, "careTicks") ?? 0) + 1;
+        world.setField(e, Diseases, "careTicks", care);
+        if (care >= secondsToTicks(CARE_CURE_SECONDS, dt)) {
+          cureDisease(world, e, "common_cold"); cureDisease(world, e, "influenza");
+          world.setField(e, Diseases, "careTicks", 0);
+        }
+      } else if ((world.getField(e, Diseases, "careTicks") ?? 0) !== 0) {
+        world.setField(e, Diseases, "careTicks", 0);
+      }
+    } else if ((world.getField(e, Diseases, "careTicks") ?? 0) !== 0) {
+      world.setField(e, Diseases, "careTicks", 0);
     }
     // sprinting too long -> exhaustion; resting (no sprint) for the recovery period clears it
     const si = intent.slot(entityIndex(e));

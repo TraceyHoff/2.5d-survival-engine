@@ -21,8 +21,10 @@ describe("Task 13: HUD disease chips", () => {
     h.destroy(); h = mountHud(() => w, () => p, {}); // mount calls update() synchronously
     const chips = Array.from(document.querySelectorAll<HTMLElement>("#hud .dchip"));
     expect(chips.map((c) => c.dataset["disease"])).toEqual(["common_cold"]);
-    expect(chips[0]!.textContent).toBe("Cold");
+    expect(chips[0]!.textContent).toContain("Cold");
     expect(chips[0]!.title).toBe("Common Cold");
+    // Task 31: each chip carries its custom sprite (snowflake for a cold)
+    expect(chips[0]!.querySelector("img")?.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
     expect(G.cureDisease(w, p, "common_cold")).toBe(true);
     h.destroy(); h = mountHud(() => w, () => p, {});
     expect(document.querySelectorAll("#hud .dchip").length).toBe(0);
@@ -34,5 +36,25 @@ describe("Task 13: HUD disease chips", () => {
     h = mountHud(() => w, () => p, {});
     expect(Array.from(document.querySelectorAll<HTMLElement>("#hud .dchip")).map((c) => c.dataset["disease"]).sort())
       .toEqual(["dysentery", "heatstroke"]);
+  });
+
+  test("Task 31: a wet chip (droplet + %) shows while wet, and flu carries the thermometer sprite", () => {
+    const w = world(); const p = G.spawnPlayer(w, { x: 0, y: 0, clientId: 1 });
+    w.setField(p, G.Exposure, "wetness", 0.5);
+    G.contractDisease(w, p, "influenza");
+    h = mountHud(() => w, () => p, {});
+    const chips = Array.from(document.querySelectorAll<HTMLElement>("#hud .dchip"));
+    expect(chips.map((c) => c.dataset["disease"]).sort()).toEqual(["influenza", "wet"]);
+    const wet = chips.find((c) => c.dataset["disease"] === "wet")!;
+    expect(wet.textContent).toContain("Wet 50%");
+    expect(wet.title).toContain("dry indoors or by a fire");
+    expect(wet.querySelector("img")?.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+    const flu = chips.find((c) => c.dataset["disease"] === "influenza")!;
+    expect(flu.textContent).toContain("Flu");
+    expect(flu.querySelector("img")?.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+    // dry again: the wet chip vanishes, the flu chip stays
+    w.setField(p, G.Exposure, "wetness", 0);
+    h.destroy(); h = mountHud(() => w, () => p, {});
+    expect(Array.from(document.querySelectorAll<HTMLElement>("#hud .dchip")).map((c) => c.dataset["disease"])).toEqual(["influenza"]);
   });
 });

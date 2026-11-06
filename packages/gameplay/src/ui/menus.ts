@@ -10,7 +10,7 @@ import { ReadyCmd } from "../ready.js";
  * The client sends intents through its net bridge (`gameplayNet(cmd)`); entity args (target/stall) are Entities here
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
-import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, getAppearance, slotIndex, SLOT_PALETTE, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
+import { Appearance, GroupRole, Membership, PlayerId, SEASON_NAMES, Transform, WEARABLE_SLOTS, Weather, getAppearance, slotIndex, SLOT_PALETTE, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
 import { BuildPiece, CraftingStation, Dead, Container, Exposure, Health, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, Progression, RoomHeat, SlotDye, StallHeader, Survival, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { carriedBags } from "../stance.js";
@@ -21,11 +21,11 @@ import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallN
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost, pieceGates } from "../building/place.js";
 import { hasSkillUnlock, unlockRequirement, xpToNext } from "../skills/tree.js";
-import { activeDiseases } from "../diseases.js";
-import { ambientTemperature, shelteredAirTemp, worldSeason } from "../systems/environment.js";
+import { activeDiseases, careStatus, diseaseIcon, CARE_DRY_MAX } from "../diseases.js";
+import { ambientTemperature, effectiveInsulation, heatAt, shelteredAirTemp, weatherDef, worldSeason } from "../systems/environment.js";
 import { BoilCmd, DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
 import { Equipment, Worn } from "../components.js";
-import { ItemCategory, WEAR_SLOTS } from "../defs.js";
+import { ItemCategory, WEAR_SLOTS, WeatherKind } from "../defs.js";
 import { entityIndex } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { isAuthority } from "../config.js";
@@ -285,12 +285,16 @@ export const dyeIntent = (kind: number, slot: number, palette: number, index: nu
 /** Base insulation (deg C) of an unclothed body: bare skin provides no insulation in this model. */
 export const BASE_INSULATION_C = 0;
 export interface CharacterSheetWorn { slot: string; name: string; insulation: number }
-export interface CharacterSheetDisease { key: string; name: string; short: string; color: string }
+export interface CharacterSheetDisease { key: string; name: string; short: string; color: string; icon: string }
 export interface CharacterSheetView {
   name: string; bodyTempC: number; health: number; maxHealth: number; hunger: number; thirst: number; stamina: number; maxStamina: number;
   level: number; xp: number; xpNext: number; diseases: CharacterSheetDisease[];
-  insulationBase: number; insulationClothing: number; worn: CharacterSheetWorn[];
+  insulationBase: number; insulationClothing: number; insulationWet: number; worn: CharacterSheetWorn[];
   ambientC: number; indoorC: number; sheltered: boolean; enclosed: boolean; season: number; seasonName: string;
+  /** Task 31: wetness 0..1 (worn gear shares it), seconds until dry at the current drying rate (undefined when dry or still getting wetter in the rain), whether a fire is speeding the drying. */
+  wetness: number; drySeconds: number | undefined; dryByFire: boolean;
+  /** Task 31: seconds of care still owed to cure a cold/flu (undefined when healthy), and which care conditions are unmet. */
+  careSecondsLeft: number | undefined; careMissing: string[];
 }
 /**
  * Task 23: the live character sheet (body temperature, vitals, diseases, experience, insulation, shelter).
@@ -305,18 +309,34 @@ export function characterSheetView(c: MenuCtx): CharacterSheetView | undefined {
   const air = t ? shelteredAirTemp(w, t.x, t.y, t.z, undefined, w.getField(p, RoomHeat, "heat") ?? 0) : undefined;
   const ambient = t ? ambientTemperature(w, t.x, t.y) : ambientTemperature(w);
   const si = worldSeason(w);
+  // Task 31: wetness + care timers for the sheet. Drying rate matches exposureSystem (dryPerSec, x3 by a fire);
+  // in rain while exposed the player is still getting wetter, so there is no dry time to show.
+  const wet = w.getField(p, Exposure, "wetness") ?? 0;
+  const heat = t ? heatAt(w, t.x, t.y, t.z) : 0;
+  const env = gameplayDefs(w).environment;
+  const wdef = weatherDef(env, w.env(Weather).kind as WeatherKind);
+  const gettingWetter = wdef.wetnessPerSec > 0 && (air?.exposure ?? 1) > 0;
+  const dryRate = env.dryPerSec * (heat > 0 ? env.heatDryMul : 1);
+  const care = careStatus(w, p);
+  const insClothing = w.getField(p, Exposure, "insulation") ?? 0;
   return {
     name: nameOf(c, pidOf(w, p)),
     bodyTempC: sv.bodyTemp, health: hp.hp, maxHealth: hp.max, hunger: sv.hunger, thirst: sv.thirst, stamina: sv.stamina, maxStamina: sv.maxStamina,
     level: prog?.level ?? 1, xp: prog?.xp ?? 0, xpNext: xpToNext(prog?.level ?? 1),
-    diseases: activeDiseases(w, p).map((d) => ({ key: d.key, name: d.name, short: d.short, color: d.color })),
+    diseases: activeDiseases(w, p).map((d) => ({ key: d.key, name: d.name, short: d.short, color: d.color, icon: diseaseIcon(d.key) })),
     insulationBase: BASE_INSULATION_C,
-    insulationClothing: w.getField(p, Exposure, "insulation") ?? 0,
+    insulationClothing: insClothing,
+    insulationWet: effectiveInsulation(insClothing, wet),
     worn: equipmentView(c).filter((s) => s.slot >= 0 && s.item !== 0).map((s) => ({
       slot: s.label, name: s.name, insulation: gameplayDefs(w).items.get(s.item)?.wear?.insulation ?? 0,
     })),
     ambientC: ambient, indoorC: air?.temp ?? ambient, sheltered: air?.sheltered ?? false, enclosed: air?.enclosed ?? false,
     season: si.index, seasonName: SEASON_NAMES[si.index] ?? "summer",
+    wetness: wet,
+    drySeconds: wet > CARE_DRY_MAX && !gettingWetter ? Math.ceil(wet / dryRate) : undefined,
+    dryByFire: heat > 0,
+    careSecondsLeft: care.sick ? Math.ceil(care.secondsLeft) : undefined,
+    careMissing: care.sick ? care.missing : [],
   };
 }
 
@@ -444,10 +464,10 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
-/** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "worker"; worker: Entity } | { panel: "loot"; bag: Entity } | { panel: "lootLocked"; bag: Entity } | { panel: "storage"; piece: Entity } | undefined {
+/** What the Interact action should open: a nearby stall's trade panel, else the wardrobe panel. */
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "wardrobe" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "worker"; worker: Entity } | { panel: "loot"; bag: Entity } | { panel: "lootLocked"; bag: Entity } | { panel: "storage"; piece: Entity } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
-  if (nearWardrobe(c.world, c.player)) return { panel: "character" };
+  if (nearWardrobe(c.world, c.player)) return { panel: "wardrobe" };
   const st = nearestStation(c); const pet = nearestPet(c.world, c.player); const worker = nearestWorker(c.world, c.player);
   // ADR-160: a loot bag (zombie / animal / death / dropped / crate) in reach opens by hand when it is the closest target
   const bag = nearestLootBag(c);

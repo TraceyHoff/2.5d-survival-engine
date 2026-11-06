@@ -31,9 +31,9 @@ const q = (sel: string): HTMLElement | null => document.querySelector<HTMLElemen
 const qa = (sel: string): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>(sel));
 
 describe("Task 25: dye UI", () => {
-  test("Character panel shows the dye status and gates the swatches on brush + dye", () => {
+  test("Wardrobe panel shows the dye status and gates the swatches on brush + dye", () => {
     const { w, me, id } = setup();
-    const sent: unknown[] = []; const m = menus(w, me, undefined, (i) => { sent.push(i); return true; }); m.open("character");
+    const sent: unknown[] = []; const m = menus(w, me, undefined, (i) => { sent.push(i); return true; }); m.open("wardrobe");
     const status = q("[data-role=dye-status]")!;
     expect(status.textContent).toContain("paint brush in your hotbar"); // no brush yet
     // hair swatches exist (3 hair colours) but are disabled without brush/dye
@@ -41,11 +41,11 @@ describe("Task 25: dye UI", () => {
     expect(hairSwatches.length).toBe(3);
     expect(hairSwatches.every((b) => b.hasAttribute("disabled"))).toBe(true);
     // brush in the hotbar but no dye: still disabled
-    putInSlot(w, me, 16, id("paint_brush")); m.open("character");
+    putInSlot(w, me, 16, id("paint_brush")); m.open("wardrobe");
     expect(q("[data-role=dye-status]")!.textContent).toContain("no dye");
     expect(qa("[data-key^=dye-0-]").every((b) => b.hasAttribute("disabled"))).toBe(true);
     // brush + dye: swatches enabled, status shows the dye count
-    G.addItem(w, me, id("dye"), 2); m.open("character");
+    G.addItem(w, me, id("dye"), 2); m.open("wardrobe");
     expect(q("[data-role=dye-status]")!.textContent).toContain("2 dye");
     expect(qa("[data-key^=dye-0-]").every((b) => !b.hasAttribute("disabled"))).toBe(true);
     // worn top row uses the clothing palette (3 swatches, kind 1)

@@ -22,8 +22,9 @@ const give = (w: World, p: Entity, key: string, count = 1): void => { G.addItem(
 
 describe("Task 13: diseases", () => {
   it("defs: 6 diseases, cures, boil pairs and mask/waterskin items", () => {
-    expect(d.diseases.map((x) => x.key)).toEqual(["food_poisoning", "dysentery", "common_cold", "heatstroke", "exhaustion", "wound_infection"]);
+    expect(d.diseases.map((x) => x.key)).toEqual(["food_poisoning", "dysentery", "common_cold", "heatstroke", "exhaustion", "wound_infection", "influenza"]);
     expect(d.diseases.find((x) => x.key === "common_cold")!.contagious).toBe(true);
+    expect(d.diseases.find((x) => x.key === "influenza")!.contagious).toBe(true); // Task 31: flu, worse than a cold
     expect(d.diseases.find((x) => x.key === "exhaustion")!.cure).toBeNull();
     for (const [rawKey, boiledKey] of [["water_flask", "boiled_water_flask"], ["canteen", "boiled_canteen"], ["water_bottle", "boiled_water_bottle"], ["waterskin", "boiled_waterskin"]] as const) {
       const raw = d.items.get(id(rawKey))!, boiled = d.items.get(id(boiledKey))!;

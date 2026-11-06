@@ -32,7 +32,7 @@ beforeEach(() => { document.body.innerHTML = `<div id="game-root"><canvas id="ga
 
 describe("wardrobe colours", () => {
   test("skin: every tone offered, and a pick keeps the female body + the rest of the look", () => {
-    const { sent, menus } = setup(); menus.open("character");
+    const { sent, menus } = setup(); menus.open("wardrobe");
     expect(all("button[data-key^=skin-]").length).toBe(cat.skinTones.length);
     expect(q("[data-key=skin-2]").getAttribute("aria-pressed")).toBe("true");
     q(`[data-key=skin-${cat.skinTones.length - 1}]`).click();
@@ -40,7 +40,7 @@ describe("wardrobe colours", () => {
     menus.destroy();
   });
   test("eyes: curated eye colours + a secondary row; picks keep the other channel", () => {
-    const { sent, menus } = setup(); menus.open("character"); q(`[data-key=wslot-${slotIndex("eyes")}]`).click();
+    const { sent, menus } = setup(); menus.open("wardrobe"); q(`[data-key=wslot-${slotIndex("eyes")}]`).click();
     const keys = all("button[data-key^=color-]").map((b) => Number(b.dataset["key"]!.slice(6)));
     expect(keys).toEqual(colorChoices(cat, "eyes"));
     const pick = keys.find((k) => k !== 16)!; q(`[data-key=color-${pick}]`).click();
@@ -51,7 +51,7 @@ describe("wardrobe colours", () => {
     menus.destroy();
   });
   test("hair: full hair palette + secondary row; 1-channel top has no secondary row", () => {
-    const { sent, menus } = setup(); menus.open("character"); q(`[data-key=wslot-${slotIndex("hair")}]`).click();
+    const { sent, menus } = setup(); menus.open("wardrobe"); q(`[data-key=wslot-${slotIndex("hair")}]`).click();
     expect(all("button[data-key^=color-]").length).toBe(cat.hairColors.length);
     q("[data-key=color2-3]").click(); expect(sent.at(-1)).toMatchObject({ args: { slot: 0, wearable: 1, primary: 2, secondary: 3 } });
     q(`[data-key=wslot-${slotIndex("top")}]`).click(); expect(all("button[data-key^=color2-]").length).toBe(0);

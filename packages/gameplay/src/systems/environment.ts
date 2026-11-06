@@ -263,6 +263,17 @@ export const COLD_DAMAGE_HI_C = ((10 - 32) * 5) / 9;
 export const COLD_DAMAGE_INSULATION_C = 10;
 
 /**
+ * Task 31: wet clothing insulates less — at full wetness it keeps only half its insulation (felt-temperature
+ * shift only; the >= 10 cold-damage block still uses the dry total, unchanged). Worn gear shares the wearer's
+ * wetness, so it dries with them — no per-item wetness state.
+ */
+export const WET_INSULATION_LOSS = 0.5;
+/** Effective insulation at a wetness level (0 dry .. 1 soaked); shared by the exposure system and the sheet. */
+export function effectiveInsulation(insulation: number, wetness: number): number {
+  return insulation * (1 - WET_INSULATION_LOSS * Math.min(1, Math.max(0, wetness)));
+}
+
+/**
  * Per entity, every EXPOSURE_EVERY ticks (dt = dt x every): wetness, felt temperature, buffs.
  * Deterministic from replicated state, so the owning client may run it for prediction.
  */
@@ -302,8 +313,9 @@ export function exposureSystem(world: World, dt: number): void {
     const ambient = ambient0 ?? ambientTemperature(world, x, y);
     // Task 23: clothing insulation pulls felt toward the comfort band — it warms in the cold and shades in the heat
     // (a fur coat no longer cooks its wearer in a heat wave); higher tiers insulate more (items.json).
+    // Task 31: wet clothing insulates less (effectiveInsulation); the cold-damage block below still uses the dry total.
     const ins = ex.data.insulation[s]!;
-    const insShift = ambient > vt.comfortMax ? -ins : ambient < vt.comfortMin ? ins : 0;
+    const insShift = ambient > vt.comfortMax ? -effectiveInsulation(ins, wet) : ambient < vt.comfortMin ? effectiveInsulation(ins, wet) : 0;
     let felt = ambient + insShift + shelterTempShift(sh, ambient, vt, env.shelterTempBonus)
       - env.wetChill * wet - env.windChillPerSpeed * Math.sqrt(Math.max(0, w.windSpeed)) * sh.exposure;
     // Fully enclosed + roofed: protected from the elements and from death by them — felt never leaves the comfort

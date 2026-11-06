@@ -1,6 +1,6 @@
 /**
  * In-game menus on the shared focus layer (./ui-nav.ts): pause (hub of every menu + "Quit to main menu"), inventory,
- * crafting, build, character (wardrobe), party, clan, trade stalls, chat, settings and session (P2P). Each is a modal
+ * crafting, build, character (details), wardrobe, party, clan, trade stalls, chat, settings and session (P2P). Each is a modal
  * shell with stable hooks for Gameplay/Art to fill: `.gm-modal[data-modal=<id>]`, `[data-role=body]`, `[data-role=close]`.
  * Touch: a top-right menu bar (`#game-menubar`, 44px buttons, inside the safe area) opens each menu.
  * Keyboard hotkeys (no text field focused): Esc pause, I/Tab inventory, C crafting, B build, K character, P party,
@@ -29,7 +29,8 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "crafting", title: "Crafting", icon: "ic_hammer.png", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft by hand. More recipes at stations." },
   { id: "station", title: "Crafting Station", icon: "ic_anvil.png", hotkeys: [], text: "Recipes made at this station." },
   { id: "build", title: "Build", icon: "ic_build.png", hotkeys: ["KeyB"], bar: true, text: "Pick a piece to place." },
-  { id: "character", title: "Character", icon: "ic_shirt.png", hotkeys: ["KeyK"], text: "Wardrobe and character creator." },
+  { id: "character", title: "Character", icon: "ic_shirt.png", hotkeys: ["KeyK"], text: "Your vitals, temperature, diseases and insulation." },
+  { id: "wardrobe", title: "Wardrobe", icon: "ic_shirt.png", hotkeys: [], text: "Change your look at a wardrobe." },
   { id: "party", title: "Party", icon: "ic_people.png", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
   { id: "clan", title: "Clan", icon: "ic_shield.png", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
   { id: "trade", title: "Trade stalls", icon: "ic_scales.png", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },

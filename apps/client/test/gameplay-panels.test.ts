@@ -163,6 +163,22 @@ describe("gameplay panels (ADR-095 shell)", () => {
     expect(txt("sheet-worn")).toMatch(/Fur Coat · \+7\.0°C/);
     menus.destroy();
   });
+  test("Task 31: Character panel is details only — wardrobe controls live in the Wardrobe panel", () => {
+    const { menus } = setup();
+    menus.open("character");
+    expect(document.querySelector("[data-menu=character]")!.textContent).toContain("Character sheet — Ada");
+    expect(document.querySelectorAll("[data-key^=wslot-]").length).toBe(0);
+    expect(document.querySelector("[data-role=dye-status]")).toBeNull();
+    expect(document.querySelector("[data-key=edit-character]")).toBeNull();
+    expect(document.querySelectorAll("[data-role=unlock]").length).toBe(0);
+    menus.nav.closeAll();
+    menus.open("wardrobe");
+    expect(document.querySelectorAll("[data-key^=wslot-]").length).toBeGreaterThan(0);
+    expect(document.querySelector("[data-role=dye-status]")).not.toBeNull();
+    expect(document.querySelector("[data-key=edit-character]")).not.toBeNull();
+    expect(document.querySelectorAll("[data-role=unlock]").length).toBeGreaterThan(0);
+    menus.destroy();
+  });
   test("styling hooks: data-item/data-icon, job --p, data-unlocked, data-rank, data-chan, data-tip (no title=)", () => {
     const dir = new G.SocialDirectory(); const { w, me, mk, menus } = setup(dir);
     G.addItem(w, me, id("wood"), 5, 7); G.addItem(w, me, id("reeds"), 3); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);
@@ -173,7 +189,7 @@ describe("gameplay panels (ADR-095 shell)", () => {
     menus.nav.closeAll();
     G.addItem(w, me, id("wood"), 20); G.enqueueCraft(w, me, d.recipeId("stone_axe"), 1); menus.open("crafting");
     const job = q("[data-role=job]"); expect(job.getAttribute("style")).toMatch(/^--p:(0|1)?\.\d{3}$/);
-    menus.nav.closeAll(); menus.open("character");
+    menus.nav.closeAll(); menus.open("wardrobe");
     const unlocks = Array.from(document.querySelectorAll<HTMLElement>("[data-role=unlock]")); expect(unlocks.length).toBeGreaterThan(0);
     for (const u of unlocks) expect(u.textContent).not.toMatch(/[✓🔒]/u);
     expect(unlocks.some((u) => u.hasAttribute("data-unlocked")) || unlocks.every((u) => !u.hasAttribute("data-unlocked"))).toBe(true);

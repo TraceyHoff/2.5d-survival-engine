@@ -7,7 +7,8 @@
 import { mountUi } from "./ui-root.js";
 import { Weather, Transform, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
-import { activeDiseases, Diseases, Exposure, Health, RoomHeat, Survival } from "@engine/gameplay";
+import { activeDiseases, diseaseIcon, Diseases, Exposure, Health, RoomHeat, Survival, WET_ICON } from "@engine/gameplay";
+import { iconImg } from "./game-icons.js";
 import { seasonAtDays } from "@engine/core";
 import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
@@ -65,7 +66,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
 #hud .row[data-stat=temp] .felt{position:absolute;top:-4px;width:0;height:0;margin-left:-3px;border:3px solid transparent;border-top-color:#3B2433;transition:left .4s}
 #hud .row[data-stat=temp] .tv{flex:none;min-width:30px;text-align:right;font-size:10px;white-space:nowrap}
 #hud .row[data-stat=temp][data-band=cold] .tv{color:#5A9BFF}#hud .row[data-stat=temp][data-band=hot] .tv{color:#FF6A4A}
-#hud [data-role=disease-chips]{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}#hud .dchip{font-size:9px;padding:1px 5px;border-radius:6px;border:1px solid #4A2F3D;color:#FFFAF0;text-shadow:0 1px 0 #3B2433;white-space:nowrap}
+#hud [data-role=disease-chips]{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}#hud .dchip{font-size:9px;padding:1px 5px;border-radius:6px;border:1px solid #4A2F3D;color:#FFFAF0;text-shadow:0 1px 0 #3B2433;white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
 @media (max-height:420px){#hud{width:100px;padding:2px 4px;opacity:.9}#hud .bar{height:5px}#hud .row{margin:1px 0}#hud .row[data-stat=temp] .tv{min-width:26px;font-size:9px}}`;
   document.head.append(style);
   const root = document.createElement("div"); root.id = "hud";
@@ -169,13 +170,16 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     const vals = [hp ? hp.hp / (hp.max || 100) : 1, sv ? sv.hunger / 100 : 1, sv ? sv.thirst / 100 : 1, sv ? sv.stamina / (sv.maxStamina || 100) : 1];
     if (ui) vals.forEach((v, i) => { const low = v < 0.25; const ic = icons[i]!; if (ic.dataset["low"] !== String(low)) { const u = ui!.url(`vital_${SPRITE_KEYS[i]}${low ? "_low" : ""}`); if (u) { ic.src = u; ic.dataset["low"] = String(low); } } });
     vals.forEach((v, i) => { setStyle(`fill${i}`, fills[i]!, "width", `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`); });
-    // Task 13: disease chips follow the replicated component (added / removed as diseases come and go)
+    // Task 13: disease chips follow the replicated component (added / removed as diseases come and go).
+    // Task 31: each chip carries its custom sprite, and a wet chip (droplet + %) shows while the player is wet.
     try {
       const actives = p !== undefined && w.isRegistered(Diseases) ? activeDiseases(w, p) : [];
-      const keys = actives.map((d) => d.key).join(",");
+      const wet = p !== undefined ? (w.getField(p, Exposure, "wetness") ?? 0) : 0;
+      const keys = `${actives.map((d) => d.key).join(",")}|wet:${wet >= 0.05 ? Math.round(wet * 20) : 0}`;
       if (chips.dataset["keys"] !== keys) {
         chips.dataset["keys"] = keys; chips.innerHTML = "";
-        for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.textContent = d.short; c.title = d.name; c.style.background = d.color; chips.append(c); }
+        for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.append(iconImg(diseaseIcon(d.key), 11, d.name), ` ${d.short}`); c.title = d.name; c.style.background = d.color; chips.append(c); }
+        if (wet >= 0.05) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = "wet"; c.append(iconImg(WET_ICON, 11, "Wet"), ` Wet ${Math.round(wet * 100)}%`); c.title = "Wet — dry indoors or by a fire"; c.style.background = "#4A7A9E"; chips.append(c); }
         if (!ro) publishHudBottom(); // no ResizeObserver: chips are the only content that changes the HUD height
       }
     } catch { /* replica without Diseases yet */ }

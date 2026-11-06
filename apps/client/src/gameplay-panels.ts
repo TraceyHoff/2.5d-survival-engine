@@ -24,13 +24,13 @@ import { iconForItem, ROADS, clanTintIndex,
   SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, setWorkerJobIntent, dismissWorkerIntent,
-  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent,
+  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent, WET_ICON,
 } from "@engine/gameplay";
 import { formatTemp, loadTempUnit } from "./hud-temp.js";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, Membership, PlayerId, SLOT_PALETTE, swatchColor, Transform, type Entity, type WearableSlot } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet", /* Task 22 */ "worker"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", /* Task 31 */ "wardrobe", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet", /* Task 22 */ "worker"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -101,6 +101,10 @@ export function pieceGlyph(key: string): string {
   for (const [r, g] of m) if (r.test(key)) return g; return "◼";
 }
 let wardrobeSlot = 0;
+/** Task 31: seconds as "45s" / "3m 12s" for the sheet's dry / cure timers. */
+const fmtDur = (s: number): string => (s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
+/** Task 31: care conditions the sheet reports as still unmet, in plain words. */
+const CARE_NEED_LABEL: Record<string, string> = { dry: "drying off", fed: "food", hydrated: "water", warm: "warmth" };
 /** Camper station: active tab + selected cook recipe survive re-renders. */
 const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
 const dismissedClan = new Set<number>();
@@ -596,8 +600,8 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       return out;
     }
     case "character": {
-      const v = wardrobeView(c); const out: Node[] = [];
-      // Task 23: live character sheet above the wardrobe — body temperature, vitals, diseases, experience,
+      const out: Node[] = [];
+      // Task 23: live character sheet — body temperature, vitals, diseases, experience,
       // insulation and shelter. The panel refreshes 4x/s while open, so these numbers track the player.
       const sheet = characterSheetView(c);
       if (sheet) {
@@ -610,13 +614,38 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         out.push(row("Water", `${Math.round(sheet.thirst)}/100`, "sheet-thirst"));
         out.push(row("Energy", `${Math.round(sheet.stamina)}/${Math.round(sheet.maxStamina)}`, "sheet-stamina"));
         out.push(row("Experience", `Level ${sheet.level} · ${sheet.xp}/${sheet.xpNext} XP`, "sheet-xp"));
-        out.push(row("Diseases", sheet.diseases.length ? sheet.diseases.map((d) => d.name).join(", ") : "Healthy", "sheet-diseases"));
-        out.push(row("Insulation", `Base ${sheet.insulationBase.toFixed(1)}°C + clothing ${sheet.insulationClothing.toFixed(1)}°C`, "sheet-insulation"));
+        const disRow = row("Diseases", sheet.diseases.length ? sheet.diseases.map((d) => d.name).join(", ") : "Healthy", "sheet-diseases");
+        if (sheet.diseases.length) { // Task 31: one custom sprite per disease, in front of its name
+          disRow.textContent = "Diseases: ";
+          for (const d of sheet.diseases) { disRow.append(iconImg(d.icon, 14, d.name)); disRow.append(` ${d.name} `); }
+        }
+        out.push(disRow);
+        // Task 31: wet clothing insulates less — the sheet shows the effective total while wet
+        out.push(row("Insulation", sheet.wetness > 0.05
+          ? `Base ${sheet.insulationBase.toFixed(1)}°C + clothing ${sheet.insulationClothing.toFixed(1)}°C (${sheet.insulationWet.toFixed(1)}°C while wet)`
+          : `Base ${sheet.insulationBase.toFixed(1)}°C + clothing ${sheet.insulationClothing.toFixed(1)}°C`, "sheet-insulation"));
+        // Task 31: how long until dry (only while wet), and how long until the care cure (only while sick)
+        if (sheet.wetness > 0.05) {
+          const wetRow = row("Wetness", sheet.drySeconds !== undefined
+            ? `${Math.round(sheet.wetness * 100)}% · dry in ~${fmtDur(sheet.drySeconds)}${sheet.dryByFire ? " by the fire" : ""}`
+            : `${Math.round(sheet.wetness * 100)}% · get out of the rain to dry`, "sheet-wetness");
+          wetRow.prepend(iconImg(WET_ICON, 14, "Wet")); out.push(wetRow);
+        }
+        if (sheet.careSecondsLeft !== undefined) {
+          const careRow = row("Cure", `in ~${fmtDur(sheet.careSecondsLeft)}${sheet.careMissing.length ? ` — still needs: ${sheet.careMissing.map((m) => CARE_NEED_LABEL[m] ?? m).join(", ")}` : " — keep it up"}`, "sheet-care");
+          const first = sheet.diseases[0]; if (first) careRow.prepend(iconImg(first.icon, 14, first.name));
+          out.push(careRow);
+        }
         if (sheet.worn.length) for (const it of sheet.worn) out.push(row(it.slot, `${it.name} · +${it.insulation.toFixed(1)}°C`, "sheet-worn"));
         else out.push(row("Worn", "Nothing — craft clothing to stay warm and dry", "sheet-worn"));
         out.push(row(sheet.enclosed ? "Indoors" : sheet.sheltered ? "Sheltered" : "Outside",
           `${formatTemp(sheet.indoorC, unit)}${sheet.sheltered ? ` (outside ${formatTemp(sheet.ambientC, unit)})` : ""} · ${sheet.seasonName}`, "sheet-shelter"));
       }
+      return out;
+    }
+    case "wardrobe": {
+      // Task 31: the wardrobe lives in its own panel now — the Character panel is details only (sheet above).
+      const v = wardrobeView(c); const out: Node[] = [];
       out.push(kit.para(v.canEdit ? (v.created ? "At a wardrobe: change your look." : "Create your character.") : "Stand near a wardrobe to change your look."));
       const sg = grid(); for (const s of v.slots) sg.append(btn(`${s.key}${s.equipped ? "" : " (none)"}`, `wslot-${s.slot}`, () => { wardrobeSlot = s.slot; kit.rerender(); }, { pressed: s.slot === wardrobeSlot, alt: s.slot !== wardrobeSlot }));
       out.push(heading("Slot"), sg);
