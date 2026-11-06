@@ -285,7 +285,9 @@ export function paintTask34Atlases(): PaintedAtlas[] {
 /** Rasterized pixels -> PNG blob URL (OffscreenCanvas, else a document canvas; undefined when no canvas exists). */
 async function canvasToBlobURL(w: number, h: number, pixels: Uint8ClampedArray): Promise<string | undefined> {
   try {
-    const data = new ImageData(pixels, w, h);
+    // TS 5.9 (CI's pinned version) types ImageData's data as Uint8ClampedArray<ArrayBuffer>; our pixels are
+    // Uint8ClampedArray<ArrayBufferLike>, so copy into a fresh ArrayBuffer-backed array (once, at load).
+    const data = new ImageData(new Uint8ClampedArray(pixels), w, h);
     const OC = (globalThis as { OffscreenCanvas?: typeof OffscreenCanvas }).OffscreenCanvas;
     if (OC) {
       const cv = new OC(w, h); const ctx = cv.getContext("2d");
