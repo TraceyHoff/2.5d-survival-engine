@@ -113,9 +113,10 @@ export function agentLodEvery(d: DeviceHints = detectDevice(), cores = globalThi
 export const BOT_DISTANT_THROTTLE = { nearTiles: 24, interval: 4 } as const;
 const ACT_MASK = Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather;
 /** Task 22: may this host run virtual players? Singleplayer always; multiplayer only when AI humans are on.
- * A save keeps its own rule (read from the store meta); a new world takes the creation options (default on). */
+ * Explicit host settings override the save; absent an explicit setting, preserve its rule. */
 export function aiHumansOn(o: Pick<LocalServerOptions, "mode" | "worldRules" | "store">): boolean {
   if ((o.mode ?? "singleplayer") === "singleplayer") return true;
+  if (o.worldRules?.aiHumans !== undefined) return o.worldRules.aiHumans;
   const saved = o.store?.readMeta()?.aiHumans;
   return saved !== undefined ? saved === 1 : (o.worldRules?.aiHumans ?? true);
 }
@@ -141,7 +142,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     // Task 22: the in-process bot host runs whenever AI humans are on — singleplayer always, multiplayer only
-    // when the world rule allows it. A save keeps its own rule (like hordes); a new world takes the options.
+    // when the resolved host rule allows it (explicit settings override saved AI policy).
     ...(aiHumansOn(o) ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),
   });
 

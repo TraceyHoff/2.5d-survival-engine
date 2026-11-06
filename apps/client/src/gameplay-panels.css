@@ -1301,3 +1301,6 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
   .gm-modal .gm-panel [data-role=piece-grid] button .nm{word-break:normal;overflow-wrap:anywhere}
   .gm-modal .gm-panel [data-role=body] [data-role=recipe-grid]{grid-template-columns:repeat(auto-fill,76px);max-height:max(180px,calc(100dvh - 480px))}
   .gm-modal .gm-panel [data-role=body] [data-role=recipe-grid] button[data-role=recipe]{width:76px}}
+
+/* ADR-258: character details use the same inset plates, ink and typography as other gameplay panels. */
+.gm-modal[data-menu=character] [data-role=body] > [data-role^=sheet-]{border-style:solid;border-width:14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x,url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% fill / 14px stretch;padding:2px 4px;color:var(--cz-ink);font:600 14px/1.35 Fredoka,system-ui,sans-serif;overflow-wrap:anywhere;min-width:0}

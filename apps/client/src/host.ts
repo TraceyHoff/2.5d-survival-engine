@@ -51,7 +51,7 @@ export async function startP2PHost(o: P2PHostOptions): Promise<P2PHost> {
     local, room, rtc, code: room.code, cap: o.cap, hostTransport, hostClientId: undefined,
     players: () => {
       const out: P2PPlayer[] = [];
-      for (const [cid, p] of local.game.players) out.push({ clientId: cid, name: p.name || `Player ${cid}`, host: cid === host.hostClientId });
+      for (const [cid, p] of local.game.players) if (!p.bot) out.push({ clientId: cid, name: p.name || `Player ${cid}`, host: cid === host.hostClientId });
       return out.sort((a, b) => Number(b.host) - Number(a.host) || a.clientId - b.clientId);
     },
     leave: () => (ended ??= (async () => { rtc.close(); room.close(); await local.stop(); })()),

@@ -2983,3 +2983,17 @@ spawn guarantee on Art & Assets landing painted pack sheets.
 - Pepper / beetroot / rice still use tinted fallbacks (out of scope).
 - Task 36 shovel / flowing water / underground bases unchanged.
 
+
+
+## ADR-258: Portrait guide/HUD clearance, contextual panels, safe hand input and host AI policy
+
+**Status:** Accepted. **Scope:** client UI, input, authoritative host and join capacity (not Task 36 or art).
+
+- Portrait pickup toasts follow the HUD's measured bottom (including disease chips and safe-area changes); landscape anchors are unchanged.
+- Portrait tutorial cards use a compact, scrollable upper-right lane, scan UI edges, and strongly avoid the camera-centred player. Inline prompts render the existing icon PNGs / input glyph atlas rather than PNG filenames or empty glyph hooks. Text labels remain readable when rebound.
+- Character details are opened from the focusable health cluster (tap/click, Enter/Space), existing K, or LB + right-stick click on gamepad. Character rows use Cozy Camp inset plates. Character, wardrobe and trade are not menu/HUD entries; wardrobe/stall access stays on world Interact and the trade hotkey is removed.
+- Explicit host AI-human settings override the saved AI flag, in both local virtual-player creation and the authoritative WorldRules used by population/recruitment. If unspecified, the saved flag still applies. Hordes retain their existing save policy. The effective AI flag is persisted normally.
+- Trusted in-process direct clients are excluded from network player capacity; this is server state, never a wire admission flag. Human caps still reject excess human joins. P2P player listings omit AI humans.
+- Append `Act.Attack` (bit 8) to the demo hold bits; Interact keeps `Act.Gather` (bit 5), Primary uses Attack. Only Attack may select melee creatures. If both controls are down, safe hand interaction wins. The dedicated Primary tool-gather fallback remains. Existing clients must update alongside the host for the new Primary mapping.
+
+**Validation:** ADR-258 UI, multiplayer and authoritative hand tests; existing tutorial, menu navigation, local/P2P, server gameplay/recruitment and input/network package regressions; locked TypeScript 5.9.3 typecheck.

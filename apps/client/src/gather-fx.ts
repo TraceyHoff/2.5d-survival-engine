@@ -208,7 +208,8 @@ export interface GatherFxDeps {
 const CSS = `#gather-fx{position:absolute;inset:0;z-index:5;pointer-events:none}
 #pickup-toasts{position:absolute;left:12px;bottom:96px;z-index:5;display:flex;flex-direction:column;gap:4px;pointer-events:none;font:600 14px/1.2 system-ui,sans-serif}
 #pickup-toasts[data-device=touch]{bottom:auto;top:84px;left:8px;font-size:12px}
-#pickup-toasts [data-role=toast]{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:6px;background:rgba(20,16,12,.62);color:#FFFAF0;transition:opacity .3s ease,transform .3s ease;text-shadow:0 1px 1px #000}
+@media (orientation:portrait){#pickup-toasts,#pickup-toasts[data-device=touch]{bottom:auto;top:calc(var(--hud-bottom,140px) + 8px);left:calc(8px + var(--sal,0px));max-width:min(120px,calc(100% - 16px - var(--sal,0px) - var(--sar,0px)))}}
+#pickup-toasts [data-role=toast]{overflow-wrap:anywhere;display:flex;align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:6px;background:rgba(20,16,12,.62);color:#FFFAF0;transition:opacity .3s ease,transform .3s ease;text-shadow:0 1px 1px #000}
 #pickup-toasts [data-role=toast][data-fade=true]{opacity:0;transform:translateX(-8px)}
 #pickup-toasts[data-art=true] [data-role=toast]{background:transparent;border-style:solid;border-width:6px 5px;border-image:var(--toast-bg) ${TOAST_SLICE.t} ${TOAST_SLICE.r} ${TOAST_SLICE.b} ${TOAST_SLICE.l} fill / 12px 10px / 0 round;border-radius:0;padding:0 6px 0 2px;color:#3a2a18;text-shadow:none}
 #pickup-toasts [data-item="-1"] .ic{background:#d9a227;border-radius:50%}

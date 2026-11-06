@@ -133,8 +133,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
   // ADR-107: restore the saved day clock (meta.dayEpochTick); pre-ADR-107 saves fall back to their 0.25 start.
   if (meta) { restoreDayClock(world, meta); restoreSeason(world, meta); }
-  // ADR-121: world rules - a save keeps its own (meta), a new world takes the creation options.
-  setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}), ...(meta?.aiHumans !== undefined ? { aiHumans: meta.aiHumans === 1 } : {}) });
+  // ADR-121: horde rules belong to the save. ADR-258: explicit host AI policy overrides its saved default.
+  setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}), ...(meta?.aiHumans !== undefined && o.worldRules?.aiHumans === undefined ? { aiHumans: meta.aiHumans === 1 } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
@@ -181,14 +181,14 @@ export function createGameServer(o: GameServerOptions): GameServer {
       if (cmd && players.get(clientId)?.entity === e) { // ADR-244 stance (before movement: a move input wakes a sleeper first)
         const b = cmd.edges ?? 0;
         applyStanceInput(w, e, { guard: !!(cmd.buttons & Act.Guard), crouch: !!(cmd.buttons & Act.Crouch), carry: !!(b & GameplayEdgeBits.Carry), rest: !!(b & GameplayEdgeBits.Rest), interact: !!(cmd.buttons & Act.Gather),
-          active: !!(cmd.buttons & (Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather)) || Math.hypot(cmd.moveX ?? 0, cmd.moveY ?? 0) > 0.3 || !!(b & ~(GameplayEdgeBits.Carry | GameplayEdgeBits.Rest)) });
+          active: !!(cmd.buttons & (Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather | Act.Attack)) || Math.hypot(cmd.moveX ?? 0, cmd.moveY ?? 0) > 0.3 || !!(b & ~(GameplayEdgeBits.Carry | GameplayEdgeBits.Rest)) });
       }
       applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
       // ADR-180: edge pulses (exactly-once per seq) -> the same input-queue commands their net command twins use (Hotbar1..8 equip, Reload)
       if (cmd?.edges && players.get(clientId)?.entity === e) for (const c of edgeCommands(cmd.edges, w, e)) queueCommand(w, e, handlers.registry, handlers.registry.make(c.def, c.values as never));
-      if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e && !stanceBlocksActions(w, e)) { // ADR-244: no attack / gather while carrying or asleep
-        // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
-        const foe = nearestMeleeTarget(w, e);
+      if (cmd && (cmd.buttons & (Act.Gather | Act.Attack)) && players.get(clientId)?.entity === e && !stanceBlocksActions(w, e)) { // ADR-244: no attack / gather while carrying or asleep
+        // Hand/interact is never combat. Only the dedicated primary/attack control may strike.
+        const foe = (cmd.buttons & Act.Attack) && !(cmd.buttons & Act.Gather) ? nearestMeleeTarget(w, e) : undefined;
         if (foe !== undefined) setIntent(w, e, { action: IntentAction.Attack, target: foe });
         else {
           // ADR-160: bare-handed loot: a loot bag in reach that is closer than any node opens instead of gathering

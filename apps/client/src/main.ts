@@ -707,7 +707,7 @@ mountStationHint(root, { world: () => world, player: () => session.player, camer
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,
   art: (icon) => toolIconFrame(iso?.registry, icon, Math.min(3, devicePixelRatio || 1) * (promptDevice() === "touch" ? 44 : 34) / 32) });
-if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}), ...seasonOv });
+if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}), ...seasonOv }, () => menus?.toggle("character"));
 
 let last = performance.now();
 function audioFrame(w: World, dayFrac: number | undefined): void {

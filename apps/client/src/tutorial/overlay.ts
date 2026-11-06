@@ -5,6 +5,8 @@
  * changes (no per-frame layout). Hooks: `#tutorial[data-step][data-device]`, `#tutorial-spot`, `#tutorial-arrow`.
  */
 import { actionCombos, combosText, menuHotkeyCombos, type BindingSource, type Combo, type TutDevice } from "./labels.js";
+import glyphAtlas from "../../../../assets/ui/input/atlas/input_glyphs.json";
+import { iconUrl, isIconFile } from "../game-icons.js";
 import { GAME_MENUS, PRIMARY_BAR_MENUS } from "../game-menus.js";
 import type { Probe, StepText, TutorialProgress } from "./steps.js";
 
@@ -24,12 +26,18 @@ export function placeCard(view: { w: number; h: number }, card: { w: number; h: 
   }
   cands.push({ x: cx, y: view.h * 0.16 }, { x: cx, y: maxY - view.h * 0.2 }, { x: m, y: view.h * 0.3 }, { x: view.w - card.w - m, y: view.h * 0.3 }, { x: cx, y: pz.y - card.h - m }, { x: cx, y: pz.y + pz.h + m }, { x: m, y: m }, { x: view.w - card.w - m, y: m }, { x: m, y: maxY }, { x: view.w - card.w - m, y: maxY }, { x: cx, y: m }, { x: cx, y: maxY }, { x: cx, y: (view.h - card.h) / 2 });
   for (let i = 1; i < 8; i++) { const x = m + ((view.w - card.w - 2 * m) * i) / 8; cands.push({ x, y: m }, { x, y: maxY }); } // ADR-150: row scan for tight landscape phones
+  if (view.h > view.w) {
+    // Portrait has a free upper-right lane beside the health cluster. Scan obstacle edges, not the player.
+    for (const a of avoid) for (const x of [m, view.w - card.w - m]) cands.push({ x, y: a.y + a.h + m });
+    cands.push({ x: view.w - card.w - m, y: 70 });
+  }
   const tg = target && { x: target.x - 10, y: target.y - 10, w: target.w + 20, h: target.h + 20 }; // the spotlight (4px pad + border) is drawn outside the target
-  let best = cands[0]!; let bestScore = Infinity;
+  let best = cands[0]!; let bestScore = Infinity, bestPlayerOverlap = Infinity;
   for (const c0 of cands) {
     const c = { x: clamp(c0.x, m, Math.max(m, view.w - card.w - m)), y: clamp(c0.y, m, maxY) }; const r = { ...c, w: card.w, h: card.h };
+    const playerOverlap = view.h > view.w ? overlap(r, pz) : 0;
     const s = (tg ? overlap(r, tg) * 1000 : 0) + avoid.reduce((a, b) => a + overlap(r, b) * 20, 0) + overlap(r, pz);
-    if (s < bestScore - 1e-6) { best = c; bestScore = s; }
+    if (playerOverlap < bestPlayerOverlap || (playerOverlap === bestPlayerOverlap && s < bestScore - 1e-6)) { best = c; bestScore = s; bestPlayerOverlap = playerOverlap; }
   }
   return best;
 }
@@ -37,14 +45,23 @@ const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export function stepText(t: StepText, d: TutDevice): string { return typeof t === "string" ? t : t[d] ?? t.all ?? ""; }
-const chipsHtml = (cs: readonly Combo[]): string => cs.slice(0, 2).map((c) => `${c.how === "hold" || c.how === "longPress" ? "hold " : ""}${c.chips.map((x) => `<kbd class="tut-key" data-glyph="${esc(x.glyph)}">${x.icon ? `<i>${x.icon}</i>` : ""}${esc(x.text)}</kbd>`).join(c.sep === " " ? "" : "+")}`).join(" or ");
+const glyphFrames = new Map(Object.values(glyphAtlas.frames).map((f) => [f.meta.id, f.frame]));
+const glyphAtlasUrl = new URL("../../../../assets/ui/input/atlas/input_glyphs.png", import.meta.url).href;
+/** The art atlas is shared by every input device; keep the text alongside it for rebinding and accessibility. */
+function chipIcon(glyph: string, icon?: string): string {
+  if (icon && isIconFile(icon)) return `<img src="${esc(iconUrl(icon))}" alt="" width="18" height="18">`;
+  const f = glyphFrames.get(glyph);
+  if (f) return `<span class="tut-glyph" aria-hidden="true" style="display:inline-block;width:${f.w / 2}px;height:${f.h / 2}px;background:url('${esc(glyphAtlasUrl)}') -${f.x / 2}px -${f.y / 2}px / ${glyphAtlas.meta.size.w / 2}px ${glyphAtlas.meta.size.h / 2}px"></span>`;
+  return icon ? `<i>${esc(icon)}</i>` : "";
+}
+const chipsHtml = (cs: readonly Combo[]): string => cs.slice(0, 2).map((c) => `${c.how === "hold" || c.how === "longPress" ? "hold " : ""}${c.chips.map((x) => `<kbd class="tut-key" data-glyph="${esc(x.glyph)}">${chipIcon(x.glyph, x.icon)}${esc(x.text)}</kbd>`).join(c.sep === " " ? "" : "+")}`).join(" or ");
 /** How to open a menu on this device: its binding, else the desktop hotkey, else Menu → item. */
 export function menuCombos(src: BindingSource, d: TutDevice, id: string): { html: string; text: string } {
-  const m = GAME_MENUS.find((x) => x.id === id); const name = m ? `${m.icon} ${m.title}` : id;
-  const bound: Record<string, string> = { inventory: "ToggleInventory", crafting: "ToggleCrafting", chat: "OpenChat", social: "OpenSocial", build: "ToggleBuild" };
+  const m = GAME_MENUS.find((x) => x.id === id); const name = m ? m.title : id;
+  const bound: Record<string, string> = { inventory: "ToggleInventory", crafting: "ToggleCrafting", chat: "OpenChat", social: "OpenSocial", build: "ToggleBuild", character: "ToggleCharacter" };
   if (d === "touch") {
-    const bar = m?.bar ? (PRIMARY_BAR_MENUS.has(id) ? `the ${name} button` : `the ${name} button (under ⋯ More)`) : `☰ Menu, then ${name}`;
-    return { html: esc(bar), text: bar };
+    const bar = id === "character" ? "the health stats (top left)" : m?.bar ? (PRIMARY_BAR_MENUS.has(id) ? `the ${name} button` : `the ${name} button (under ⋯ More)`) : `☰ Menu, then ${name}`;
+    return { html: `${m && isIconFile(m.icon) ? `<img class="tut-icon" src="${esc(iconUrl(m.icon))}" alt="" width="18" height="18"> ` : ""}${esc(bar)}`, text: bar };
   }
   const b = bound[id]; const cs = b ? actionCombos(src, d, b) : [];
   if (cs.length) return { html: chipsHtml(cs), text: combosText(cs) };
@@ -71,7 +88,7 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 #tutorial .tut-bar{height:4px;background:#E6C47E;border-radius:3px;overflow:hidden;margin:4px 0 6px}#tutorial .tut-bar i{display:block;height:100%;background:#5A9A4A}
 #tutorial h3{margin:0 0 2px;font-size:16px;color:#74432C}#tutorial p{margin:0}
 #tutorial .tut-key{display:inline-flex;align-items:center;gap:2px;font:700 12px Fredoka,system-ui,sans-serif;background:#3B2433;color:#FFFAF0;border-radius:6px;padding:1px 6px;margin:0 1px;border-bottom:2px solid #1d1119;white-space:nowrap}
-#tutorial .tut-key i{font-style:normal}
+#tutorial .tut-key i{font-style:normal}#tutorial img{vertical-align:middle;image-rendering:pixelated;flex:none}
 #tutorial .tut-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
 #tutorial button{pointer-events:auto;font:700 13px Fredoka,system-ui,sans-serif;min-height:34px;min-width:44px;border-radius:9px;border:2px solid #3B2433;background:#5A9A4A;color:#FFFAF0;padding:2px 10px;cursor:pointer}
 #tutorial button.alt{background:#C98A4B}#tutorial button.x{background:transparent;color:#61402E;border:none;min-width:34px;padding:0}
@@ -89,6 +106,7 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 @media (prefers-reduced-motion:reduce){#tutorial-spot{animation:none}#tutorial{transition:none}}
 @media (min-width:1600px) and (min-height:900px){#tutorial{width:430px;font-size:18px;padding:12px 14px}#tutorial h3{font-size:21px}#tutorial .tut-key{font-size:16px}#tutorial button{font-size:17px;min-height:44px}#tutorial .tut-hint{font-size:14px}}
 @media (max-width:480px){#tutorial{width:min(280px,calc(100vw - 16px));font-size:13px;padding:6px 8px}#tutorial h3{font-size:14px}}
+@media (orientation:portrait){#tutorial{width:min(245px,calc(100vw - 16px));max-height:max(80px,calc(50dvh - 248px));overflow-y:auto;pointer-events:auto;overscroll-behavior:contain}}
 @media (max-height:420px){#tutorial{width:min(260px,calc(100vw - 16px));padding:6px 8px;font-size:13px}#tutorial h3{font-size:14px}}`;
 
 export interface TutorialOverlayOptions {

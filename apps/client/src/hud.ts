@@ -50,12 +50,13 @@ export function overrideDays(w: World, days: number, ov: HudOverrides): number {
   const target = Math.floor(((ov.season % 3) + 3) % 3);
   return base + (((target - s.index) % 3) + 3) % 3 * L + Math.floor(L / 2) + t;
 }
-export function mountHud(world: () => World, player: () => Entity | undefined, ov: HudOverrides = {}): { destroy(): void } {
+export function mountHud(world: () => World, player: () => Entity | undefined, ov: HudOverrides = {}, onCharacter?: () => void): { destroy(): void } {
   const base = import.meta.env.BASE_URL;
   const style = document.createElement("style");
   style.textContent = `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
 #hud{position:absolute;left:calc(6px + var(--sal,0px));top:calc(6px + var(--sat,0px));z-index:5;font:600 11px/1.1 Fredoka,system-ui,sans-serif;color:#3B2433;background:rgba(246,234,210,.88);
-border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4px 6px;width:clamp(112px,18vw,150px);box-sizing:border-box;user-select:none;pointer-events:none}
+border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4px 6px;width:clamp(112px,18vw,150px);box-sizing:border-box;user-select:none;pointer-events:auto;cursor:pointer}
+#hud:focus-visible{outline:3px solid #FFD45A;outline-offset:3px}
 #hud .row{display:flex;align-items:center;gap:4px;margin:2px 0}#hud .bar{flex:1;height:6px;background:#E6C47E;border:1px solid #4A2F3D;border-radius:4px;overflow:hidden}
 #hud .lab{display:flex;width:14px;font-size:10px;justify-content:center}
 #hud .fill{height:100%;border-radius:3px;transition:width .2s}#hud .clock{display:flex;justify-content:space-between;margin-bottom:2px;color:#61402E;font-size:10px}
@@ -70,6 +71,11 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
 @media (max-height:420px){#hud{width:100px;padding:2px 4px;opacity:.9}#hud .bar{height:5px}#hud .row{margin:1px 0}#hud .row[data-stat=temp] .tv{min-width:26px;font-size:9px}}`;
   document.head.append(style);
   const root = document.createElement("div"); root.id = "hud";
+  root.tabIndex = 0; root.setAttribute("role", "button"); root.setAttribute("aria-label", "Health stats — open character sheet");
+  root.title = "Character sheet · K / LB + right stick click";
+  root.addEventListener("click", (e) => { e.stopPropagation(); onCharacter?.(); });
+  root.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onCharacter?.(); } });
+  for (const event of ["pointerdown", "mousedown", "touchstart"]) root.addEventListener(event, (e) => e.stopPropagation());
   const clock = document.createElement("div"); clock.className = "clock"; root.append(clock);
   const clockIcon = document.createElement("img"); clockIcon.className = "ic"; clockIcon.alt = "";
   const clockText = document.createElement("span"); clockText.dataset["hud"] = "clock";
@@ -112,6 +118,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     const hb = root.offsetTop + root.offsetHeight + 4;
     if (root.offsetHeight > 0 && hb !== hudBottom) { hudBottom = hb; document.documentElement.style.setProperty("--hud-bottom", `${hb}px`); }
   };
+  addEventListener("resize", publishHudBottom);
   const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
   let ro: ResizeObserver | undefined;
   if (RO) { ro = new RO(() => publishHudBottom()); ro.observe(root); } else publishHudBottom();
@@ -185,5 +192,5 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
     } catch { /* replica without Diseases yet */ }
   };
   const timer = setInterval(update, 250); update();
-  return { destroy: () => { clearInterval(timer); ro?.disconnect(); root.remove(); style.remove(); } };
+  return { destroy: () => { clearInterval(timer); removeEventListener("resize", publishHudBottom); ro?.disconnect(); root.remove(); style.remove(); } };
 }

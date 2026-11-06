@@ -24,7 +24,7 @@ export const DEFAULT_ACTIONS: readonly ActionDef[] = [
   { name: "Move", type: "axis2D" }, { name: "Aim", type: "axis2D" }, { name: "Camera.Zoom", type: "axis1D" },
   /** ADR-253 camera view rotation (90° steps): KBM [ / ], pad RB + D-pad ←/→ (build mode: LT + D-pad ←/→), touch HUD buttons. */
   btn("Camera.RotateCCW"), btn("Camera.RotateCW"),
-  ...["Sprint", "Primary", "Secondary", "Crouch", "Interact", "ContextRadial", "Charge", ...EDGE_ACTIONS, "ToggleBuild", "RoadTool", "PlaceSign", "Vehicle.Engine", "Vehicle.Lights"].map(btn),
+  ...["Sprint", "Primary", "Secondary", "Crouch", "Interact", "ContextRadial", "Charge", ...EDGE_ACTIONS, "ToggleBuild", "ToggleCharacter", "RoadTool", "PlaceSign", "Vehicle.Engine", "Vehicle.Lights"].map(btn),
   ...["Mark", "Confirm", "Cancel", "Next"].map((n) => btn(`Road.${n}`)), { name: "Road.Cursor", type: "axis2D" },
   ...["PlaceConfirm", "Cancel", "RotateCW", "RotateCCW", "PieceNext", "PiecePrev", "TierNext", "TierPrev", "ToggleSnap", "LevelUp", "LevelDown", "DemolishMode", "UpgradeMode", "RepairMode", "RoadTool", "PlaceSign"].map((n) => btn(`Build.${n}`)), // ADR-171: last two appended
   { name: "Build.Nudge", type: "axis2D" },

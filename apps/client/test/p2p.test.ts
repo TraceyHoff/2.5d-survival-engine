@@ -128,6 +128,15 @@ describe("P2P host e2e (host-authoritative, loopback data channels)", () => {
     await end(r);
   });
 
+  it("lists real players, not AI humans, in the shared session roster", async () => {
+    const r = await rig();
+    try {
+      const bot = await join(r, "AI human");
+      expect(r.host.local.game.markVirtual(bot.client!.clientId)).toBe(true);
+      expect(r.host.players().map((p) => p.name)).toEqual(["Hosty"]);
+    } finally { await end(r); }
+  });
+
   it("applies the server's rate limits and dev-bot rejection to guests", async () => {
     const r = await rig();
     const a = await join(r, "Spam"); await tick(r, 300);

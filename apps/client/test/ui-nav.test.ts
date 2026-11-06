@@ -104,7 +104,7 @@ describe("focus navigation", () => {
     more.click(); expect(bar.dataset["expanded"]).toBe("true"); expect(more.getAttribute("aria-expanded")).toBe("true");
     bar.querySelector<HTMLButtonElement>('[data-open="skills"]')!.click(); expect(bar.dataset["expanded"]).toBe("false"); menus.nav.closeAll();
     menus.pause(); const labels = menus.nav.focusables().map((e) => e.textContent ?? "");
-    for (const m of ["Inventory", "Crafting", "Build", "Character", "Party", "Clan", "Trade stalls", "Chat", "Settings", "Quit to main menu"]) expect(labels.some((l) => l.includes(m))).toBe(true);
+    for (const m of ["Inventory", "Crafting", "Build", "Party", "Clan", "Chat", "Settings", "Quit to main menu"]) expect(labels.some((l) => l.includes(m))).toBe(true);
     Array.from(document.querySelectorAll<HTMLButtonElement>("[data-modal=pause] button")).find((b) => b.textContent === "Quit to main menu")!.click();
     expect(quit).toHaveBeenCalledTimes(1); expect(menus.nav.isOpen).toBe(false); expect(ctx).toEqual([]);
   });

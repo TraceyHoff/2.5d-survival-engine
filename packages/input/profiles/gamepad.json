@@ -51,6 +51,11 @@
     "control": "pad.lt"
    },
    {
+    "action": "ToggleCharacter",
+    "control": "pad.rs",
+    "modifiers": ["pad.lb"]
+   },
+   {
     "action": "Crouch",
     "control": "pad.rs"
    },

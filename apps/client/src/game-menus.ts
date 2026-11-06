@@ -1,10 +1,10 @@
 /**
- * In-game menus on the shared focus layer (./ui-nav.ts): pause (hub of every menu + "Quit to main menu"), inventory,
+ * In-game menus on the shared focus layer (./ui-nav.ts): pause (general menus + "Quit to main menu"), inventory,
  * crafting, build, character (details), wardrobe, party, clan, trade stalls, chat, settings and session (P2P). Each is a modal
  * shell with stable hooks for Gameplay/Art to fill: `.gm-modal[data-modal=<id>]`, `[data-role=body]`, `[data-role=close]`.
- * Touch: a top-right menu bar (`#game-menubar`, 44px buttons, inside the safe area) opens each menu.
+ * Touch: general menus live in the top-right bar; health opens character, world Interact opens furniture/stalls.
  * Keyboard hotkeys (no text field focused): Esc pause, I/Tab inventory, C crafting, B build, K character, P party,
- * L clan, J skills, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
+ * L clan, J skills, Enter or / chat, O settings. Gamepad: Start pause, LB+RS character, D-pad/stick + A/B inside menus.
  */
 import { deleteConfirm } from "./delete-progress.js";
 import { bindTypingFullscreenExit } from "./fullscreen.js";
@@ -21,8 +21,8 @@ import { DEFAULT_QUALITY_PRESET, loadPreset, parsePreset, savePreset, QUALITY_PR
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
 export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 1: "local", 2: "party", 3: "clan", 4: "trade", 5: "whisper", 6: "system" };
-/** Menus that only make sense next to a world object (opened by Interact), so the pause list leaves them out. */
-export const CONTEXT_ONLY_MENUS: ReadonlySet<string> = new Set(["station", "camper"]);
+/** Contextual panels are absent from pause: world Interact opens furniture/stalls; the health cluster opens character. */
+export const CONTEXT_ONLY_MENUS: ReadonlySet<string> = new Set(["station", "camper", "character", "wardrobe", "trade"]);
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
   { id: "inventory", title: "Inventory", icon: "ic_backpack.png", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
@@ -33,7 +33,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "wardrobe", title: "Wardrobe", icon: "ic_shirt.png", hotkeys: [], text: "Change your look at a wardrobe." },
   { id: "party", title: "Party", icon: "ic_people.png", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
   { id: "clan", title: "Clan", icon: "ic_shield.png", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
-  { id: "trade", title: "Trade stalls", icon: "ic_scales.png", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
+  { id: "trade", title: "Trade stalls", icon: "ic_scales.png", hotkeys: [], text: "Browse and run trade stalls." },
   { id: "skills", title: "Skills", icon: "ic_star.png", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
   { id: "camper", title: "Camper Station", icon: "ic_camper.png", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "pet", title: "Pets", icon: "ic_paw.png", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
@@ -316,7 +316,8 @@ export function cycleTabs(nav: UINav, d: number, kind: "tab" | "page"): boolean 
   const key = bs[(i + d + bs.length) % bs.length]!.dataset["key"]; bs[(i + d + bs.length) % bs.length]!.click();
   const n = key ? m?.querySelector<HTMLElement>(`[data-key="${key}"]`) : undefined; n?.focus(); return true;
 }
-export function padMenuAction(i: { pressed(a: string): boolean }): "crafting" | "chat" | "inventory" | undefined {
+export function padMenuAction(i: { pressed(a: string): boolean }): "crafting" | "chat" | "inventory" | "character" | undefined {
+  if (i.pressed("ToggleCharacter")) return "character";
   return i.pressed("ToggleCrafting") ? "crafting" : i.pressed("OpenChat") ? "chat" : i.pressed("ToggleInventory") ? "inventory" : undefined;
 }
 
