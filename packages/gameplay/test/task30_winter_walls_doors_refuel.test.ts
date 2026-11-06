@@ -3,7 +3,7 @@
  * 1-row foundations, doors that only snap into door frames, and AI humans refuelling their own fires.
  */
 import { describe, expect, it } from "vitest";
-import { Blackboard, Rng, idleOutput, installPermissions, Membership, PlayerId, Transform, scoreBehavior, setSeason, setTimeOfDay, type Entity, type World } from "@engine/core";
+import { Blackboard, Rng, idleOutput, installPermissions, Membership, PlayerId, Transform, scoreBehavior, setSeason, setTimeOfDay, type AgentContext, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
 import { SALT_CONSUME_TICKS, saltCount } from "../src/systems/spoilage.js";
 import { collect, makeWorld, spawnLearned, steps } from "./helpers.js";
@@ -200,12 +200,12 @@ describe("Task 30: AI humans refuel their own fires", () => {
     return { camp, fire, furnace };
   }
   /** A hand-built agent context over a base scan, like the Task 28 garden test's mkCtx. */
-  function mkCtx(w: World, bot: Entity, agent: ReturnType<typeof G.makeAgent>, bs: G.BaseState, woodTotal: number, phase: "day" | "night" | "dusk" = "night", at: { x: number; y: number } = { x: BASE.x + 1.5, y: BASE.y + 1.5 }): G.AgentContext<G.AgentWorldView> {
+  function mkCtx(w: World, bot: Entity, agent: ReturnType<typeof G.makeAgent>, bs: G.BaseState, woodTotal: number, phase: "day" | "night" | "dusk" = "night", at: { x: number; y: number } = { x: BASE.x + 1.5, y: BASE.y + 1.5 }): AgentContext<G.AgentWorldView> {
     G.bindAgentWorld(agent, w);
     const self = { x: at.x, y: at.y, facing: 0, hp: 1, hunger: 1, thirst: 1, stamina: 1, tick: w.tick, dayT: 0.5, phase };
     return { self, bb: new Blackboard(), memory: agent.memory, traits: agent.identity.traits, rng: new Rng(1), agent, world: { seen: [], home: BASE, playerName: "p", base: BASE, bs, woodTotal } };
   }
-  const runBeh = (beh: G.GameBehavior, c: G.AgentContext<G.AgentWorldView>) => { const o = idleOutput(); beh.run!(c as never, o as never); return o.actions; };
+  const runBeh = (beh: G.GameBehavior, c: AgentContext<G.AgentWorldView>) => { const o = idleOutput(); beh.run!(c as never, o as never); return o.actions; };
   it("scanBase lists every heat fire (campfire, fireplace, furnace) with lit + fuel, but not light-only lamps", () => {
     const w = makeWorld(); installPermissions(w); const p = spawnLearned(w, { x: 12, y: 12, maxWeight: 0, clientId: 1 }); steps(w, 1);
     const { camp, fire, furnace } = baseWithFires(w, p);
