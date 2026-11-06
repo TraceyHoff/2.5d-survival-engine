@@ -230,7 +230,7 @@ export class WorldPersistence {
     return this;
   }
 
-  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash(), nextPlayerId: this.nextPlayerId, dayEpochTick: this.world.env(TimeOfDay).epochTick, ...(this.world.isRegistered(Season) && this.world.has(this.world.environment, Season) ? { seasonOffsetDays: this.world.env(Season).offsetDays } : {}), ...(this.opts.extraMeta?.() ?? {}) }; }
+  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash(), nextPlayerId: this.nextPlayerId, dayEpochTick: this.world.env(TimeOfDay).epochTick, ...(this.world.isRegistered(Season) && this.world.has(this.world.environment, Season) ? { seasonOffsetDays: this.world.env(Season).offsetDays, seasonLengthDays: this.world.env(Season).lengthDays } : {}), ...(this.opts.extraMeta?.() ?? {}) }; }
   /**
    * Hands out the next account PlayerId (core `PlayerId`, persistent: it is saved in the player record). The counter
    * is written right away, ahead of any player row that could carry the id, so ids are never reused after a crash.

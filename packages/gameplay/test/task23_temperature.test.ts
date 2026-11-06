@@ -52,7 +52,7 @@ describe("Task 23 snow only below freezing", () => {
   });
   it("snow already falling re-rolls at once once the season warms past freezing (winter->summer blend)", () => {
     const w = makeWorld({ liveWeather: true }, 7);
-    setSeason(w, 2, 2.99); setTimeOfDay(w, 12); // into the 0.75-day blend toward summer
+    setSeason(w, 2, L - 1); setTimeOfDay(w, 12); // noon of the last winter day: into the 0.75-day blend toward spring
     w.env(Weather).kind = G.WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).endsAtTick = 0;
     steps(w, 1);
     expect(G.isSnowing(w.env(Weather).kind)).toBe(false);

@@ -241,13 +241,13 @@ describe("Task 28: grazing", () => {
 
 describe("Task 28: seasonal crop death", () => {
   it("dormancy: final day of fall + winter pause growth; early fall and summer grow", () => {
-    expect(G.LATE_FALL_DAYS).toBe(1); // seasons are 3 in-game days, so the "last days of fall" is the last day
+    expect(G.LATE_FALL_DAYS).toBe(1); // seasons are 15 in-game days; the "last days of fall" is still just the last day (ADR-261)
     const { w } = fresh();
     setSeason(w, 0, 0); expect(G.isCropDormant(w)).toBe(false); // summer
     setSeason(w, 1, 0); expect(G.isCropDormant(w)).toBe(false); // early fall
     const len = seasonAt(w).lengthDays;
-    expect(len).toBe(3);
-    setSeason(w, 1, len - 2); expect(G.isCropDormant(w)).toBe(false); // second day of fall still grows
+    expect(len).toBe(15);
+    setSeason(w, 1, len - 2); expect(G.isCropDormant(w)).toBe(false); // second-to-last day of fall still grows
     setSeason(w, 1, len - 1); expect(G.isCropDormant(w)).toBe(true); // last day of fall: dormant
     setSeason(w, 1, len - 1); expect(G.isCropDormant(w)).toBe(true); // last day of fall
     setSeason(w, 2, 0); expect(G.isCropDormant(w)).toBe(true); // winter

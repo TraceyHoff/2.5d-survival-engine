@@ -26,7 +26,17 @@ describe("ADR-239 seasons on the server", { timeout: 30_000 }, () => {
   it("saves without seasonOffsetDays keep the install default", () => {
     const w = new World({ seed: 1, maxEntities: 64 }); installDemoWorld(w, "server"); const before = w.env(Season).offsetDays;
     restoreSeason(w, {}); expect(w.env(Season).offsetDays).toBe(before);
-    restoreSeason(w, { seasonOffsetDays: 4 }); expect(w.env(Season).offsetDays).toBe(4);
+    restoreSeason(w, { seasonOffsetDays: 4, seasonLengthDays: 15 }); expect(w.env(Season).offsetDays).toBe(4);
+  });
+  it("ADR-261: a legacy 3-day-season save loads with current 15-day seasons in the same season", () => {
+    const w = new World({ seed: 1, maxEntities: 64 }); installDemoWorld(w, "server");
+    expect(w.env(Season).lengthDays).toBe(15);
+    const tod = w.env(TimeOfDay); tod.epochTick = 0; const tick = Math.round(7.5 * tod.dayLengthTicks); // day 7.5
+    // Legacy save: L = 3, offset 0 -> pos 7.5 = winter (6..9), half way.
+    restoreSeason(w, { seasonOffsetDays: 0, tick }); w.tick = tick;
+    const si = seasonAt(w); expect(si.index).toBe(2); expect(si.into).toBeGreaterThanOrEqual(7); expect(si.into).toBeLessThan(8);
+    // Saved under the current length: offset kept as-is.
+    restoreSeason(w, { seasonOffsetDays: 4, seasonLengthDays: 15, tick }); expect(w.env(Season).offsetDays).toBe(4);
   });
   it("clients receive the season and the server's weather (never snow in a replicated summer)", async () => {
     const net = new LoopbackNetwork(5);

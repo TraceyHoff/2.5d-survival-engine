@@ -3,7 +3,7 @@ import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine
 import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
 import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, installReadyCommands, markReady, PlayerReady, PetEvent, setWorldRules, worldRules, type WorldRulesOpts, installAnimalSkillCommands, installWorkerCommands, installDyeCommands, WorkerEvent } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, SEASON_COUNT, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, DISEASE_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, edgeCommands, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind, installMapMarkerCommands, MapMarker } from "@engine/gameplay";
@@ -23,10 +23,26 @@ export function restoreDayClock(world: World, meta: { dayEpochTick?: number }): 
   const tod = world.env(TimeOfDay);
   tod.epochTick = meta.dayEpochTick !== undefined && Number.isFinite(meta.dayEpochTick) ? meta.dayEpochTick : -Math.round(LEGACY_START_TIME_OF_DAY * tod.dayLengthTicks);
 }
-/** ADR-239: restore the season phase (Season.offsetDays) from save meta; older saves keep the install default. */
-export function restoreSeason(world: World, meta: { seasonOffsetDays?: number }): void {
+/** ADR-261: seasons were 3 in-game days before ADR-261; saves without seasonLengthDays used that length. */
+export const LEGACY_SEASON_LENGTH_DAYS = 3;
+/**
+ * ADR-239: restore the season phase (Season.offsetDays) from save meta; older saves keep the install default.
+ * ADR-261: lengthDays / blendDays always come from current defs (installGameplay). If the save was written under a
+ * different season length, the offset is rescaled so the world stays in the same season at the same fraction through it.
+ * Call after restoreDayClock; `meta.tick` is the saved tick (world.tick is not restored yet).
+ */
+export function restoreSeason(world: World, meta: { seasonOffsetDays?: number; seasonLengthDays?: number; tick?: number }): void {
   if (!world.isRegistered(Season) || !world.has(world.environment, Season)) return;
-  if (meta.seasonOffsetDays !== undefined && Number.isFinite(meta.seasonOffsetDays)) world.set(world.environment, Season, { offsetDays: meta.seasonOffsetDays });
+  if (meta.seasonOffsetDays === undefined || !Number.isFinite(meta.seasonOffsetDays)) return;
+  const L = world.env(Season).lengthDays; const oldL = meta.seasonLengthDays ?? LEGACY_SEASON_LENGTH_DAYS;
+  const tod = world.env(TimeOfDay);
+  if (L > 0 && oldL > 0 && oldL !== L && tod.dayLengthTicks > 0) {
+    const days = ((meta.tick ?? world.tick) - tod.epochTick) / tod.dayLengthTicks;
+    const oldCycle = oldL * SEASON_COUNT; const ph = (((days + meta.seasonOffsetDays) % oldCycle) + oldCycle) % oldCycle;
+    const idx = Math.min(SEASON_COUNT - 1, Math.floor(ph / oldL)); const frac = (ph - idx * oldL) / oldL;
+    const cycle = L * SEASON_COUNT; const off = Math.floor(idx * L + frac * L) - Math.floor(days); // whole-day offset (i32) that stays inside season idx
+    world.set(world.environment, Season, { offsetDays: ((off % cycle) + cycle) % cycle });
+  } else world.set(world.environment, Season, { offsetDays: meta.seasonOffsetDays });
 }
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */

@@ -67,6 +67,8 @@ export interface WorldMeta { seed: number; tick: number; schemaHash: number; cre
   dayEpochTick?: number;
   /** ADR-239: core Season.offsetDays (season cycle phase relative to the day clock). */
   seasonOffsetDays?: number;
+  /** ADR-261: Season.lengthDays the offset was saved under. Absent = legacy 3-day seasons. */
+  seasonLengthDays?: number;
   /** World rules (ADR-121): roaming hordes on (1) / off (0), and their grace period in in-game days. Absent = gameplay defaults. */
   hordes?: number; hordeGraceDays?: number;
   /** World rules (Task 22): AI humans on (1) / off (0) in multiplayer. Absent = on. */

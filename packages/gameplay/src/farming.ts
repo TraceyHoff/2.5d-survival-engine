@@ -145,7 +145,7 @@ export function growthMul(world: World, c: { waterUntilTick: number; fertilized:
 }
 export const CROP_EVERY = Math.round(FARMING.tickSeconds * DEFAULT_TICK_HZ);
 /** Task 28 seasonal crop death: growth pauses in the final LATE_FALL_DAYS days of fall, and all winter.
- * Seasons are 3 in-game days (environment.json lengthDays), so N = 1: the last day of fall is the dormant
+ * Seasons are 15 in-game days (environment.json lengthDays, ADR-261); N stays 1: the last day of fall is the dormant
  * warning day (N = 3 would make the whole of fall dormant and no fall crop would ever grow). */
 export const LATE_FALL_DAYS = 1;
 /** Task 28: below this ambient temperature (40°F) outdoor crops/plants die. */

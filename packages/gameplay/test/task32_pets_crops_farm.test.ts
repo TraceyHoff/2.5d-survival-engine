@@ -14,7 +14,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { PlayerId, setSeason, Transform, type Entity, type World } from "@engine/core";
+import { PlayerId, Season, setSeason, Transform, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
 import { makeWorld, spawnLearned, steps } from "./helpers.js";
 import { resolveIcon, resolveSprite } from "../src/sprite-fallback.js";
@@ -310,7 +310,7 @@ describe("Task 32: new crops", () => {
     setSeason(w, 0, 0); expect(G.isCropDormant(w)).toBe(false); // summer grows
     const lettuce = cropAt(w, BASE.x + 3, BASE.y, "lettuce_seeds", 0.5);
     const rice = cropAt(w, BASE.x + 5, BASE.y, "rice_seeds", 0.5);
-    setSeason(w, 1, 2); // last day of fall
+    setSeason(w, 1, w.env(Season).lengthDays - 1); // last day of fall
     G.cropGrowthSystem(w);
     expect(w.get(lettuce, G.Crop)!.growth).toBeCloseTo(0.5, 6); // dormant: no growth
     expect(w.get(rice, G.Crop)!.growth).toBeCloseTo(0.5, 6);
