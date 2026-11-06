@@ -1043,6 +1043,75 @@
       ],
       "residency": "stream",
       "ktx2": "atlases/season_heat_haze.ktx2"
+    },
+    {
+      "key": "season_tall_spring",
+      "image": "atlases/season_tall_spring.png",
+      "frameW": 100,
+      "frameH": 132,
+      "columns": 3,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_tall_spring@2x.png",
+          "ktx2": "atlases/season_tall_spring@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_tall_spring_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_tall_spring.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_tall_spring_sway.ktx2"
+      }
+    },
+    {
+      "key": "season_res_spring",
+      "image": "atlases/season_res_spring.png",
+      "frameW": 68,
+      "frameH": 68,
+      "columns": 5,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_res_spring@2x.png",
+          "ktx2": "atlases/season_res_spring@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_res_spring_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_res_spring.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_res_spring_sway.ktx2"
+      }
+    },
+    {
+      "key": "season_huge_spring",
+      "image": "atlases/season_huge_spring.png",
+      "frameW": 132,
+      "frameH": 164,
+      "columns": 1,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_huge_spring@2x.png",
+          "ktx2": "atlases/season_huge_spring@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_huge_spring_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_huge_spring.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_huge_spring_sway.ktx2"
+      }
     }
   ],
   "sprites": [
@@ -51023,6 +51092,196 @@
           "loop": true
         }
       }
+    },
+    {
+      "key": "tree_spring",
+      "category": "resource",
+      "atlas": "season_tall_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.2,
+        "freq": 0.35,
+        "stiffness": 0.6
+      },
+      "placeholder": "tree"
+    },
+    {
+      "key": "tree_apple_spring",
+      "category": "resource",
+      "atlas": "season_tall_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.0,
+        "freq": 0.33,
+        "stiffness": 0.62
+      },
+      "placeholder": "tree_apple"
+    },
+    {
+      "key": "tree_pine_spring",
+      "category": "resource",
+      "atlas": "season_tall_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.4,
+        "freq": 0.28,
+        "stiffness": 0.78
+      },
+      "placeholder": "tree_pine"
+    },
+    {
+      "key": "bush_spring",
+      "category": "resource",
+      "atlas": "season_res_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "bush"
+    },
+    {
+      "key": "berry_bush_spring",
+      "category": "resource",
+      "atlas": "season_res_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        },
+        "depleted": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "berry_bush"
+    },
+    {
+      "key": "fiber_grass_spring",
+      "category": "resource",
+      "atlas": "season_res_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.8,
+        "freq": 0.85,
+        "stiffness": 0.28
+      },
+      "placeholder": "fiber_grass"
+    },
+    {
+      "key": "flowers_spring",
+      "category": "resource",
+      "atlas": "season_res_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.2,
+        "freq": 0.95,
+        "stiffness": 0.38
+      },
+      "placeholder": "flowers"
+    },
+    {
+      "key": "oak_tree_spring",
+      "category": "resource",
+      "atlas": "season_huge_spring",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.926829268292683
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.6,
+        "freq": 0.25,
+        "stiffness": 0.7
+      },
+      "placeholder": "oak_tree"
     }
   ],
   "sounds": [
