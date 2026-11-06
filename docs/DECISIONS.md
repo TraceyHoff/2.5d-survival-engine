@@ -3034,3 +3034,11 @@ spawn guarantee on Art & Assets landing painted pack sheets.
 
 **Decision.** `environment.json` `seasons.lengthDays` 3 → 15 (a 60-day year, still Summer → Fall → Winter → Spring → Summer); `blendDays` stays 0.75. `LATE_FALL_DAYS` stays 1: only the last day of fall is the dormant warning day.
 - **Existing saves.** `Season.lengthDays` / `blendDays` already come from current defs at install (only `offsetDays` is saved, in world meta). Meta now also stores `seasonLengthDays`. On load, `restoreSeason` rescales the saved offset when the saved length differs from the current one (absent = legacy 3), so an old world reopens in the same season at the same fraction through it, now on 15-day seasons. No schema change.
+
+## ADR-262: The beginning torch boils water and cooks meat; portrait loading bar + label centred
+
+**Decision.**
+- **Torch cooking.** `holdingTorch(world, e)` (systems/crafting.ts) is true when the `torch` item (and only that item — not lanterns or candles) is in the main hand (`Equipment.mainHandItem`) or the worn off hand. The Boil action (`boilIntents`) accepts a held torch as well as a lit campfire (same sip-preserving `boilTarget` conversion; otherwise still `ConsumeFail.NoFire`); the client Boil button shows on the same condition. Recipes get an optional `"torch": true` flag in `recipes.json`; only `cooked_meat` has it. A torch recipe skips the station range and station-unlock checks while the torch is held (`torchCraftable` / `recipeStationOk`, used by direct crafting, the craft queue, and pause/resume), and appears in the personal (hand) crafting list while held. Every other campfire recipe (bread, stew, pies, …) still needs a lit campfire/stove. The torch is not consumed.
+- **Portrait loading layout.** Under `@media (orientation:portrait),(max-width:480px)` the `.boot .lane` (bar + zombie walker) gets auto side margins and `.boot .lbl` takes the bar's width (`min(420px,76vw)`) with `text-align:center`, so both centre in the screen on the first boot screen and the "Loading world…" screen. The landscape rules are unchanged.
+
+**Validation:** `adr262_torch_cooking` (torch boil, NoFire without fire/torch, lantern does not count, cooked meat queued + crafted with a torch away from fire, bread still needs a campfire, cooked meat at a campfire), `adr262_portrait_loading_center`; locked TypeScript 5.9.3 typecheck.

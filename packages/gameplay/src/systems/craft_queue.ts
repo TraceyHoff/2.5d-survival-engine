@@ -17,7 +17,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { crafterIdFor } from "../economy/provenance.js";
-import { meetsSkill, stationInRange, stationUnlocked } from "./crafting.js";
+import { meetsSkill, recipeStationOk, stationInRange, stationUnlocked, torchCraftable } from "./crafting.js";
 import { recordRecentCraft } from "../recent.js";
 
 export const CRAFT_QUEUE_SLOTS = 4;
@@ -89,8 +89,9 @@ export function craftQueueReason(world: World, e: Entity, recipe: number, count:
   const r = recipeOf(world, recipe); if (!r) return "unknown_recipe";
   if (!world.has(e, Inventory) || world.has(e, Dead)) return "no_actor";
   if (count < 1 || count > MAX_CRAFT_COUNT) return "bad_count";
-  if (!stationUnlocked(world, e, r.station)) return "skill_locked"; // ADR-221: before no_station (you cannot build it yet)
-  if (!stationInRange(world, e, r.station)) return "no_station";
+  const torch = torchCraftable(world, e, r); // ADR-262: cooked meat over the held beginning torch
+  if (!torch && !stationUnlocked(world, e, r.station)) return "skill_locked"; // ADR-221: before no_station (you cannot build it yet)
+  if (!torch && !stationInRange(world, e, r.station)) return "no_station";
   if (!meetsSkill(world, e, r)) return "skill_too_low";
   const q = world.getResource(CraftQueuesRes); if (q && q.jobs(e).length >= CRAFT_QUEUE_SLOTS) return "queue_full";
   let have = true;
@@ -127,7 +128,7 @@ export function craftQueueSystem(world: World): void {
   for (const e of [...world.query([CraftQueue])].sort((a, b) => a - b)) {
     const h = q.info(e, 0); if (h.state !== JobState.Running && h.state !== JobState.Paused) continue;
     const r = recipeOf(world, h.recipeId); if (!r) continue;
-    const ok = !world.has(e, Dead) && stationInRange(world, e, r.station) && !world.has(e, CraftOwed) &&
+    const ok = !world.has(e, Dead) && recipeStationOk(world, e, r) && !world.has(e, CraftOwed) &&
       (h.state === JobState.Paused || h.endTick > world.tick + 1 || outputFits(world, e, h.recipeId));
     if (h.state === JobState.Running && !ok) q.pause(e);
     else if (h.state === JobState.Paused && ok && outputFits(world, e, h.recipeId)) q.resume(e);

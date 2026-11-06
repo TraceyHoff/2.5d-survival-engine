@@ -8,9 +8,9 @@
  */
 import { defineResource, entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
-import { CraftingStation, Crafter, Dead, Fuel, IntentAction, Inventory, PlayerIntent, WorkerOrder, Worker, WorkerJob } from "../components.js";
+import { CraftingStation, Crafter, Dead, Equipment, Fuel, Worn, IntentAction, Inventory, PlayerIntent, WorkerOrder, Worker, WorkerJob } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
-import { secondsToTicks, StationKind, type RecipeDef } from "../defs.js";
+import { secondsToTicks, StationKind, WearSlot, type RecipeDef } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { exchangeItems } from "../inventory.js";
 import { crafterIdFor } from "../economy/provenance.js";
@@ -49,6 +49,19 @@ function pieceStationInRange(world: World, e: Entity, kind: StationKind): boolea
   }
   return false;
 }
+/** ADR-262: the character holds the beginning torch (items.json "torch") in the main hand or off hand. Lanterns/candles do not count. */
+export function holdingTorch(world: World, e: Entity): boolean {
+  if (world.has(e, Dead)) return false;
+  const id = torchId(world); if (id === undefined) return false;
+  const mh = world.isRegistered(Equipment) ? (world.getField(e, Equipment, "mainHandItem") ?? 0) : 0;
+  const oh = world.isRegistered(Worn) && world.has(e, Worn) ? (world.get(e, Worn)!.item[WearSlot.OffHand] ?? 0) : 0;
+  return mh === id || oh === id;
+}
+function torchId(world: World): number | undefined { for (const d of gameplayDefs(world).items.values()) if (d.key === "torch") return d.id; return undefined; }
+/** ADR-262: torch recipes (cooked meat) need no station or station unlock while the beginning torch is held. */
+export const torchCraftable = (world: World, e: Entity, r: RecipeDef): boolean => r.torch === true && holdingTorch(world, e);
+/** The recipe's station is satisfied: in range, or a torch recipe with the torch held. */
+export const recipeStationOk = (world: World, e: Entity, r: RecipeDef): boolean => stationInRange(world, e, r.station) || torchCraftable(world, e, r);
 /** Fired station is lit (Fuel.lit). */
 export function isLit(world: World, e: Entity): boolean { return (world.getField(e, Fuel, "lit") ?? 0) !== 0; }
 
@@ -70,8 +83,9 @@ export function stationUnlocked(world: World, e: Entity, kind: StationKind): boo
 }
 function checkRecipe(world: World, e: Entity, r: RecipeDef): CraftFail | 0 {
   if (!meetsSkill(world, e, r)) return CraftFail.SkillTooLow;
-  if (!stationUnlocked(world, e, r.station)) return CraftFail.Locked;
-  if (!stationInRange(world, e, r.station)) return CraftFail.NoStation;
+  const torch = torchCraftable(world, e, r);
+  if (!torch && !stationUnlocked(world, e, r.station)) return CraftFail.Locked;
+  if (!torch && !stationInRange(world, e, r.station)) return CraftFail.NoStation;
   if (!exchangeItems(world, e, r.ingredients, [], true)) return CraftFail.MissingIngredients;
   if (!exchangeItems(world, e, r.ingredients, [r.output], true, crafterIdFor(world, e, r.output.item))) return CraftFail.InventoryFull;
   return 0;
@@ -101,7 +115,7 @@ export function craftingSystem(world: World, dt: number): void {
     if (current === 0) continue;
     const r = defs.recipes.get(current);
     if (!r) { clear(); fail(current, CraftFail.UnknownRecipe); continue; }
-    if (!stationInRange(world, e, r.station)) { clear(); fail(current, CraftFail.NoStation); continue; }
+    if (!recipeStationOk(world, e, r)) { clear(); fail(current, CraftFail.NoStation); continue; }
     // progress is derived from startTick (no per-tick writes); the client predicts only this
     if (craftProgressTicks(world, e) + 1 < cr.data.totalTicks[cs]!) continue;
     if (!isAuthority(world)) continue; // the result lands by replication (owner-scoped Inventory) + reliable CraftCompleted

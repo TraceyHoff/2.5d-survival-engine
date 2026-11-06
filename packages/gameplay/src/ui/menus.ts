@@ -18,6 +18,7 @@ import type { ItemCount } from "../defs.js";
 import { countItem, hasBrushInHotbar, listSlots, readSlots, slotItem, slotsWeight } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
+import { holdingTorch } from "../systems/crafting.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost, pieceGates } from "../building/place.js";
 import { hasSkillUnlock, unlockRequirement, xpToNext } from "../skills/tree.js";
@@ -197,7 +198,8 @@ export function craftingView(c: MenuCtx, station = 0): CraftingView { // station
   if (!isAuthority(w)) installSpatialIndex(w).rebuild();
   const counts = new Map<number, number>(); for (const r of all) if (station >= 0 && r.station !== station) counts.set(r.station, (counts.get(r.station) ?? 0) + 1);
   const elsewhere = [...counts].sort((a, b) => a[0] - b[0]).map(([k, n]) => ({ station: k, name: STATION_NAMES[k] ?? `Station ${k}`, count: n }));
-  const recipes = all.filter((r) => station < 0 || r.station === station).map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
+  const torchHeld = station === 0 && holdingTorch(w, c.player); // ADR-262: torch recipes (cooked meat) join the personal list
+  const recipes = all.filter((r) => station < 0 || r.station === station || (torchHeld && r.torch === true)).map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
     output: { item: r.output.item, name: itemName(w, r.output.item), count: r.output.count }, ingredients: withNames(w, r.ingredients, c.player), reason: craftQueueReason(w, c.player, r.id, 1) }));
   // Task 33: craftable first — a recipe with no reason is craftable right now (materials + station + skill +
   // unlock + queue space, all for ×1). Stable sort, so the data order is kept within each group.

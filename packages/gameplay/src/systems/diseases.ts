@@ -4,6 +4,7 @@
  * Authority-only: contraction rolls use world.rngFor, and symptom drains ride the replicated Diseases / Survival /
  * Health components to every peer (the client predicts movement from the replicated Diseases component).
  */
+import { holdingTorch } from "./crafting.js";
 import { entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { DamageCause, Dead, Diseases, Health, IntentAction, Inventory, MAX_DISEASES, PlayerIntent, Survival, VitalsState, snapStamina } from "../components.js";
@@ -29,7 +30,7 @@ function boilIntents(world: World, defs: GameDefs): void {
     const v = readSlots(world, e);
     if (slot >= v.slotCount || v.durability(slot) <= 0) { fail(ConsumeFail.Empty); continue; }
     const tf = world.get(e, Transform)!;
-    if (!nearLitCampfire(world, tf.x, tf.y, defs.building.containerReach + rangeSlack(world, e))) { fail(ConsumeFail.NoFire); continue; }
+    if (!holdingTorch(world, e) && !nearLitCampfire(world, tf.x, tf.y, defs.building.containerReach + rangeSlack(world, e))) { fail(ConsumeFail.NoFire); continue; } // ADR-262: a held beginning torch boils too
     v.put(slot, idef.boilTarget, v.count(slot), v.created(slot), v.durability(slot));
     writeSlots(world, e, v, defs);
   }

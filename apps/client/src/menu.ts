@@ -91,6 +91,8 @@ box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:
 .boot input:focus{outline:3px solid #FFD45A;outline-offset:1px}
 .boot .mp-status{font-weight:700}.boot .mp-status[data-state=online]{color:#2D5A2E}.boot .mp-status[data-state=offline]{color:#A0302A}
 .boot .mp-foot{font-size:12px;opacity:.8}
+/* ADR-262: portrait phones — the loading bar (lane) and its status label sit dead centre (both loading screens) */
+@media (orientation:portrait),(max-width:480px){.boot .lane{margin-left:auto;margin-right:auto}.boot .lbl{display:block;box-sizing:border-box;width:min(420px,76vw);margin-left:auto;margin-right:auto;text-align:center;overflow-wrap:anywhere}}
 @media (max-height:860px){.boot[data-page=multiplayer]{justify-content:flex-start;gap:8px;padding-top:max(8px,env(safe-area-inset-top,0px))}.boot[data-page=multiplayer] .title{font-size:28px}.boot[data-page=multiplayer] .title small{display:none}.boot[data-page=multiplayer] .logo{max-height:56px}.boot[data-page=multiplayer] .lane,.boot[data-page=multiplayer] .lbl{display:none}}
 @media (max-height:860px),(max-width:480px){.boot[data-page=multiplayer] .panel{padding:12px 14px}.boot[data-page=multiplayer] button{font-size:17px;padding:8px 14px}}
 ${artCss(base)}`;

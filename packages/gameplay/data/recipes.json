@@ -18,7 +18,7 @@
     {"key": "mortar", "station": "workbench", "seconds": 2, "ingredients": [{"item": "sand", "count": 2}, {"item": "clay", "count": 1}], "output": {"item": "mortar", "count": 2}},
     {"key": "bandage", "station": "workbench", "seconds": 2, "ingredients": [{"item": "cloth", "count": 2}], "output": {"item": "bandage", "count": 1}},
     {"key": "charcoal", "station": "campfire", "seconds": 4, "ingredients": [{"item": "wood", "count": 2}], "output": {"item": "charcoal", "count": 1}},
-    {"key": "cooked_meat", "station": "campfire", "seconds": 3, "ingredients": [{"item": "raw_meat", "count": 1}], "output": {"item": "cooked_meat", "count": 1}},
+    {"key": "cooked_meat", "station": "campfire", "torch": true, "seconds": 3, "ingredients": [{"item": "raw_meat", "count": 1}], "output": {"item": "cooked_meat", "count": 1}},
     {"key": "clay_brick", "station": "furnace", "seconds": 3, "ingredients": [{"item": "clay", "count": 2}, {"item": "sand", "count": 1}], "output": {"item": "clay_brick", "count": 2}},
     {"key": "glass", "station": "furnace", "seconds": 4, "ingredients": [{"item": "sand", "count": 3}], "output": {"item": "glass", "count": 1}},
     {"key": "copper_ingot", "station": "furnace", "seconds": 4, "ingredients": [{"item": "copper_ore", "count": 2}, {"item": "charcoal", "count": 1}], "output": {"item": "copper_ingot", "count": 1}},

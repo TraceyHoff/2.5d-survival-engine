@@ -99,7 +99,7 @@ export interface DiseasesTuning {
   readonly exposure: { readonly coldSeconds: number; readonly heatSeconds: number; readonly sprintSeconds: number; readonly restSeconds: number };
 }
 export interface ItemCount { readonly item: number; readonly count: number }
-export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount; readonly skill: { readonly key: string; readonly level: number } | null }
+export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount; readonly skill: { readonly key: string; readonly level: number } | null; /** ADR-262: also craftable while holding the beginning torch */ readonly torch?: boolean }
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
 export interface ResourceDef extends Visual {
   readonly id: number; readonly key: string; readonly requiredTool: ToolKind; readonly minTier: number; readonly capacity: number;
@@ -308,7 +308,7 @@ export interface RawItem extends RawVisual { key: string; name: string; category
   boiled?: boolean; boilTo?: string; cures?: string[]; rawMeat?: boolean; mask?: boolean;
   ranged?: Omit<RangedDef, "ammo" | "chargeSeconds" | "minChargeMul" | "staminaCost" | "structureMul"> & { ammo: string[]; chargeSeconds?: number; minChargeMul?: number; staminaCost?: number; structureMul?: number };
   thrown?: ThrownDef; ammo?: { damageMul: number; structureMul?: number; armorPierce?: number; ignite?: boolean }; explosive?: Omit<ExplosiveDef, "ignite"> & { ignite?: boolean } }
-export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
+export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number }; torch?: boolean }
 export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[]; oneShot?: boolean }
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
 export interface RawSeasonWeather { kind: string; weight: number; durationSeconds?: number[]; intensity?: number[]; tempOffset?: number; windSpeed?: number[] }
@@ -505,7 +505,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     posInt(r.output.count, `${where}.output.count`);
     if (r.skill && !(KEY.test(r.skill.key) && Number.isInteger(r.skill.level) && r.skill.level >= 1)) err(`${where}.skill needs a key and level >= 1`);
     const id = recR.reg.tryId(r.key) ?? 0;
-    recipes.set(id, { id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count }, skill: r.skill ? { ...r.skill } : null });
+    recipes.set(id, { id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count }, skill: r.skill ? { ...r.skill } : null, ...(r.torch === true ? { torch: true } : {}) });
   }
 
   const resources = new Map<number, ResourceDef>();

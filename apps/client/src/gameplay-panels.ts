@@ -22,7 +22,7 @@ import { iconForItem, ROADS, clanTintIndex,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
-  SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire,
+  SKILLS, equipIntent, wearIntent, equipmentView, boilIntent, nearLitCampfire, holdingTorch,
   petView, petsOf, petOfferIntent, petCommandIntent, petGuardIntent, animalSkillIntent, animalSkillView, petStatusLabel, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PACK_SLOTS, HOTBAR_OFFSET, PET_HELP, petName, petSpecies, Pet, Animal, BuildPiece, Tamed,
   workerView, WORKER_JOBS, WORKER_JOB_LABELS, WORKER_JOB_HELP, WORKER_HELP, hireWorkerIntent, dismissWorkerIntent,
   treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS, characterSheetView, dyeView, dyeIntent, WET_ICON,
@@ -433,7 +433,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           if (!s.equipped) {
             const bd = gameplayDefs(c.world).items.get(s.item);
             const boilable = !!bd && bd.sips > 0 && !bd.boiled && !!bd.boilTarget && readSlots(c.world, c.player).durability(s.slot) > 0;
-            if (boilable && me && nearLitCampfire(c.world, me.x, me.y, gameplayDefs(c.world).building.containerReach)) row.append(btn("Boil", `boil-${s.slot}`, () => send(boilIntent(s.slot), `Boiled ${s.name}.`), { role: "use" }));
+            if (boilable && me && (holdingTorch(c.world, c.player) || nearLitCampfire(c.world, me.x, me.y, gameplayDefs(c.world).building.containerReach))) row.append(btn("Boil", `boil-${s.slot}`, () => send(boilIntent(s.slot), `Boiled ${s.name}.`), { role: "use" }));
           }
           if (s.equip) row.append(btn(s.equipped ? "Unequip" : "Equip", `eq-${s.slot}`, () => equipSlot(s), { role: "equip-toggle" }));
           if (!cv && s.equip === "hand" && gameplayDefs(c.world).items.get(s.item)?.wear?.slot === 6 /* WearSlot.OffHand */) row.append(btn("Off hand", `offhand-${s.slot}`, () => send(wearIntent(s.slot), `Off hand ${s.name}.`), { role: "use" }));
