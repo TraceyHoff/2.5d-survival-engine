@@ -83893,7 +83893,7 @@
    "animations": {
     "idle": {
      "frames": [
-      92
+      107
      ],
      "fps": 1
     }
@@ -83910,7 +83910,7 @@
    "animations": {
     "idle": {
      "frames": [
-      93
+      108
      ],
      "fps": 1
     }
@@ -83927,7 +83927,7 @@
    "animations": {
     "idle": {
      "frames": [
-      90
+      109
      ],
      "fps": 1
     }
@@ -87974,6 +87974,210 @@
       }
      }
     ]
+   }
+  }
+ },
+ {
+  "key": "paint_brush",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     111
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "honey_tea",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     112
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "salt_brew",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     113
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "charcoal_tonic",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     114
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "cooling_brew",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     115
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "medicated_bandage",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     116
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "cloth_mask",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     117
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "waterskin",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     118
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "boiled_water_flask",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     119
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "boiled_canteen",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     120
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "boiled_water_bottle",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     121
+    ],
+    "fps": 1
+   }
+  }
+ },
+ {
+  "key": "boiled_waterskin",
+  "category": "item",
+  "atlas": "nature_icons",
+  "anchor": {
+   "x": 0.5,
+   "y": 0.5
+  },
+  "animations": {
+   "idle": {
+    "frames": [
+     122
+    ],
+    "fps": 1
    }
   }
  }]

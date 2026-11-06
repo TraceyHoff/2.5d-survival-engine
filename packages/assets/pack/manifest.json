@@ -43011,7 +43011,7 @@
     {
       "key": "truffle",
       "category": "item",
-      "atlas": "items",
+      "atlas": "nature_icons",
       "anchor": {
         "x": 0.5,
         "y": 0.5
@@ -43019,7 +43019,7 @@
       "animations": {
         "idle": {
           "frames": [
-            8
+            110
           ],
           "fps": 1
         }

@@ -4871,7 +4871,19 @@
     "wild_rice": 4869,
     "animal_alpaca": 4870,
     "animal_pig": 4871,
-    "animal_turtle": 4872
+    "animal_turtle": 4872,
+    "charcoal_tonic": 4873,
+    "cloth_mask": 4874,
+    "cooling_brew": 4875,
+    "honey_tea": 4876,
+    "medicated_bandage": 4877,
+    "paint_brush": 4878,
+    "salt_brew": 4879,
+    "waterskin": 4880,
+    "boiled_canteen": 4881,
+    "boiled_water_bottle": 4882,
+    "boiled_water_flask": 4883,
+    "boiled_waterskin": 4884
   },
   "sounds": {
     "amb_rain": 1,

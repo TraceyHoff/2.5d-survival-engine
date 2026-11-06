@@ -469,6 +469,11 @@ describe("Task 32: art wiring", () => {
       ["lettuce", "food"], ["lettuce_seeds", "resource"], ["pepper", "food"], ["pepper_seeds", "resource"],
       ["beetroot", "food"], ["beetroot_seeds", "resource"], ["rice", "food"], ["rice_seeds", "resource"],
       ["truffle", "food"], ["salad", "food"], ["rice_bowl", "food"], ["truffle_stew", "food"],
+      ["honey_tea", "food"], ["salt_brew", "food"], ["paint_brush", "tool"],
+      ["charcoal_tonic", "food"], ["cooling_brew", "food"], ["medicated_bandage", "food"],
+      ["cloth_mask", "clothing"], ["waterskin", "food"],
+      ["boiled_water_flask", "food"], ["boiled_canteen", "food"],
+      ["boiled_water_bottle", "food"], ["boiled_waterskin", "food"],
     ] as const) {
       expect(has(key), key).toBe(true);
       expect(resolveIcon(key, category, has)).toBe(key);
