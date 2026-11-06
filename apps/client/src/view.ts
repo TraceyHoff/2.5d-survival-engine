@@ -73,6 +73,7 @@ import { animChainFor, bedFit, type AnimChainCtx } from "@engine/render";
 import { floorToTerrainZ } from "@engine/world";
 import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
 import { MANIFEST_INDEX, withCharArtFragment, loadMergedManifestWith, type ManifestFragmentRef } from "./manifest-index.js";
+import { task34AtlasSources, TASK34_ATLAS_KEYS } from "./task34-art.js";
 import { stumpKeys } from "./stumps.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -298,6 +299,9 @@ export class IsoView {
     const { registry } = await loadMergedManifest(`${base}art/`);
     onStage("atlases", 0);
     const sources = sourcesFromManifest(registry, packBase + "manifest.json", {}, { probeSiblings: false });
+    // Task 34: generated bee / owl / apiary atlases — paint them and point their sources at blob URLs (the
+    // fragment's debug/*.png paths are never fetched). Only for atlases the merged registry actually has.
+    for (const [k, src] of await task34AtlasSources()) if (registry.atlases.has(k)) sources.set(k, src);
     // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
     // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
     // Until Render loads outfit layers on demand, keep them out unless the array fits (?cz=1 forces them in).
@@ -313,7 +317,8 @@ export class IsoView {
     }
     // ADR-118: count atlas/KTX2 image responses as they land (Resource Timing works for fetch and <img>); expected =
     // the eager atlases (paper-doll/streamed ones load on demand later), so the fraction stays honest and capped < 1.
-    const expected = [...registry.atlases.keys()].filter((k) => !custom.includes(k)).length;
+    // Task 34 blob URLs carry no file extension, so the png-regex watcher never counts them; exclude them so the fraction stays honest.
+    const expected = [...registry.atlases.keys()].filter((k) => !custom.includes(k) && !(TASK34_ATLAS_KEYS as readonly string[]).includes(k)).length;
     const stopWatch = watchResources(/\.(png|webp|ktx2|avif|jpe?g)(\?|$)/i, (n, bytes) => onStage("atlases", countFraction(n, expected), `Loading sprite atlases (${n}/${expected}${bytes ? `, ${(bytes / 1048576).toFixed(1)} MB` : ""})`));
     try { await renderer.atlas.setRegistry(registry, sources); } finally { stopWatch(); }
     onStage("atlases", 1); onStage("variants", 0);

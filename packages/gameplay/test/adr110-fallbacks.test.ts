@@ -6,7 +6,8 @@ import { makeWorld } from "./helpers.js";
 
 const pack = JSON.parse(readFileSync(new URL("../../assets/pack/manifest.json", import.meta.url), "utf8")) as { sprites: Record<string, unknown> | { key: string }[] };
 const nature = JSON.parse(readFileSync(new URL("../../assets/pack/nature/manifest.nature.json", import.meta.url), "utf8")) as { sprites: { key: string }[] }; // ADR-145/146: real animal/pet art lives in the nature sub-pack
-const PACK = new Set([...(Array.isArray(pack.sprites) ? pack.sprites.map((s) => s.key) : Object.keys(pack.sprites)), ...nature.sprites.map((s) => s.key)]);
+const task34 = JSON.parse(readFileSync(new URL("../../assets/pack/task34/manifest.task34.json", import.meta.url), "utf8")) as { sprites: { key: string }[] }; // Task 34: dedicated bee/owl art lives in the task34 fragment
+const PACK = new Set([...(Array.isArray(pack.sprites) ? pack.sprites.map((s) => s.key) : Object.keys(pack.sprites)), ...nature.sprites.map((s) => s.key), ...task34.sprites.map((s) => s.key)]);
 const has = (k: string): boolean => PACK.has(k);
 
 describe("ADR-110 sprite / icon fallbacks", () => {

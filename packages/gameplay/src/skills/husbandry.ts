@@ -10,7 +10,7 @@ import { DEFAULT_TICK_HZ, entityIndex, Transform, type Entity, type World } from
 import { Animal, AnimState, AttachKind, BuildPiece, Dead, Equipment, GrazedTile, Grazing, IntentAction, PlayerIntent, Tamed, AnimalSkills } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { emit, ev } from "../events.js";
-import { addItem, countItem, removeItem, slotItem, takeFromSlot } from "../inventory.js";
+import { addItem, canAddItem, countItem, removeItem, slotItem, takeFromSlot } from "../inventory.js";
 import { animalDefs, spawnAnimal } from "../population.js";
 import { awardXp } from "./progression.js";
 import { animalSkillMods, awardAnimalXp, ensureAnimalSkills } from "../animal_skills.js";
@@ -79,6 +79,21 @@ function troughs(world: World): Entity[] {
   }
   return out.sort((x, y) => x - y);
 }
+/** Task 34: the Apiary piece key (packages/gameplay/data/pieces.json). Bees deposit honey here instead of a trough. */
+export const APIARY_PIECE = "apiary";
+/** Task 34: Apiary storage attachments, same shape as troughs() (Container on the storage attachment, Task 28 lesson). */
+function apiaries(world: World): Entity[] {
+  let id: number; try { id = gameplayDefs(world).pieceId(APIARY_PIECE); } catch { return []; }
+  const out: Entity[] = [];
+  for (const b of world.query([BuildPiece, Transform], [Dead])) {
+    if (world.get(b, BuildPiece)!.type !== id) continue;
+    const att = resolveAttachment(world, b, AttachKind.Storage);
+    if (att !== undefined) out.push(att);
+  }
+  return out.sort((x, y) => x - y);
+}
+/** Task 34: true for a tamed bee (the only animal whose produce goes to an Apiary). */
+const isBeeAnimal = (world: World, a: Entity): boolean => animalDefs()[world.get(a, Tamed)?.kind ?? -1]?.key === "animal_bee";
 /** Task 28: hay (the trough-feed item); 1 hay feeds one farm animal for the usual fedSeconds (600s). */
 export const HAY_ITEM = "hay";
 /** Task 28 grazing: seconds of grazing one grass tile to feed, and seconds the tile stays bare before regrowing. */
@@ -90,7 +105,7 @@ export const HUSBANDRY_EVERY = DEFAULT_TICK_HZ; // once per second
 /** Restore Animal after load; production + breeding at troughs. */
 export function husbandrySystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
-  const defs = gameplayDefs(world); const now = world.tick; const tr = troughs(world);
+  const defs = gameplayDefs(world); const now = world.tick; const tr = troughs(world); const ap = apiaries(world);
   const animals = [...world.query([Tamed, Transform], [Dead])].sort((a, b) => a - b);
   for (const a of animals) if (!world.has(a, Animal)) {
     const t = world.get(a, Transform)!; world.add(a, Animal, { kind: world.get(a, Tamed)!.kind, homeX: t.x, homeY: t.y, goalX: t.x, goalY: t.y, thinkAt: now });
@@ -98,8 +113,42 @@ export function husbandrySystem(world: World): void {
   }
   for (const a of animals) if (!world.has(a, AnimalSkills)) ensureAnimalSkills(world, a); // Task 15: legacy/loaded farm animals
   const atTrough = (a: Entity): Entity | undefined => { const t = world.get(a, Transform)!; return tr.find((b) => { const bt = world.get(b, Transform)!; return (bt.x - t.x) ** 2 + (bt.y - t.y) ** 2 <= H.troughRange ** 2; }); };
+  // Task 34: nearest Apiary in the same range as a trough (H.troughRange).
+  const atApiary = (a: Entity): Entity | undefined => { const t = world.get(a, Transform)!; return ap.find((b) => { const bt = world.get(b, Transform)!; return (bt.x - t.x) ** 2 + (bt.y - t.y) ** 2 <= H.troughRange ** 2; }); };
   const perTrough = new Map<Entity, Entity[]>();
   for (const a of animals) { const b = canUsePens(world, world.get(a, Tamed)!.owner) ? atTrough(a) : undefined; if (b !== undefined) { const l = perTrough.get(b) ?? []; l.push(a); perTrough.set(b, l); } }
+  // Task 34: bees at an Apiary but no trough still produce (into the Apiary). Bees at a trough are already in perTrough.
+  const perApiary = new Map<Entity, Entity[]>();
+  for (const a of animals) {
+    if (!isBeeAnimal(world, a) || atTrough(a) !== undefined) continue;
+    const b = canUsePens(world, world.get(a, Tamed)!.owner) ? atApiary(a) : undefined; if (b !== undefined) { const l = perApiary.get(b) ?? []; l.push(a); perApiary.set(b, l); }
+  }
+  // Task 34: one animal's production at its station (trough or Apiary). Bees deposit honey into the nearest Apiary
+  // in range INSTEAD of the trough; if there is no Apiary, or it cannot fit the whole harvest, the trough is tried;
+  // if neither fits, the honey is kept (produceAt stays past-due, retried next tick) — never silently lost.
+  const produceOne = (a: Entity, station: Entity): void => {
+    const t = world.get(a, Tamed)!; if (t.fedUntil <= now) return;
+    const bt = world.get(station, Transform)!; world.set(a, Animal, { homeX: bt.x, homeY: bt.y });
+    const p = H.animals[animalDefs()[t.kind]?.key ?? ""]; if (!p || t.produceAt > now) return;
+    const owner = t.owner && world.isAlive(t.owner) ? t.owner : 0;
+    const mods = animalSkillMods(world, a); // Task 15: production + produce-speed nodes
+    const mul = (1 + (owner ? skillMod(world, owner, "produce") : 0)) * (1 + mods.produceSpeed);
+    const nextAt = now + sec(p.seconds / mul);
+    if (!isBeeAnimal(world, a)) {
+      world.set(a, Tamed, { produceAt: nextAt });
+      try { addItem(world, station, defs.itemId(p.produce), 1 + mods.produce); awardAnimalXp(world, a, defs.animalSkillsTuning.xp.produceXp); } catch { /* unknown produce item */ }
+      return;
+    }
+    let honeyId = 0; try { honeyId = defs.itemId(p.produce); } catch { /* unknown produce item: same as today */ }
+    if (!honeyId) { world.set(a, Tamed, { produceAt: nextAt }); return; }
+    const count = 1 + mods.produce;
+    const apiary = atApiary(a); const trough = atTrough(a);
+    for (const tgt of [apiary, trough]) {
+      if (tgt === undefined) continue;
+      if (canAddItem(world, tgt, honeyId, count) >= count) { addItem(world, tgt, honeyId, count); world.set(a, Tamed, { produceAt: nextAt }); awardAnimalXp(world, a, defs.animalSkillsTuning.xp.produceXp); return; }
+    }
+    // Apiary full (or no room anywhere): keep the honey, retry next husbandry tick.
+  };
   // Task 28: hay in a trough feeds hungry animals at it — 1 hay -> fed for the usual fedSeconds (600s). Runs before
   // production so a hay-fed animal produces the same tick. Not gated on canUsePens (that gate is for settling /
   // production / breeding); eating from a trough is feeding, like animal_feed by hand.
@@ -111,16 +160,7 @@ export function husbandrySystem(world: World): void {
     world.set(a, Tamed, { fedUntil: now + sec(H.fedSeconds) });
   }
   for (const [b, list] of perTrough) {
-    for (const a of list) {
-      const t = world.get(a, Tamed)!; if (t.fedUntil <= now) continue;
-      const bt = world.get(b, Transform)!; world.set(a, Animal, { homeX: bt.x, homeY: bt.y });
-      const p = H.animals[animalDefs()[t.kind]?.key ?? ""]; if (!p || t.produceAt > now) continue;
-      const owner = t.owner && world.isAlive(t.owner) ? t.owner : 0;
-      const mods = animalSkillMods(world, a); // Task 15: production + produce-speed nodes
-      const mul = (1 + (owner ? skillMod(world, owner, "produce") : 0)) * (1 + mods.produceSpeed);
-      world.set(a, Tamed, { produceAt: now + sec(p.seconds / mul) });
-      try { addItem(world, b, defs.itemId(p.produce), 1 + mods.produce); awardAnimalXp(world, a, defs.animalSkillsTuning.xp.produceXp); } catch { /* unknown produce item */ }
-    }
+    for (const a of list) produceOne(a, b);
     if (list.length >= H.maxPerTrough) continue;
     const byKind = new Map<number, Entity[]>();
     for (const a of list) { const t = world.get(a, Tamed)!; if (t.fedUntil > now && t.breedAt <= now && t.owner && world.isAlive(t.owner) && hasPerk(world, t.owner, "breeding")) { const l = byKind.get(t.kind) ?? []; l.push(a); byKind.set(t.kind, l); } }
@@ -134,6 +174,8 @@ export function husbandrySystem(world: World): void {
       break;
     }
   }
+  // Task 34: bees settled at an Apiary (no trough in range) produce into it; breeding still needs a trough.
+  for (const [b, list] of perApiary) for (const a of list) produceOne(a, b);
   // Task 28 grazing: a hungry tamed animal with no food at a trough grazes the grass tile it stands on — GRAZE_SECONDS
   // of grazing feeds it for the usual fedSeconds, depletes the tile (bare GRASS_REGROW_SECONDS, then grass regrows).
   // Containment is emergent, not a loop proof: grazing only ever targets the tile the animal is already standing on,

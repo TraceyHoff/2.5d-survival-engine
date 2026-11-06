@@ -77,7 +77,7 @@ const withTerrain = (w: World): void => {
     heightAt: () => 0,
   });
 };
-// Real sprite keys from the art pack manifests (base + nature), exactly the set the runtime `has` is built from.
+// Real sprite keys from the art pack manifests (base + nature + task34), exactly the set the runtime `has` is built from.
 const manifestKeys = (rel: string): string[] => {
   const j = JSON.parse(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8")) as { sprites: { key: string }[] };
   return j.sprites.map((s) => s.key);
@@ -85,6 +85,7 @@ const manifestKeys = (rel: string): string[] => {
 const realSprites = new Set<string>([
   ...manifestKeys("../../assets/pack/manifest.json"),
   ...manifestKeys("../../assets/pack/nature/manifest.nature.json"),
+  ...manifestKeys("../../assets/pack/task34/manifest.task34.json"), // Task 34: dedicated bee/owl art
 ]);
 const has = (k: string): boolean => realSprites.has(k);
 
@@ -426,14 +427,15 @@ describe("Task 32: new farm animals", () => {
 
 describe("Task 32: art wiring", () => {
   it("every new animal resolves to a real pack sprite through the fallback chain (no placeholder)", () => {
-    // owl = dark bird (crow sheet, brown tint); turtle = green boar at 0.85; pig = pink boar;
-    // alpaca = cream deer (the long-neck quadruped, same pattern as goat -> deer); bee = tiny gold crow
-    expect(resolveSprite("animal_owl", has)).toMatchObject({ key: "animal_crow", scale: 1 });
-    expect(resolveSprite("animal_owl", has)!.tint).toBeGreaterThan(0);
+    // Task 34: owl + bee have their OWN art now (task34 fragment) — no crow reuse, no tint, no scale;
+    // turtle = green boar at 0.85; pig = pink boar; alpaca = cream deer (the long-neck quadruped, same pattern as goat -> deer)
+    expect(resolveSprite("animal_owl", has)).toMatchObject({ key: "animal_owl", scale: 1 });
+    expect(resolveSprite("animal_owl", has)!.tint).toBe(0);
     expect(resolveSprite("animal_turtle", has)).toMatchObject({ key: "animal_boar", scale: 0.85 });
     expect(resolveSprite("animal_pig", has)).toMatchObject({ key: "animal_boar", scale: 1 });
     expect(resolveSprite("animal_alpaca", has)).toMatchObject({ key: "animal_deer", scale: 1 });
-    expect(resolveSprite("animal_bee", has)).toMatchObject({ key: "animal_crow", scale: 0.5 });
+    expect(resolveSprite("animal_bee", has)).toMatchObject({ key: "animal_bee", scale: 1 });
+    expect(resolveSprite("animal_bee", has)!.tint).toBe(0);
     // the reused sheets animate like the originals: crow/boar/deer sheets carry idle+walk+run+attack+hit+death
     for (const kind of ["animal_owl", "animal_turtle", "animal_pig", "animal_alpaca", "animal_bee"]) {
       expect(resolveSprite(kind, has)).toBeDefined();

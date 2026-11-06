@@ -974,6 +974,13 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
   if (!v.wild) head.append(el("p", { "data-role": "pet-doing" }, `Doing: ${petStatusLabel(v.status)}${v.guard ? ` · ${v.guard}` : ""}`));
   head.append(bar("HP", v.hp, v.maxHp, "pet-hp"));
   if (!v.wild) head.append(bar("Fed", v.fullness, 100, "pet-fullness"), bar("Trust", v.loyalty, 100, "pet-loyalty"), bar("XP", v.xp, v.xpNext, "pet-xp"));
+  // Task 34: favourite treat(s) from the taming data (pets.json `love` entries) — name + icon; nothing when the species loves none.
+  if (v.favorites.length) {
+    const fav = el("p", { "data-role": "pet-favorite" });
+    fav.append(`Favorite treat${v.favorites.length > 1 ? "s" : ""}: `);
+    for (const [i, f] of v.favorites.entries()) { if (i) fav.append(", "); fav.append(el("span", { "data-role": "ic", "data-icon": f.key, "aria-hidden": "true" }), ` ${f.name}`); }
+    head.append(fav);
+  }
   out.push(head);
   if (!v.wild && !v.owned) { out.push(kit.para(`Someone else's ${v.speciesName.toLowerCase()}.`)); return out; }
   if (v.livestock) {

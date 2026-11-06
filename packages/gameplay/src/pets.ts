@@ -552,9 +552,20 @@ export function petSystem(world: World, dt: number): void {
 }
 // ---- client view-model (replica reads only) ------------------------------------------------------------
 export interface PetOffer { item: number; key: string; name: string; count: number; chance: number; pref: TreatPref | "food"; fullness: number }
+/** Task 34: a species' favourite treats (pets.json `love` entries) for the hand-on-pet popup. `key` is the item key (the panel's data-icon); `name` is the item's display name. Empty when the species loves nothing (farm animals have no pet species). */
+export interface PetFavorite { key: string; name: string }
+export const favoriteTreats = (world: World, s: PetSpecies | undefined): PetFavorite[] => {
+  if (!s) return [];
+  const defs = gameplayDefs(world);
+  return Object.entries(s.treats).filter(([, pref]) => pref === "love").map(([key]) => {
+    let name = key; try { name = defs.items.get(defs.itemId(key))?.name ?? key; } catch { /* unknown treat item: show the key */ }
+    return { key, name };
+  });
+};
 export interface PetView {
   entity: Entity; species: number; speciesName: string; name: string; owned: boolean; wild: boolean; ownerId: number;
   level: number; xp: number; xpNext: number; hp: number; maxHp: number; fullness: number; loyalty: number; cmd: number; offers: PetOffer[];
+  favorites: PetFavorite[];
   status: number; guard: string | undefined; livestock: boolean;
 }
 /** Display name for an animal kind key ("animal_dog_dachshund" -> "Dog Dachshund"). */
@@ -574,6 +585,7 @@ export function petView(world: World, player: Entity, e: Entity): PetView | unde
     return {
       entity: e, species: 0, speciesName: name, name, owned: isTamedOwner(world, player, e), wild: false, ownerId: pidOf(world, world.getField(e, Tamed, "owner") ?? 0) ?? 0,
       level: sk?.level ?? 1, xp: sk?.xp ?? 0, xpNext: animalXpToNext(world, sk?.level ?? 1), hp: h?.hp ?? 0, maxHp: h?.max ?? 0, fullness: 0, loyalty: 0, cmd: 0, offers: [],
+      favorites: favoriteTreats(world, PET_SPECIES.find((x) => x.animal === kind)),
       status: PetStatus.Idle, guard: undefined, livestock: true,
     };
   }
@@ -590,6 +602,7 @@ export function petView(world: World, player: Entity, e: Entity): PetView | unde
   return {
     entity: e, species: sp, speciesName: s.name, name: p ? petName(world, e) : `Wild ${s.name}`, owned: !!p && isPetOwner(world, player, e), wild: !p, ownerId: p?.owner ?? 0,
     level, xp: p?.xp ?? 0, xpNext: petXpToNext(level), hp: h?.hp ?? p?.hp ?? st.maxHp, maxHp: h?.max ?? st.maxHp, fullness: p?.fullness ?? 0, loyalty: p?.loyalty ?? 0, cmd: p?.cmd ?? 0, offers,
+    favorites: favoriteTreats(world, s),
     status: world.has(e, PetStatusComp) ? world.getField(e, PetStatusComp, "status")! : p?.cmd === PetCmd.Guard ? PetStatus.Guard : p?.cmd === PetCmd.Stay ? PetStatus.Stay : PetStatus.Idle,
     guard: p?.cmd === PetCmd.Guard ? guardTargetLabel(world, e) : undefined, livestock: false,
   };

@@ -3577,6 +3577,28 @@
       ]
     },
     {
+      "key": "apiary",
+      "paintable": true,
+      "$comment": "Task 34: beehive storage for honey. Tamed bees within 10 tiles deposit their honey here instead of a feeding trough (falls back to the trough when there is no Apiary or it is full). Openable as ordinary storage (Container on the storage attachment).",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "ground": true,
+      "category": "outdoor",
+      "container": 12,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "rope",
+          "amount": 2
+        }
+      ]
+    },
+    {
       "key": "trophy_mount",
       "paintable": true,
       "placement": "edge",

@@ -116,11 +116,11 @@ describe("Task 25: dye system", () => {
     expect(w.getField(piece, G.BuildPiece, "paint")).toBe(3);
     expect(G.countItem(w, p, id("dye"))).toBe(1);
   });
-  it("paintable pieces: 157 flagged + tiered pieces paintable server-side; claim_totem excluded", () => {
+  it("paintable pieces: 158 flagged + tiered pieces paintable server-side; claim_totem excluded", () => {
     const d = G.gameplayDefs(makeWorld());
     let flagged = 0, tiered = 0, total = 0;
     for (const p of d.pieces.values()) { total++; if (p.paintable) flagged++; if (p.tiered) tiered++; }
-    expect(total).toBe(185); expect(flagged).toBe(157); expect(tiered).toBeGreaterThan(0); // Task 28: +3 salt-storage pieces, all paintable
+    expect(total).toBe(186); expect(flagged).toBe(158); expect(tiered).toBeGreaterThan(0); // Task 28: +3 salt-storage pieces, all paintable; Task 34: +1 Apiary, paintable
     expect(d.pieces.get(d.pieceId("claim_totem"))!.paintable).toBe(false);
     expect(d.pieces.get(d.pieceId("rug"))!.paintable).toBe(true);
     for (const k of ["salt_barrel", "curing_box", "cold_store"]) expect(d.pieces.get(d.pieceId(k))!.paintable).toBe(true);

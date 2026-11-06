@@ -11620,6 +11620,23 @@
    }
   },
   {
+   "key": "build_apiary",
+   "category": "ui",
+   "atlas": "items_build",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      224
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
    "key": "build_trophy_mount",
    "category": "ui",
    "atlas": "items_build",

@@ -4831,7 +4831,11 @@
     "rice_seeds": 4829,
     "salad": 4830,
     "truffle": 4831,
-    "truffle_stew": 4832
+    "truffle_stew": 4832,
+    "animal_bee": 4833,
+    "animal_owl": 4834,
+    "dec_apiary": 4835,
+    "build_apiary": 4836
   },
   "sounds": {
     "amb_rain": 1,

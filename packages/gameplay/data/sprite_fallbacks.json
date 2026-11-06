@@ -607,12 +607,6 @@
       ],
       "tint": "#a0a0a0"
     },
-    "animal_owl": {
-      "to": [
-        "animal_crow"
-      ],
-      "tint": "#b09070"
-    },
     "animal_turtle": {
       "to": [
         "animal_boar"
@@ -631,13 +625,6 @@
         "animal_deer"
       ],
       "tint": "#f0e8d8"
-    },
-    "animal_bee": {
-      "to": [
-        "animal_crow"
-      ],
-      "tint": "#e8c040",
-      "scale": 0.5
     },
     "clutter_grass_tuft_a": {
       "to": [
@@ -1564,6 +1551,11 @@
       "to": [
         "wild_wheat",
         "flax"
+      ]
+    },
+    "apiary": {
+      "to": [
+        "salt_barrel"
       ]
     }
   },
