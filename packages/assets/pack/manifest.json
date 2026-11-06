@@ -292,11 +292,59 @@
       "ktx2": "atlases/gt_winter_p1.ktx2"
     },
     {
+      "key": "gt_spring_p0",
+      "image": "atlases/gt_spring_p0.png",
+      "frameW": 68,
+      "frameH": 52,
+      "columns": 15,
+      "rows": 19,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/gt_spring_p0@2x.png",
+          "ktx2": "atlases/gt_spring_p0@2x.ktx2"
+        }
+      ],
+      "ktx2": "atlases/gt_spring_p0.ktx2"
+    },
+    {
+      "key": "gt_spring_p1",
+      "image": "atlases/gt_spring_p1.png",
+      "frameW": 68,
+      "frameH": 52,
+      "columns": 15,
+      "rows": 19,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/gt_spring_p1@2x.png",
+          "ktx2": "atlases/gt_spring_p1@2x.ktx2"
+        }
+      ],
+      "ktx2": "atlases/gt_spring_p1.ktx2"
+    },
+    {
+      "key": "gt_spring_p2",
+      "image": "atlases/gt_spring_p2.png",
+      "frameW": 68,
+      "frameH": 52,
+      "columns": 15,
+      "rows": 10,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/gt_spring_p2@2x.png",
+          "ktx2": "atlases/gt_spring_p2@2x.ktx2"
+        }
+      ],
+      "ktx2": "atlases/gt_spring_p2.ktx2"
+    },
+    {
       "key": "gt_grazed",
       "image": "atlases/gt_grazed.png",
       "frameW": 68,
       "frameH": 52,
-      "columns": 3,
+      "columns": 4,
       "rows": 1,
       "pages": [
         {
@@ -19430,6 +19478,24 @@
       "placeholder": "gt_grass_winter"
     },
     {
+      "key": "gt_grass_grazed_spring",
+      "category": "tile",
+      "atlas": "gt_grazed",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_spring"
+    },
+    {
       "key": "gt_snow_edge_1",
       "category": "tile",
       "atlas": "gt_summer_p0",
@@ -28188,6 +28254,7956 @@
         }
       },
       "placeholder": "gt_side_snow_winter"
+    },
+    {
+      "key": "gt_grass_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_grass_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_grass_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_grass_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_grass_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_grass_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            5
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_grass"
+    },
+    {
+      "key": "gt_dirt_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            6
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_dirt_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            7
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_dirt_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_dirt_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            9
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_dirt_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            10
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_dirt_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            11
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_forest_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            12
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_forest_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            13
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_forest_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            14
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_forest_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            15
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_forest_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_forest_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            17
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_forest"
+    },
+    {
+      "key": "gt_sand_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            18
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_sand_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            19
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_sand_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            20
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_sand_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            21
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_sand_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            22
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_sand_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            23
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_sand"
+    },
+    {
+      "key": "gt_rock_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_rock_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            25
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_rock_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            26
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_rock_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            27
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_rock_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            28
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_rock_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            29
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_rock"
+    },
+    {
+      "key": "gt_mud_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            30
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_mud_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            31
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_mud_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_mud_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            33
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_mud_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            34
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_mud_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            35
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_dirt"
+    },
+    {
+      "key": "gt_snow_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            36
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_snow_b_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            37
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_snow_c_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            38
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_snow_d_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            39
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_snow_e_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_snow_f_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            41
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "tile_snow"
+    },
+    {
+      "key": "gt_water_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            42,
+            43,
+            44,
+            45
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "tile_water"
+    },
+    {
+      "key": "gt_water_shallow_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            46,
+            47,
+            48,
+            49
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "tile_water_shallow"
+    },
+    {
+      "key": "gt_sand_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            50
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_1"
+    },
+    {
+      "key": "gt_sand_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            51
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_2"
+    },
+    {
+      "key": "gt_sand_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            52
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_3"
+    },
+    {
+      "key": "gt_sand_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            53
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_4"
+    },
+    {
+      "key": "gt_sand_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            54
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_5"
+    },
+    {
+      "key": "gt_sand_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            55
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_6"
+    },
+    {
+      "key": "gt_sand_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_7"
+    },
+    {
+      "key": "gt_sand_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            57
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_8"
+    },
+    {
+      "key": "gt_sand_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            58
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_9"
+    },
+    {
+      "key": "gt_sand_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            59
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_10"
+    },
+    {
+      "key": "gt_sand_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_11"
+    },
+    {
+      "key": "gt_sand_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            61
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_12"
+    },
+    {
+      "key": "gt_sand_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            62
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_13"
+    },
+    {
+      "key": "gt_sand_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            63
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_14"
+    },
+    {
+      "key": "gt_sand_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            64
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_15"
+    },
+    {
+      "key": "gt_sand_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            65
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_16"
+    },
+    {
+      "key": "gt_sand_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            66
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_20"
+    },
+    {
+      "key": "gt_sand_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            67
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_24"
+    },
+    {
+      "key": "gt_sand_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            68
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_28"
+    },
+    {
+      "key": "gt_sand_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            69
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_32"
+    },
+    {
+      "key": "gt_sand_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            70
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_33"
+    },
+    {
+      "key": "gt_sand_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            71
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_40"
+    },
+    {
+      "key": "gt_sand_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            72
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_41"
+    },
+    {
+      "key": "gt_sand_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            73
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_48"
+    },
+    {
+      "key": "gt_sand_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            74
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_56"
+    },
+    {
+      "key": "gt_sand_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            75
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_64"
+    },
+    {
+      "key": "gt_sand_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            76
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_65"
+    },
+    {
+      "key": "gt_sand_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            77
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_66"
+    },
+    {
+      "key": "gt_sand_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            78
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_67"
+    },
+    {
+      "key": "gt_sand_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            79
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_80"
+    },
+    {
+      "key": "gt_sand_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            80
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_96"
+    },
+    {
+      "key": "gt_sand_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            81
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_97"
+    },
+    {
+      "key": "gt_sand_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            82
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_112"
+    },
+    {
+      "key": "gt_sand_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            83
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_128"
+    },
+    {
+      "key": "gt_sand_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            84
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_130"
+    },
+    {
+      "key": "gt_sand_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            85
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_132"
+    },
+    {
+      "key": "gt_sand_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            86
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_134"
+    },
+    {
+      "key": "gt_sand_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            87
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_144"
+    },
+    {
+      "key": "gt_sand_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            88
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_148"
+    },
+    {
+      "key": "gt_sand_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            89
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_160"
+    },
+    {
+      "key": "gt_sand_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            90
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_176"
+    },
+    {
+      "key": "gt_sand_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            91
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_192"
+    },
+    {
+      "key": "gt_sand_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            92
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_194"
+    },
+    {
+      "key": "gt_sand_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            93
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_208"
+    },
+    {
+      "key": "gt_sand_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            94
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_224"
+    },
+    {
+      "key": "gt_sand_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            95
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand_edge_240"
+    },
+    {
+      "key": "gt_dirt_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            96
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_1"
+    },
+    {
+      "key": "gt_dirt_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            97
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_2"
+    },
+    {
+      "key": "gt_dirt_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            98
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_3"
+    },
+    {
+      "key": "gt_dirt_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            99
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_4"
+    },
+    {
+      "key": "gt_dirt_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            100
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_5"
+    },
+    {
+      "key": "gt_dirt_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            101
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_6"
+    },
+    {
+      "key": "gt_dirt_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            102
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_7"
+    },
+    {
+      "key": "gt_dirt_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            103
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_8"
+    },
+    {
+      "key": "gt_dirt_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            104
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_9"
+    },
+    {
+      "key": "gt_dirt_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            105
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_10"
+    },
+    {
+      "key": "gt_dirt_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            106
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_11"
+    },
+    {
+      "key": "gt_dirt_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            107
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_12"
+    },
+    {
+      "key": "gt_dirt_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            108
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_13"
+    },
+    {
+      "key": "gt_dirt_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            109
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_14"
+    },
+    {
+      "key": "gt_dirt_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            110
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_15"
+    },
+    {
+      "key": "gt_dirt_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            111
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_16"
+    },
+    {
+      "key": "gt_dirt_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            112
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_20"
+    },
+    {
+      "key": "gt_dirt_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            113
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_24"
+    },
+    {
+      "key": "gt_dirt_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            114
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_28"
+    },
+    {
+      "key": "gt_dirt_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            115
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_32"
+    },
+    {
+      "key": "gt_dirt_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            116
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_33"
+    },
+    {
+      "key": "gt_dirt_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            117
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_40"
+    },
+    {
+      "key": "gt_dirt_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            118
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_41"
+    },
+    {
+      "key": "gt_dirt_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            119
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_48"
+    },
+    {
+      "key": "gt_dirt_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            120
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_56"
+    },
+    {
+      "key": "gt_dirt_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            121
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_64"
+    },
+    {
+      "key": "gt_dirt_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            122
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_65"
+    },
+    {
+      "key": "gt_dirt_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            123
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_66"
+    },
+    {
+      "key": "gt_dirt_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            124
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_67"
+    },
+    {
+      "key": "gt_dirt_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            125
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_80"
+    },
+    {
+      "key": "gt_dirt_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            126
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_96"
+    },
+    {
+      "key": "gt_dirt_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            127
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_97"
+    },
+    {
+      "key": "gt_dirt_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            128
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_112"
+    },
+    {
+      "key": "gt_dirt_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            129
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_128"
+    },
+    {
+      "key": "gt_dirt_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            130
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_130"
+    },
+    {
+      "key": "gt_dirt_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            131
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_132"
+    },
+    {
+      "key": "gt_dirt_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            132
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_134"
+    },
+    {
+      "key": "gt_dirt_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_144"
+    },
+    {
+      "key": "gt_dirt_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            134
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_148"
+    },
+    {
+      "key": "gt_dirt_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            135
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_160"
+    },
+    {
+      "key": "gt_dirt_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            136
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_176"
+    },
+    {
+      "key": "gt_dirt_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            137
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_192"
+    },
+    {
+      "key": "gt_dirt_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            138
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_194"
+    },
+    {
+      "key": "gt_dirt_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            139
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_208"
+    },
+    {
+      "key": "gt_dirt_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            140
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_224"
+    },
+    {
+      "key": "gt_dirt_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            141
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt_edge_240"
+    },
+    {
+      "key": "gt_mud_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            142
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_1"
+    },
+    {
+      "key": "gt_mud_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            143
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_2"
+    },
+    {
+      "key": "gt_mud_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            144
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_3"
+    },
+    {
+      "key": "gt_mud_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            145
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_4"
+    },
+    {
+      "key": "gt_mud_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            146
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_5"
+    },
+    {
+      "key": "gt_mud_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            147
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_6"
+    },
+    {
+      "key": "gt_mud_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            148
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_7"
+    },
+    {
+      "key": "gt_mud_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            149
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_8"
+    },
+    {
+      "key": "gt_mud_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            150
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_9"
+    },
+    {
+      "key": "gt_mud_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            151
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_10"
+    },
+    {
+      "key": "gt_mud_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            152
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_11"
+    },
+    {
+      "key": "gt_mud_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            153
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_12"
+    },
+    {
+      "key": "gt_mud_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            154
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_13"
+    },
+    {
+      "key": "gt_mud_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            155
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_14"
+    },
+    {
+      "key": "gt_mud_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            156
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_15"
+    },
+    {
+      "key": "gt_mud_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            157
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_16"
+    },
+    {
+      "key": "gt_mud_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            158
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_20"
+    },
+    {
+      "key": "gt_mud_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            159
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_24"
+    },
+    {
+      "key": "gt_mud_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            160
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_28"
+    },
+    {
+      "key": "gt_mud_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            161
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_32"
+    },
+    {
+      "key": "gt_mud_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            162
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_33"
+    },
+    {
+      "key": "gt_mud_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            163
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_40"
+    },
+    {
+      "key": "gt_mud_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            164
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_41"
+    },
+    {
+      "key": "gt_mud_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            165
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_48"
+    },
+    {
+      "key": "gt_mud_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            166
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_56"
+    },
+    {
+      "key": "gt_mud_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            167
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_64"
+    },
+    {
+      "key": "gt_mud_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            168
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_65"
+    },
+    {
+      "key": "gt_mud_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            169
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_66"
+    },
+    {
+      "key": "gt_mud_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            170
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_67"
+    },
+    {
+      "key": "gt_mud_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            171
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_80"
+    },
+    {
+      "key": "gt_mud_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            172
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_96"
+    },
+    {
+      "key": "gt_mud_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            173
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_97"
+    },
+    {
+      "key": "gt_mud_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            174
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_112"
+    },
+    {
+      "key": "gt_mud_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            175
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_128"
+    },
+    {
+      "key": "gt_mud_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            176
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_130"
+    },
+    {
+      "key": "gt_mud_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            177
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_132"
+    },
+    {
+      "key": "gt_mud_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            178
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_134"
+    },
+    {
+      "key": "gt_mud_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            179
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_144"
+    },
+    {
+      "key": "gt_mud_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            180
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_148"
+    },
+    {
+      "key": "gt_mud_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            181
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_160"
+    },
+    {
+      "key": "gt_mud_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            182
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_176"
+    },
+    {
+      "key": "gt_mud_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            183
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_192"
+    },
+    {
+      "key": "gt_mud_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            184
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_194"
+    },
+    {
+      "key": "gt_mud_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            185
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_208"
+    },
+    {
+      "key": "gt_mud_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            186
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_224"
+    },
+    {
+      "key": "gt_mud_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            187
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud_edge_240"
+    },
+    {
+      "key": "gt_forest_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            188
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_1"
+    },
+    {
+      "key": "gt_forest_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            189
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_2"
+    },
+    {
+      "key": "gt_forest_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            190
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_3"
+    },
+    {
+      "key": "gt_forest_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            191
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_4"
+    },
+    {
+      "key": "gt_forest_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            192
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_5"
+    },
+    {
+      "key": "gt_forest_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            193
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_6"
+    },
+    {
+      "key": "gt_forest_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            194
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_7"
+    },
+    {
+      "key": "gt_forest_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            195
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_8"
+    },
+    {
+      "key": "gt_forest_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            196
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_9"
+    },
+    {
+      "key": "gt_forest_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            197
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_10"
+    },
+    {
+      "key": "gt_forest_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            198
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_11"
+    },
+    {
+      "key": "gt_forest_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            199
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_12"
+    },
+    {
+      "key": "gt_forest_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            200
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_13"
+    },
+    {
+      "key": "gt_forest_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            201
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_14"
+    },
+    {
+      "key": "gt_forest_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            202
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_15"
+    },
+    {
+      "key": "gt_forest_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            203
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_16"
+    },
+    {
+      "key": "gt_forest_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            204
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_20"
+    },
+    {
+      "key": "gt_forest_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            205
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_24"
+    },
+    {
+      "key": "gt_forest_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            206
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_28"
+    },
+    {
+      "key": "gt_forest_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            207
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_32"
+    },
+    {
+      "key": "gt_forest_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            208
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_33"
+    },
+    {
+      "key": "gt_forest_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            209
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_40"
+    },
+    {
+      "key": "gt_forest_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            210
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_41"
+    },
+    {
+      "key": "gt_forest_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            211
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_48"
+    },
+    {
+      "key": "gt_forest_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            212
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_56"
+    },
+    {
+      "key": "gt_forest_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            213
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_64"
+    },
+    {
+      "key": "gt_forest_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            214
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_65"
+    },
+    {
+      "key": "gt_forest_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            215
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_66"
+    },
+    {
+      "key": "gt_forest_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            216
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_67"
+    },
+    {
+      "key": "gt_forest_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            217
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_80"
+    },
+    {
+      "key": "gt_forest_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            218
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_96"
+    },
+    {
+      "key": "gt_forest_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            219
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_97"
+    },
+    {
+      "key": "gt_forest_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            220
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_112"
+    },
+    {
+      "key": "gt_forest_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            221
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_128"
+    },
+    {
+      "key": "gt_forest_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            222
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_130"
+    },
+    {
+      "key": "gt_forest_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            223
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_132"
+    },
+    {
+      "key": "gt_forest_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            224
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_134"
+    },
+    {
+      "key": "gt_forest_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            225
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_144"
+    },
+    {
+      "key": "gt_forest_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            226
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_148"
+    },
+    {
+      "key": "gt_forest_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            227
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_160"
+    },
+    {
+      "key": "gt_forest_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            228
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_176"
+    },
+    {
+      "key": "gt_forest_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            229
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_192"
+    },
+    {
+      "key": "gt_forest_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            230
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_194"
+    },
+    {
+      "key": "gt_forest_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            231
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_208"
+    },
+    {
+      "key": "gt_forest_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            232
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_224"
+    },
+    {
+      "key": "gt_forest_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            233
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest_edge_240"
+    },
+    {
+      "key": "gt_grass_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            234
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_1"
+    },
+    {
+      "key": "gt_grass_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            235
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_2"
+    },
+    {
+      "key": "gt_grass_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            236
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_3"
+    },
+    {
+      "key": "gt_grass_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            237
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_4"
+    },
+    {
+      "key": "gt_grass_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            238
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_5"
+    },
+    {
+      "key": "gt_grass_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            239
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_6"
+    },
+    {
+      "key": "gt_grass_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            240
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_7"
+    },
+    {
+      "key": "gt_grass_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            241
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_8"
+    },
+    {
+      "key": "gt_grass_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            242
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_9"
+    },
+    {
+      "key": "gt_grass_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            243
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_10"
+    },
+    {
+      "key": "gt_grass_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            244
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_11"
+    },
+    {
+      "key": "gt_grass_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            245
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_12"
+    },
+    {
+      "key": "gt_grass_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            246
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_13"
+    },
+    {
+      "key": "gt_grass_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            247
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_14"
+    },
+    {
+      "key": "gt_grass_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            248
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_15"
+    },
+    {
+      "key": "gt_grass_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            249
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_16"
+    },
+    {
+      "key": "gt_grass_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            250
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_20"
+    },
+    {
+      "key": "gt_grass_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            251
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_24"
+    },
+    {
+      "key": "gt_grass_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            252
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_28"
+    },
+    {
+      "key": "gt_grass_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            253
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_32"
+    },
+    {
+      "key": "gt_grass_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            254
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_33"
+    },
+    {
+      "key": "gt_grass_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            255
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_40"
+    },
+    {
+      "key": "gt_grass_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            256
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_41"
+    },
+    {
+      "key": "gt_grass_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            257
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_48"
+    },
+    {
+      "key": "gt_grass_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            258
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_56"
+    },
+    {
+      "key": "gt_grass_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            259
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_64"
+    },
+    {
+      "key": "gt_grass_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            260
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_65"
+    },
+    {
+      "key": "gt_grass_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            261
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_66"
+    },
+    {
+      "key": "gt_grass_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            262
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_67"
+    },
+    {
+      "key": "gt_grass_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            263
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_80"
+    },
+    {
+      "key": "gt_grass_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            264
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_96"
+    },
+    {
+      "key": "gt_grass_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            265
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_97"
+    },
+    {
+      "key": "gt_grass_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            266
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_112"
+    },
+    {
+      "key": "gt_grass_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            267
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_128"
+    },
+    {
+      "key": "gt_grass_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            268
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_130"
+    },
+    {
+      "key": "gt_grass_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            269
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_132"
+    },
+    {
+      "key": "gt_grass_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            270
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_134"
+    },
+    {
+      "key": "gt_grass_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            271
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_144"
+    },
+    {
+      "key": "gt_grass_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            272
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_148"
+    },
+    {
+      "key": "gt_grass_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            273
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_160"
+    },
+    {
+      "key": "gt_grass_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            274
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_176"
+    },
+    {
+      "key": "gt_grass_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            275
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_192"
+    },
+    {
+      "key": "gt_grass_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            276
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_194"
+    },
+    {
+      "key": "gt_grass_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            277
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_208"
+    },
+    {
+      "key": "gt_grass_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            278
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_224"
+    },
+    {
+      "key": "gt_grass_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            279
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass_edge_240"
+    },
+    {
+      "key": "gt_snow_edge_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            280
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_1"
+    },
+    {
+      "key": "gt_snow_edge_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            281
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_2"
+    },
+    {
+      "key": "gt_snow_edge_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            282
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_3"
+    },
+    {
+      "key": "gt_snow_edge_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            283
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_4"
+    },
+    {
+      "key": "gt_snow_edge_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            284
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_5"
+    },
+    {
+      "key": "gt_snow_edge_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_6"
+    },
+    {
+      "key": "gt_snow_edge_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_7"
+    },
+    {
+      "key": "gt_snow_edge_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_8"
+    },
+    {
+      "key": "gt_snow_edge_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_9"
+    },
+    {
+      "key": "gt_snow_edge_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_10"
+    },
+    {
+      "key": "gt_snow_edge_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            5
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_11"
+    },
+    {
+      "key": "gt_snow_edge_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            6
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_12"
+    },
+    {
+      "key": "gt_snow_edge_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            7
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_13"
+    },
+    {
+      "key": "gt_snow_edge_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_14"
+    },
+    {
+      "key": "gt_snow_edge_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            9
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_15"
+    },
+    {
+      "key": "gt_snow_edge_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            10
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_16"
+    },
+    {
+      "key": "gt_snow_edge_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            11
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_20"
+    },
+    {
+      "key": "gt_snow_edge_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            12
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_24"
+    },
+    {
+      "key": "gt_snow_edge_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            13
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_28"
+    },
+    {
+      "key": "gt_snow_edge_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            14
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_32"
+    },
+    {
+      "key": "gt_snow_edge_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            15
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_33"
+    },
+    {
+      "key": "gt_snow_edge_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_40"
+    },
+    {
+      "key": "gt_snow_edge_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            17
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_41"
+    },
+    {
+      "key": "gt_snow_edge_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            18
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_48"
+    },
+    {
+      "key": "gt_snow_edge_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            19
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_56"
+    },
+    {
+      "key": "gt_snow_edge_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            20
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_64"
+    },
+    {
+      "key": "gt_snow_edge_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            21
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_65"
+    },
+    {
+      "key": "gt_snow_edge_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            22
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_66"
+    },
+    {
+      "key": "gt_snow_edge_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            23
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_67"
+    },
+    {
+      "key": "gt_snow_edge_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_80"
+    },
+    {
+      "key": "gt_snow_edge_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            25
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_96"
+    },
+    {
+      "key": "gt_snow_edge_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            26
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_97"
+    },
+    {
+      "key": "gt_snow_edge_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            27
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_112"
+    },
+    {
+      "key": "gt_snow_edge_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            28
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_128"
+    },
+    {
+      "key": "gt_snow_edge_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            29
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_130"
+    },
+    {
+      "key": "gt_snow_edge_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            30
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_132"
+    },
+    {
+      "key": "gt_snow_edge_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            31
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_134"
+    },
+    {
+      "key": "gt_snow_edge_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_144"
+    },
+    {
+      "key": "gt_snow_edge_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            33
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_148"
+    },
+    {
+      "key": "gt_snow_edge_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            34
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_160"
+    },
+    {
+      "key": "gt_snow_edge_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            35
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_176"
+    },
+    {
+      "key": "gt_snow_edge_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            36
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_192"
+    },
+    {
+      "key": "gt_snow_edge_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            37
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_194"
+    },
+    {
+      "key": "gt_snow_edge_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            38
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_208"
+    },
+    {
+      "key": "gt_snow_edge_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            39
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_224"
+    },
+    {
+      "key": "gt_snow_edge_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow_edge_240"
+    },
+    {
+      "key": "gt_shore_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            41,
+            42,
+            43,
+            44
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_1"
+    },
+    {
+      "key": "gt_shore_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            45,
+            46,
+            47,
+            48
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_2"
+    },
+    {
+      "key": "gt_shore_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            49,
+            50,
+            51,
+            52
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_3"
+    },
+    {
+      "key": "gt_shore_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            53,
+            54,
+            55,
+            56
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_4"
+    },
+    {
+      "key": "gt_shore_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            57,
+            58,
+            59,
+            60
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_5"
+    },
+    {
+      "key": "gt_shore_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            61,
+            62,
+            63,
+            64
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_6"
+    },
+    {
+      "key": "gt_shore_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            65,
+            66,
+            67,
+            68
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_7"
+    },
+    {
+      "key": "gt_shore_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            69,
+            70,
+            71,
+            72
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_8"
+    },
+    {
+      "key": "gt_shore_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            73,
+            74,
+            75,
+            76
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_9"
+    },
+    {
+      "key": "gt_shore_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            77,
+            78,
+            79,
+            80
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_10"
+    },
+    {
+      "key": "gt_shore_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            81,
+            82,
+            83,
+            84
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_11"
+    },
+    {
+      "key": "gt_shore_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            85,
+            86,
+            87,
+            88
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_12"
+    },
+    {
+      "key": "gt_shore_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            89,
+            90,
+            91,
+            92
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_13"
+    },
+    {
+      "key": "gt_shore_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            93,
+            94,
+            95,
+            96
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_14"
+    },
+    {
+      "key": "gt_shore_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            97,
+            98,
+            99,
+            100
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_15"
+    },
+    {
+      "key": "gt_shore_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            101,
+            102,
+            103,
+            104
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_16"
+    },
+    {
+      "key": "gt_shore_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            105,
+            106,
+            107,
+            108
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_20"
+    },
+    {
+      "key": "gt_shore_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            109,
+            110,
+            111,
+            112
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_24"
+    },
+    {
+      "key": "gt_shore_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            113,
+            114,
+            115,
+            116
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_28"
+    },
+    {
+      "key": "gt_shore_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            117,
+            118,
+            119,
+            120
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_32"
+    },
+    {
+      "key": "gt_shore_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            121,
+            122,
+            123,
+            124
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_33"
+    },
+    {
+      "key": "gt_shore_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            125,
+            126,
+            127,
+            128
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_40"
+    },
+    {
+      "key": "gt_shore_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            129,
+            130,
+            131,
+            132
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_41"
+    },
+    {
+      "key": "gt_shore_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133,
+            134,
+            135,
+            136
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_48"
+    },
+    {
+      "key": "gt_shore_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            137,
+            138,
+            139,
+            140
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_56"
+    },
+    {
+      "key": "gt_shore_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            141,
+            142,
+            143,
+            144
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_64"
+    },
+    {
+      "key": "gt_shore_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            145,
+            146,
+            147,
+            148
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_65"
+    },
+    {
+      "key": "gt_shore_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            149,
+            150,
+            151,
+            152
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_66"
+    },
+    {
+      "key": "gt_shore_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            153,
+            154,
+            155,
+            156
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_67"
+    },
+    {
+      "key": "gt_shore_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            157,
+            158,
+            159,
+            160
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_80"
+    },
+    {
+      "key": "gt_shore_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            161,
+            162,
+            163,
+            164
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_96"
+    },
+    {
+      "key": "gt_shore_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            165,
+            166,
+            167,
+            168
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_97"
+    },
+    {
+      "key": "gt_shore_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            169,
+            170,
+            171,
+            172
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_112"
+    },
+    {
+      "key": "gt_shore_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            173,
+            174,
+            175,
+            176
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_128"
+    },
+    {
+      "key": "gt_shore_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            177,
+            178,
+            179,
+            180
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_130"
+    },
+    {
+      "key": "gt_shore_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            181,
+            182,
+            183,
+            184
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_132"
+    },
+    {
+      "key": "gt_shore_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            185,
+            186,
+            187,
+            188
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_134"
+    },
+    {
+      "key": "gt_shore_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            189,
+            190,
+            191,
+            192
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_144"
+    },
+    {
+      "key": "gt_shore_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            193,
+            194,
+            195,
+            196
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_148"
+    },
+    {
+      "key": "gt_shore_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            197,
+            198,
+            199,
+            200
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_160"
+    },
+    {
+      "key": "gt_shore_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            201,
+            202,
+            203,
+            204
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_176"
+    },
+    {
+      "key": "gt_shore_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            205,
+            206,
+            207,
+            208
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_192"
+    },
+    {
+      "key": "gt_shore_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            209,
+            210,
+            211,
+            212
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_194"
+    },
+    {
+      "key": "gt_shore_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            213,
+            214,
+            215,
+            216
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_208"
+    },
+    {
+      "key": "gt_shore_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            217,
+            218,
+            219,
+            220
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_224"
+    },
+    {
+      "key": "gt_shore_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            221,
+            222,
+            223,
+            224
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_shore_240"
+    },
+    {
+      "key": "gt_bank_1_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            225,
+            226,
+            227,
+            228
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_1"
+    },
+    {
+      "key": "gt_bank_2_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            229,
+            230,
+            231,
+            232
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_2"
+    },
+    {
+      "key": "gt_bank_3_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            233,
+            234,
+            235,
+            236
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_3"
+    },
+    {
+      "key": "gt_bank_4_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            237,
+            238,
+            239,
+            240
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_4"
+    },
+    {
+      "key": "gt_bank_5_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            241,
+            242,
+            243,
+            244
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_5"
+    },
+    {
+      "key": "gt_bank_6_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            245,
+            246,
+            247,
+            248
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_6"
+    },
+    {
+      "key": "gt_bank_7_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            249,
+            250,
+            251,
+            252
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_7"
+    },
+    {
+      "key": "gt_bank_8_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            253,
+            254,
+            255,
+            256
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_8"
+    },
+    {
+      "key": "gt_bank_9_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            257,
+            258,
+            259,
+            260
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_9"
+    },
+    {
+      "key": "gt_bank_10_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            261,
+            262,
+            263,
+            264
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_10"
+    },
+    {
+      "key": "gt_bank_11_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            265,
+            266,
+            267,
+            268
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_11"
+    },
+    {
+      "key": "gt_bank_12_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            269,
+            270,
+            271,
+            272
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_12"
+    },
+    {
+      "key": "gt_bank_13_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            273,
+            274,
+            275,
+            276
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_13"
+    },
+    {
+      "key": "gt_bank_14_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            277,
+            278,
+            279,
+            280
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_14"
+    },
+    {
+      "key": "gt_bank_15_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            281,
+            282,
+            283,
+            284
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_15"
+    },
+    {
+      "key": "gt_bank_16_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_16"
+    },
+    {
+      "key": "gt_bank_20_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_20"
+    },
+    {
+      "key": "gt_bank_24_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_24"
+    },
+    {
+      "key": "gt_bank_28_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_28"
+    },
+    {
+      "key": "gt_bank_32_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_32"
+    },
+    {
+      "key": "gt_bank_33_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_33"
+    },
+    {
+      "key": "gt_bank_40_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_40"
+    },
+    {
+      "key": "gt_bank_41_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_41"
+    },
+    {
+      "key": "gt_bank_48_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32,
+            33,
+            34,
+            35
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_48"
+    },
+    {
+      "key": "gt_bank_56_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            36,
+            37,
+            38,
+            39
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_56"
+    },
+    {
+      "key": "gt_bank_64_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40,
+            41,
+            42,
+            43
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_64"
+    },
+    {
+      "key": "gt_bank_65_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            44,
+            45,
+            46,
+            47
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_65"
+    },
+    {
+      "key": "gt_bank_66_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48,
+            49,
+            50,
+            51
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_66"
+    },
+    {
+      "key": "gt_bank_67_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            52,
+            53,
+            54,
+            55
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_67"
+    },
+    {
+      "key": "gt_bank_80_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56,
+            57,
+            58,
+            59
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_80"
+    },
+    {
+      "key": "gt_bank_96_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60,
+            61,
+            62,
+            63
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_96"
+    },
+    {
+      "key": "gt_bank_97_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            64,
+            65,
+            66,
+            67
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_97"
+    },
+    {
+      "key": "gt_bank_112_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            68,
+            69,
+            70,
+            71
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_112"
+    },
+    {
+      "key": "gt_bank_128_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            72,
+            73,
+            74,
+            75
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_128"
+    },
+    {
+      "key": "gt_bank_130_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            76,
+            77,
+            78,
+            79
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_130"
+    },
+    {
+      "key": "gt_bank_132_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            80,
+            81,
+            82,
+            83
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_132"
+    },
+    {
+      "key": "gt_bank_134_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            84,
+            85,
+            86,
+            87
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_134"
+    },
+    {
+      "key": "gt_bank_144_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            88,
+            89,
+            90,
+            91
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_144"
+    },
+    {
+      "key": "gt_bank_148_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            92,
+            93,
+            94,
+            95
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_148"
+    },
+    {
+      "key": "gt_bank_160_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            96,
+            97,
+            98,
+            99
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_160"
+    },
+    {
+      "key": "gt_bank_176_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_176"
+    },
+    {
+      "key": "gt_bank_192_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            104,
+            105,
+            106,
+            107
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_192"
+    },
+    {
+      "key": "gt_bank_194_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            108,
+            109,
+            110,
+            111
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_194"
+    },
+    {
+      "key": "gt_bank_208_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            112,
+            113,
+            114,
+            115
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_208"
+    },
+    {
+      "key": "gt_bank_224_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            116,
+            117,
+            118,
+            119
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_224"
+    },
+    {
+      "key": "gt_bank_240_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            120,
+            121,
+            122,
+            123
+          ],
+          "fps": 4
+        }
+      },
+      "placeholder": "gt_bank_240"
+    },
+    {
+      "key": "gt_side_grass_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            124
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass"
+    },
+    {
+      "key": "gt_side_grass_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            125
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass_spring"
+    },
+    {
+      "key": "gt_side_dirt_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            126
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt"
+    },
+    {
+      "key": "gt_side_dirt_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            127
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt_spring"
+    },
+    {
+      "key": "gt_side_forest_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            128
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest"
+    },
+    {
+      "key": "gt_side_forest_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            129
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest_spring"
+    },
+    {
+      "key": "gt_side_sand_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            130
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand"
+    },
+    {
+      "key": "gt_side_sand_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            131
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand_spring"
+    },
+    {
+      "key": "gt_side_rock_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            132
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock"
+    },
+    {
+      "key": "gt_side_rock_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock_spring"
+    },
+    {
+      "key": "gt_side_mud_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            134
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud"
+    },
+    {
+      "key": "gt_side_mud_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            135
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud_spring"
+    },
+    {
+      "key": "gt_side_snow_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            136
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow"
+    },
+    {
+      "key": "gt_side_snow_low_spring",
+      "category": "tile",
+      "atlas": "gt_spring_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            137
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow_spring"
     },
     {
       "key": "tree",
@@ -43005,23 +51021,6 @@
           ],
           "fps": 8,
           "loop": true
-        }
-      }
-    },
-    {
-      "key": "truffle",
-      "category": "item",
-      "atlas": "nature_icons",
-      "anchor": {
-        "x": 0.5,
-        "y": 0.5
-      },
-      "animations": {
-        "idle": {
-          "frames": [
-            110
-          ],
-          "fps": 1
         }
       }
     }

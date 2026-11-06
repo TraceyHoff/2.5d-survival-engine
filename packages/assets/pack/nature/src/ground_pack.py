@@ -2,7 +2,7 @@
 python3 ground_pack.py            renders missing tiles into $GROUND_CACHE (pool of 8), packs 1x + @2x pages, merges the manifest.
 python3 ground_pack.py --manifest-only   rewrites only the manifest entries (no render, no page PNGs; keeps ktx2 fields).
 Residency: resident (ADR-246 follow-up: the engine keeps gt_ pages hot at 1x; RESIDENT_GROUND_RE). Every sprite carries a
-placeholder: bases -> legacy tile_*, fall/winter overlays -> their summer twin, summer edges -> the invader base,
+placeholder: bases -> legacy tile_*, fall/winter/spring overlays -> their summer twin; spring pages themselves are packed by artpass_spring_ground.py, summer edges -> the invader base,
 summer shore/bank -> gt_water_shallow, fall leaf decals -> gt_water.
 Cells: 64x48 art (64x32 diamond; bases carry no skirt: side faces are separate gt_side_* sprites, 16 px = one level) padded 2 px -> 68x52 (1x) / 136x104 (@2x); anchor keeps the diamond centre
 (0.5, 18/52). Pages are per season (gt_<season>_p<N>), 15x19 cells -> <=1020x988 (1x), <=2040x1976 (@2x). Re-runnable."""
@@ -109,8 +109,14 @@ def main():
             if 'ktx2' in o: a['ktx2'] = o['ktx2']
             for pg, po in zip(a['pages'], o.get('pages', [])):
                 if 'ktx2' in po: pg['ktx2'] = po['ktx2']
-    m['atlases'] = [a for a in m['atlases'] if not a['key'].startswith('gt_')]
-    m['sprites'] = [s for s in m['sprites'] if not s['key'].startswith('gt_')]
+    def _retain_gt(key):
+        # Spring pages (artpass_spring_ground.py) and grazed grass (artpass_batch1.py) are
+        # packed outside this SEAS list. Dropping them here would wipe those atlases.
+        return (key.startswith('gt_spring') or key.startswith('gt_grazed')
+                or key.startswith('gt_grass_grazed')
+                or (key.startswith('gt_') and key.endswith('_spring')))
+    m['atlases'] = [a for a in m['atlases'] if not a['key'].startswith('gt_') or _retain_gt(a['key'])]
+    m['sprites'] = [s for s in m['sprites'] if not s['key'].startswith('gt_') or _retain_gt(s['key'])]
     ia = next(i for i, a in enumerate(m['atlases']) if a['key'] == 'tiles') + 1
     m['atlases'][ia:ia] = atlases
     isp = max(i for i, s in enumerate(m['sprites']) if s['atlas'] == 'tiles') + 1

@@ -61,13 +61,20 @@ WCOL = {'trough': '#2378a8', 'mid': '#2b8dba', 'lite': '#3aa2c8', 'ripple': '#82
 WSHAL = {'trough': '#33a0b6', 'mid': '#3dabc0', 'lite': '#50bccb', 'ripple': '#96e2e6', 'spark': '#f0fffd'}    # gt_water_shallow: lighter teal
 SHORE_K = 1.06   # the shader's shallow end (k = 1 next to land): shore-overlay water is baked at this brightness so it meets the tile
 def _mul(c, k): return '#%02x%02x%02x' % tuple(min(255, int(round(x * k))) for x in hx(c))
-WSHORE = {k: _mul(v, SHORE_K) for k, v in WSHAL.items()}   # shore / bank overlays sit next to the shallow ring (generator: tile 8)
+WSHORE = {k: _mul(v, SHORE_K) for k, v in WSHAL.items()}
+# Spring thaw: cooler, slightly silty meltwater (greener-grey jade, not summer teal), with drifting ice flecks / foam
+WSPR = {'trough': '#2f7c8e', 'mid': '#3c8f9c', 'lite': '#52a4aa', 'ripple': '#a6dccf', 'spark': '#f4fff8', 'silt': '#6a9c96', 'fleck': '#e8f6fa'}
+WSPRS = {'trough': '#4aa2a6', 'mid': '#58aeae', 'lite': '#6cbeb8', 'ripple': '#b4e8da', 'spark': '#f6fffa', 'silt': '#82b2a4', 'fleck': '#f0fbff'}
+WSPRSHORE = {k: _mul(v, SHORE_K) for k, v in WSPRS.items()}   # shore / bank overlays sit next to the shallow ring (generator: tile 8)
 def water_art(t, mask, f, nf=4, pal=None):
     pal = pal or WCOL; ph = f / nf
     F = fbm(U + ph, V + ph * .5, 7001, ((6, .55), (12, .45)))
     G = fbm(U - ph * .5, V + ph, 7002, ((5, .5), (10, .5)))
     t.fill(mask, pal['mid']); t.fill(mask & (F < .38), pal['trough']); t.fill(mask & (F > .62), pal['lite'])
     rip = np.abs(G - .5) < .018; t.fill(mask & rip & (F > .42), pal['ripple'])
+    if 'silt' in pal:   # spring: drifting silt swirls + a few melting ice flecks
+        S2 = fbm(U + ph * .7, V - ph * .3, 7004, ((4, .6), (9, .4))); t.fill(mask & (S2 > .66) & (F <= .62), pal['silt'])
+        fl = vn(U - ph, V + ph * .5, 14, 7005) > .965; t.fill(mask & fl, pal['fleck'])
     sp = vn(U + ph * 2, V, 18, 7003 + f) > .955; t.fill(mask & sp & (F > .5), pal['spark'])
 def tint(rgb, k):
     """Legacy terrainTiles.ts grey tile_water recolour (not used for gt_water since ADR-251): k=1 shallow, k=0 deep."""
@@ -84,6 +91,7 @@ def shade(rgb, k):
 def water_tile(season, f, shallow=False):
     t = Tile()
     if season == 'winter': ice_art(t, TOP, 0)
+    elif season == 'spring': water_art(t, TOP, f, pal=WSPRS if shallow else WSPR)
     else: water_art(t, TOP, f, pal=WSHAL if shallow else WCOL)
     return t.finish(TOP)
 ICE = ['#f4fbff', '#d6eef8', '#b4dcef', '#8cc0e0', '#6a9cc8']
@@ -103,8 +111,8 @@ def ice_art(t, mask, var):
 def ice_tile(var):
     t = Tile(); ice_art(t, TOP, var); return t.finish(TOP)
 
-BANK = {'sand': {'summer': ['#d8bc86', '#c4a070'], 'fall': ['#d0b482', '#ba986c'], 'winter': ['#cfc4ae', '#b4a68e']},
-        'bank': {'summer': ['#b08c64', '#a07e5a'], 'fall': ['#a8865e', '#9a7a56'], 'winter': ['#d4e0f0', '#a8b8d6']}}
+BANK = {'sand': {'summer': ['#d8bc86', '#c4a070'], 'fall': ['#d0b482', '#ba986c'], 'winter': ['#cfc4ae', '#b4a68e'], 'spring': ['#e0d2a8', '#c8b48c']},
+        'bank': {'summer': ['#b08c64', '#a07e5a'], 'fall': ['#a8865e', '#9a7a56'], 'winter': ['#d4e0f0', '#a8b8d6'], 'spring': ['#94704e', '#7e5e44']}}
 def shore_overlay(style, season, m, f, nf=4):
     """Water invading land. Water baked in the shallow palette at the shader's shore brightness (SHORE_K) so it meets the
     gt_water / gt_water_shallow tiles; foam laps per frame."""
@@ -117,14 +125,15 @@ def shore_overlay(style, season, m, f, nf=4):
         fm = (RFACE if m & E else np.zeros_like(TOP)) | (LFACE if m & S else np.zeros_like(TOP))
         if fm.any(): ice_art(t, fm, None)
         return t.finish(t.alpha)
-    water_art(t, wat, f, nf, WSHORE)   # full colour at the shader's shore brightness (ADR-251)
-    foam = wat & (I < lap + .045); t.fill(foam, '#f4ffff')
+    wp = WSPRSHORE if season == 'spring' else WSHORE
+    water_art(t, wat, f, nf, wp)   # full colour at the shader's shore brightness (ADR-251)
+    foam = wat & (I < lap + .045); t.fill(foam, '#f4ffff' if season != 'spring' else '#eef8f0')
     # skirt faces toward the water neighbour: the land rim drops into water, so the visible strip reads as water too
     fm = np.zeros_like(TOP)
     if m & E: fm |= RFACE
     if m & S: fm |= LFACE
     if fm.any():
-        water_art(t, fm, f, nf, WSHORE)
+        water_art(t, fm, f, nf, wp)
     f2 = .5 + .11 + .02 * math.sin(6.2832 * f / nf + 1.7)
     l2 = wat & (np.abs(I - f2) < .012) & (vn(U, V, 10, 7201) > .4); t.fill(l2, '#d2fbfa')
     return t.finish(t.alpha)

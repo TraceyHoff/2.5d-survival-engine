@@ -3,7 +3,7 @@ import math
 import numpy as np
 from ground_core import *
 
-SEASONS = ('summer', 'fall', 'winter')
+SEASONS = ('summer', 'fall', 'winter', 'spring')   # spring appended last: seeds index SEASONS, so older seasons stay byte-identical
 OUTL = '#3b2433'
 
 # ---- palettes: t0 highlight, t1 mid (dominant), t2 shade, t3 deep (cracks, specks, feature outlines) ----------------------
@@ -16,6 +16,9 @@ P = {
                  leaves=['#f4a74a', '#e07a3a', '#f0c24c', '#c8503c'], leafol='#8a3e2e'),
   'winter': dict(t=['#cfe0c6', '#a9c29a', '#8fa982', '#6e8a6c'], blade=['#e6dfb4', '#b8a676', '#8a7a58'], ol='#566a5a',
                  snow=['#ffffff', '#eef4fb', '#cdd9ec', '#9fb0cf'], frost='#f2f8ff'),
+  'spring': dict(t=['#e6f494', '#cae76c', '#a8d458', '#7ab24a'], blade=['#f0fa9c', '#b0dc5a', '#6aa646'], ol='#4a7e3e',
+                 fl=[('#ffe14a', '#f59a2a'), ('#b98cf0', '#ffe68a'), ('#ffc6dc', '#fff6c8'), ('#fffaf0', '#ffd75e')], clover='#c6ea78',
+                 bud='#f2f8c8'),
  },
  'dirt': {
   'summer': dict(t=['#e4b486', '#c99464', '#ab7a50', '#82593e'], peb=['#e4e0d8', '#b8b2b0', '#8a8494'], ol='#5c4034', sprout=['#8fd15c', '#4f9a48']),
@@ -23,6 +26,8 @@ P = {
                  leaves=['#f4a74a', '#e07a3a', '#f0c24c', '#b8483a'], leafol='#7e3a2c'),
   'winter': dict(t=['#c6ac98', '#a68a76', '#8a705f', '#66524a'], peb=['#e2e6ee', '#b4b8c4', '#868aa0'], ol='#4c3c3c',
                  snow=['#ffffff', '#eef4fb', '#cdd9ec', '#9fb0cf'], frost='#e8eff8'),
+  'spring': dict(t=['#c89e7c', '#a87e60', '#8c664e', '#664a3e'], peb=['#dcdcd4', '#acaaac', '#7e7c8c'], ol='#4e382f',
+                 sprout=['#c8ec6e', '#7cc24c'], damp='#957058'),
  },
  'forest': {
   'summer': dict(t=['#7fb85a', '#5f9c4a', '#4c8444', '#33623c'], soil=['#9a7650', '#7a5a40'], ol='#2a4a34',
@@ -31,6 +36,9 @@ P = {
                  leaves=['#f6c84e', '#e8743a', '#c8443a', '#9a6a3a', '#f4a74a'], leafol='#6a2e26', fern=['#c8a050', '#8a6a34']),
   'winter': dict(t=['#ffffff', '#eaf1fa', '#cbd7ea', '#9fb0cf'], soil=['#8a7464', '#6a5850'], ol='#4a5470',
                  leaves=['#a8805a', '#8a6248', '#c49a6a'], leafol='#5a4038', needles=['#4f8a6e', '#2f6052'], twig='#6a4a3c'),
+  'spring': dict(t=['#c6e874', '#a6d45e', '#84b84e', '#5c9440'], soil=['#8e6a4c', '#6e5040'], ol='#3a5e34',
+                 leaves=['#a88a5a', '#8e7450', '#c2a46e', '#d8ec78'], leafol='#5a4834', fern=['#c4ec6c', '#6eb448'],
+                 bloss=[('#ffffff', '#ffe14a'), ('#ffc6dc', '#fff6c8'), ('#b98cf0', '#ffe68a')]),
  },
  'sand': {
   'summer': dict(t=['#fff4cc', '#f6dfa4', '#e8c887', '#cfa86c'], ol='#9a7a52', shell=['#ffd6e8', '#ff9ec4', '#d47a96'],
@@ -39,6 +47,8 @@ P = {
                  peb=['#e4e0d8', '#b8b2b0', '#8a8494'], leaves=['#f4a74a', '#e07a3a', '#f0c24c'], leafol='#8a4a30'),
   'winter': dict(t=['#f4eee0', '#e2d8c0', '#cbbfa4', '#a99c84'], ol='#7a7064', shell=['#f2eef8', '#cfc4dc', '#9a8eae'],
                  peb=['#e2e6ee', '#b4b8c4', '#868aa0'], snow=['#ffffff', '#eef4fb', '#cdd9ec', '#9fb0cf'], frost='#ffffff'),
+  'spring': dict(t=['#f6eccc', '#eadaa6', '#d6c08a', '#b8a070'], ol='#8c7456', shell=['#e8f0ff', '#b4c8f0', '#8494c8'],
+                 peb=['#dcdcd4', '#acaaac', '#7e7c8c'], wet='#cdb88e', bloss=('#ffc6dc', '#ffe68a')),
  },
  'stone': {
   'summer': dict(t=['#dcd8d0', '#b8b2b0', '#9d97a2', '#6f6a80'], ol='#4f4a60', moss=['#a8cc6a', '#7fa856'], lichen='#d8dc8a'),
@@ -46,6 +56,8 @@ P = {
                  leaves=['#f4a74a', '#e07a3a', '#f0c24c'], leafol='#7e3a2c'),
   'winter': dict(t=['#d4d8e2', '#adb2c2', '#9296aa', '#666a84'], ol='#4a4c66', moss=['#8aa08a', '#647a6a'], lichen='#c8d0e0',
                  snow=['#ffffff', '#eef4fb', '#cdd9ec', '#9fb0cf']),
+  'spring': dict(t=['#d6d8cc', '#b0b0a8', '#94969a', '#68687a'], ol='#4a4a5c', moss=['#c8ec6e', '#88c450'], lichen='#e8f08a',
+                 bloss=('#ffe14a', '#f59a2a')),
  },
  'mud': {
   'summer': dict(t=['#a98060', '#8c6448', '#74523c', '#553c30'], ol='#3e2c28', wet='#c39c7a', pud=['#d8f0f4', '#9cc8d8', '#6e9cb4'],
@@ -54,21 +66,25 @@ P = {
                  leaves=['#f4a74a', '#d8703a', '#b8483a'], leafol='#5e2e26', reed=['#c8b062', '#8a7a44']),
   'winter': dict(t=['#9e8a7c', '#80695c', '#68544c', '#4c3e3c'], ol='#3a3036', wet='#b8a698', pud=['#ffffff', '#d4ecf6', '#a6cce2', '#7aa4c4'],
                  snow=['#ffffff', '#eef4fb', '#cdd9ec', '#9fb0cf']),
+  'spring': dict(t=['#8e7468', '#725a50', '#5c4842', '#423436'], ol='#342a2e', wet='#a8a0a0', pud=['#eef8ff', '#a4cce0', '#6c9cba'],
+                 reed=['#c8ec6e', '#7cc24c'], sprout=['#c8ec6e', '#7cc24c']),
  },
  'snow': {
   'summer': dict(t=['#ffffff', '#eef4fb', '#d6e1f0', '#aebdd8'], ol='#7d8cae', peb=['#d4d8e2', '#a9aebc', '#7f8498'], spark='#ffffff', ice='#cfeaf6'),
   'fall':   dict(t=['#ffffff', '#eef4fb', '#d6e1f0', '#aebdd8'], ol='#7d8cae', peb=['#d4d8e2', '#a9aebc', '#7f8498'], spark='#ffffff', ice='#cfeaf6',
                  leaves=['#e07a3a', '#f0c24c'], leafol='#8a4a30'),
   'winter': dict(t=['#ffffff', '#f2f7fd', '#d4e0f0', '#a8b8d6'], ol='#7486aa', peb=['#d4d8e2', '#a9aebc', '#7f8498'], spark='#ffffff', ice='#cfeaf6'),
+  'spring': dict(t=['#f2f2ec', '#dcdcd6', '#bcc0c4', '#949aa8'], ol='#6e7486', peb=['#c4c0b8', '#9a948e', '#726c6a'], spark='#ffffff', ice='#d8eef4',
+                 earth=['#9a7a62', '#7c5e4a', '#5e4638'], slush='#b8c8d0', sprout=['#c8ec6e', '#7cc24c']),
  },
 }
 SIDE = {   # skirt bands top->bottom: lip handled by the material; body t0..t3
  'soil':  {'summer': ['#b08058', '#946644', '#7a5038', '#5c3c2e'], 'fall': ['#a87852', '#8c5e40', '#724a36', '#56382c'],
-           'winter': ['#a08878', '#846c60', '#6a564e', '#4e4040']},
+           'winter': ['#a08878', '#846c60', '#6a564e', '#4e4040'], 'spring': ['#9e7258', '#825a44', '#6a4838', '#4e342c']},
  'sand':  {'summer': ['#ecd096', '#d8b47a', '#c09a64', '#9e7c52'], 'fall': ['#e2c890', '#ccac78', '#b29262', '#927652'],
-           'winter': ['#dccfb4', '#c4b498', '#a89a82', '#8a7e6c']},
+           'winter': ['#dccfb4', '#c4b498', '#a89a82', '#8a7e6c'], 'spring': ['#e0c896', '#c8ac7c', '#ae9268', '#8e7656']},
  'rock':  {'summer': ['#aaa4a6', '#8a8494', '#6f6a80', '#575266'], 'fall': ['#a69e9e', '#86808e', '#6c667a', '#545064'],
-           'winter': ['#a4a8b8', '#868aa0', '#6c7088', '#54586e']},
+           'winter': ['#a4a8b8', '#868aa0', '#6c7088', '#54586e'], 'spring': ['#a2a6a0', '#848890', '#6a6e7c', '#525664']},
 }
 
 def fine(seed):

@@ -379,36 +379,31 @@ def patch_nature_manifest():
 
 
 def patch_root_truffle():
-    raw = open(ROOT_MAN).read()
-    needle = '''    {
-      "key": "truffle",
-      "category": "item",
-      "atlas": "items",
-      "anchor": {
-        "x": 0.5,
-        "y": 0.5
-      },
-      "animations": {
-        "idle": {
-          "frames": [
-            8
-          ],
-          "fps": 1
-        }
-      }
-    }'''
-    repl = needle.replace('"atlas": "items"', '"atlas": "nature_icons"').replace(
-        "8", str(FRAMES["truffle"])
-    )
-    if '"key": "truffle"' in raw and '"atlas": "nature_icons"' in raw[raw.find('"key": "truffle"'):raw.find('"key": "truffle"')+400] and str(FRAMES["truffle"]) in raw[raw.find('"key": "truffle"'):raw.find('"key": "truffle"')+500]:
-        print("root truffle already retargeted")
+    """nature_icons lives in the nature manifest; a root entry pointing at it fails validation.
+    Move `truffle` out of the root manifest and into nature/manifest.nature.json."""
+    root = json.load(open(ROOT_MAN))
+    nature = json.load(open(MAN))
+    removed = [s for s in root["sprites"] if s.get("key") == "truffle"]
+    if removed:
+        root["sprites"] = [s for s in root["sprites"] if s.get("key") != "truffle"]
+        open(ROOT_MAN, "w").write(json.dumps(root, indent=2, ensure_ascii=False) + "\n")
+        print("removed root truffle (atlas was not in root)")
+    else:
+        print("root has no truffle entry")
+    if any(s.get("key") == "truffle" for s in nature["sprites"]):
+        print("nature truffle already present")
         return
-    if needle not in raw:
-        raise SystemExit("root truffle sprite block not found exactly")
-    raw = raw.replace(needle, repl, 1)
-    json.loads(raw)
-    open(ROOT_MAN, "w").write(raw)
-    print("root truffle retargeted to nature_icons", FRAMES["truffle"])
+    entry = {
+        "key": "truffle",
+        "category": "item",
+        "atlas": "nature_icons",
+        "anchor": {"x": 0.5, "y": 0.5},
+        "animations": {"idle": {"frames": [FRAMES["truffle"]], "fps": 1}},
+    }
+    idx = next((i + 1 for i, s in enumerate(nature["sprites"]) if s.get("key") == "truffle_stew"), len(nature["sprites"]))
+    nature["sprites"][idx:idx] = [entry]
+    open(MAN, "w").write(json.dumps(nature, indent=2, ensure_ascii=False) + "\n")
+    print("nature truffle added at frame", FRAMES["truffle"])
 
 
 def previews():

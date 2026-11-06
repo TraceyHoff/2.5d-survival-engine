@@ -11,6 +11,21 @@ def _sc(mat, season, var, ok, margin=.13):
     sc = Scatter(SEED[mat] * 1000 + SEASONS.index(season) * 100 + (0 if var is None else var), margin)
     return sc, (ok if ok else (lambda u, v: True))
 
+def sprout(t, u, v, cols, s=1.0):
+    """Spring seedling: two tiny lime leaves on a short stem."""
+    x, y = to_px(u, v); t.line([(x, y), (x, y - R(1.4 * s))], cols[1], R(.5))
+    t.ellipse(x - R(.8 * s), y - R(1.5 * s), R(.8 * s), R(.45 * s), cols[0]); t.ellipse(x + R(.8 * s), y - R(1.6 * s), R(.8 * s), R(.45 * s), cols[1])
+def blossom(t, u, v, petal, eye, r=.7):
+    """Spring speck: a tiny 4-petal blossom (smaller and sparser than summer flowers)."""
+    x, y = to_px(u, v)
+    for k in range(4):
+        a = 1.5708 * k + .4; t.ellipse(x + math.cos(a) * R(r * .8), y + math.sin(a) * R(r * .5), R(r * .55), R(r * .42), petal)
+    t.ellipse(x, y, R(r * .35), R(r * .3), eye)
+def thaw(t, u, v, r, cols, rim, seed=0):
+    """Spring meltwater pool: cool silty water, bright sky glint, no ice."""
+    puddle(t, u, v, r, cols, rim, seed)
+    x, y = to_px(u + r * .25, v + r * .1); t.ellipse(x, y, R(.7), R(.35), cols[0])
+
 def p_grass(season, var, t, mask, ok, dens):
     p = P['grass'][season]; sc, ok = _sc('grass', season, var, ok); rng = sc.rng; vv = 0 if var is None else var
     if season == 'winter':
@@ -40,6 +55,15 @@ def p_grass(season, var, t, mask, ok, dens):
                 pe, ey = p['fl'][int(rng.integers(len(p['fl'])))] if kind != 3 else p['fl'][k % 2]
                 flower(t, u, v, pe, ey, rng.uniform(.8, 1.05))
         if kind == 5 and ok(.55, .5): pebble(t, .55, .5, .04, P['dirt']['summer']['peb'], P['dirt']['summer']['ol'], 5)
+    elif season == 'spring':   # fresh lime growth: short blades, sparse crocus / daffodil / pink blossoms, dewy buds
+        for (u, v) in sc.take(int([3, 1, 4, 2, 5, 2][kind] * dens), .09, .14, accept=ok):
+            pe, ey = p['fl'][int(rng.integers(len(p['fl'])))]; blossom(t, u, v, pe, ey, rng.uniform(.75, .95))
+        for (u, v) in sc.take(int(3 * dens), .08, accept=ok): t.ellipse(*to_px(u, v), R(.45), R(.35), p['bud'])
+        if kind in (2, 5):
+            for (u, v) in sc.take(int(2 * dens), .1, .18, accept=ok): sprout(t, u, v, [p['blade'][0], p['blade'][1]])
+        for (u, v) in sc.take(int(rng.integers(2, 5) * dens), .12, .16, accept=ok):
+            tuft(t, u, v, p['blade'], h=rng.uniform(2.2, 3.2), n=int(rng.integers(3, 5)), seed=int(rng.integers(1e6)), spread=1.8)
+        return
     else:   # fall
         for (u, v) in sc.take(int(6 * dens), .07, .11, accept=ok):
             leaf(t, u, v, rng.uniform(1.3, 2.0), p['leaves'][int(rng.integers(4))], p['leafol'], rng.uniform(0, 6.28))
@@ -63,6 +87,10 @@ def p_dirt(season, var, t, mask, ok, dens):
     if season == 'fall':
         for (u, v) in sc.take(int(rng.integers(1, 5) * dens), .08, accept=ok):
             leaf(t, u, v, rng.uniform(1.2, 1.8), p['leaves'][int(rng.integers(4))], p['leafol'], rng.uniform(0, 6.28))
+    if season == 'spring':   # damp thawing earth + seedlings
+        Pd = patches(var, 2950, 2, (.05, .1)); t.fill(mask & (Pd > .55), p['damp'])
+        for (u, v) in sc.take(int([3, 2, 4, 2, 3, 5][kind] * dens), .1, accept=ok): sprout(t, u, v, p['sprout'], rng.uniform(.8, 1.1))
+        if kind in (0, 3) and ok(.5, .5): thaw(t, .5, .5, .07, ['#eef8ff', '#a4cce0', '#7aa6bc'], p['t'][3], 4)
     if season == 'winter':
         t.fill(mask & (vn(U, V, 26, 29) > .9), p['frost'])
         if var is not None:
@@ -79,7 +107,7 @@ def p_forest(season, var, t, mask, ok, dens):
         t.fill(so & (soil < .62), p['t'][2]); t.fill(so & (soil > .78), p['soil'][0])
     else: t.fill(so, p['soil'][0]); t.fill(so & (soil > .75), p['soil'][1])
     # leaf litter in the shared field: periodic lattice of leaves so it continues across tiles
-    nl = {'summer': 30, 'fall': 60, 'winter': 12}[season]
+    nl = {'summer': 30, 'fall': 60, 'winter': 12, 'spring': 22}[season]
     for src, (lo_, hi_) in ((np.random.default_rng(3700 + SEASONS.index(season)), (.06, .15)),
                             (np.random.default_rng(3800 + SEASONS.index(season) * 50 + (0 if var is None else var)), (.15, 1))):
         lr = src
@@ -110,6 +138,10 @@ def p_forest(season, var, t, mask, ok, dens):
         for (u, v) in sc.take(1, margin=.2, accept=ok): twig(t, u, v, 3.2, '#6a4632' if season != 'winter' else p['twig'], rng.uniform(0, 3.14))
     if kind == 3:
         for (u, v) in sc.take(1, margin=.22, accept=ok): pebble(t, u, v, .04, ['#cdd0c8', '#9aa094', '#6e7468'], p['ol'], 7)
+    if season == 'spring':   # new-leaf sprouts + pale blossom specks over last year's duff
+        for (u, v) in sc.take(int(rng.integers(2, 5) * dens), .1, accept=ok): sprout(t, u, v, p['fern'], rng.uniform(.8, 1.1))
+        for (u, v) in sc.take(int([4, 3, 5, 3, 4, 5][kind] * dens), .08, .14, accept=ok):
+            pe, ey = p['bloss'][int(rng.integers(3))]; blossom(t, u, v, pe, ey, .7)
     if season == 'winter':
         for (u, v) in sc.take(int(4 * dens), .08, accept=ok): sparkle(t, u, v, '#ffffff', .8)
         if kind == 4:   # little bird tracks
@@ -138,9 +170,13 @@ def p_sand(season, var, t, mask, ok, dens):
         for j in range(5):
             a = j * 1.2566 - 1.57; t.line([(x, y), (x + math.cos(a) * R(1.8), y + math.sin(a) * R(1.1))], c[1], R(.7))
     if kind == 2 and season != 'winter':
-        for (u, v) in sc.take(1, margin=.25, accept=ok): tuft(t, u, v, ['#cfe08a', '#a6b85a', '#7d8a44'] if season == 'summer' else ['#e8d48a', '#c4a85a', '#8e7a44'], h=4.5, n=4, seed=3, spread=2.2)
+        for (u, v) in sc.take(1, margin=.25, accept=ok): tuft(t, u, v, ['#cfe08a', '#a6b85a', '#7d8a44'] if season == 'summer' else ['#dcf08a', '#a8d45e', '#6e9a48'] if season == 'spring' else ['#e8d48a', '#c4a85a', '#8e7a44'], h=4.5, n=4, seed=3, spread=2.2)
     if season == 'fall':
         for (u, v) in sc.take(int(rng.integers(0, 3) * dens), .1, accept=ok): leaf(t, u, v, 1.5, p['leaves'][int(rng.integers(3))], p['leafol'], rng.uniform(0, 6.3))
+    if season == 'spring':   # damp meltwater patches + the odd beach blossom
+        Pw = patches(var, 4150, [2, 1, 3, 1, 2, 2][kind], (.05, .1)); t.fill(mask & (Pw > .55), p['wet'])
+        if kind in (1, 4):
+            for (u, v) in sc.take(int(2 * dens), .12, .2, accept=ok): blossom(t, u, v, *p['bloss'], r=.75)
     if season == 'winter':
         t.fill(mask & (vn(U, V, 24, 47) > .91), p['frost'])
         if var is not None:
@@ -176,6 +212,10 @@ def p_stone(season, var, t, mask, ok, dens):
         for (u, v) in sc.take(int(rng.integers(1, 4) * dens), .1, accept=ok): leaf(t, u, v, 1.5, p['leaves'][int(rng.integers(3))], p['leafol'], rng.uniform(0, 6.3))
     if season == 'summer' and kind == 4:
         for (u, v) in sc.take(1, margin=.25, accept=ok): tuft(t, u, v, ['#b4e46e', '#72bd50', '#4f9a48'], h=3.2, n=4, seed=5, spread=1.8)
+    if season == 'spring':   # fresh moss cushions + crevice sprouts / a yellow coltsfoot
+        for (u, v) in sc.take(int([2, 1, 2, 1, 3, 1][kind] * dens), .12, .16, accept=ok): sprout(t, u, v, p['moss'], .9)
+        if kind in (2, 4):
+            for (u, v) in sc.take(1, margin=.25, accept=ok): blossom(t, u, v, *p['bloss'], r=.8)
 
 def p_mud(season, var, t, mask, ok, dens):
     p = P['mud'][season]; sc, ok = _sc('mud', season, var, ok); rng = sc.rng; vv = 0 if var is None else var
@@ -203,6 +243,9 @@ def p_mud(season, var, t, mask, ok, dens):
         for (u, v) in sc.take(1, margin=.25, accept=ok): tuft(t, u, v, [p['reed'][0], p['reed'][1], '#4a6030'], h=5.5, n=4, seed=8, w=1.2, spread=2)
     if season == 'fall':
         for (u, v) in sc.take(int(rng.integers(1, 4) * dens), .1, accept=ok): leaf(t, u, v, 1.5, p['leaves'][int(rng.integers(3))], p['leafol'], rng.uniform(0, 6.3))
+    if season == 'spring':   # thaw: extra melt pools (cool reflective water) + reed sprouts
+        for (u, v) in sc.take([1, 2, 1, 0, 2, 1][kind], .25, .22, accept=ok): thaw(t, u, v, rng.uniform(.04, .065), p['pud'], p['t'][3], int(rng.integers(1e6)))
+        for (u, v) in sc.take(int(2 * dens), .1, .16, accept=ok): sprout(t, u, v, p['sprout'], .9)
     if season == 'winter' and var is not None:
         for (u, v) in sc.take([1, 2, 0, 0, 2, 1][kind], .25, .22, accept=ok): snowpatch(t, u, v, rng.uniform(.05, .08), p['snow'], int(rng.integers(1e6)))
 
@@ -220,8 +263,14 @@ def p_snow(season, var, t, mask, ok, dens):
             u, v = .28 + k * .1, .62 - k * .06
             if ok(u, v):
                 x, y = to_px(u, v); t.ellipse(x, y, R(.7), R(.45), p['t'][3]); t.ellipse(x + R(1.1), y - R(.4), R(.5), R(.35), p['t'][3])
-    if kind == 3 and season != 'winter':
+    if kind == 3 and season in ('summer', 'fall'):
         for (u, v) in sc.take(1, margin=.25, accept=ok): tuft(t, u, v, ['#d8e8c8', '#9ab48a', '#6e8a6c'], h=3.5, n=3, seed=2)
+    if season == 'spring':   # thawing leftovers: slush rims, bare damp earth peeking through, first sprouts
+        Pe = patches(var, 7950, [2, 3, 2, 3, 2, 3][kind], (.05, .1)); ea = mask & (Pe > .5)
+        t.fill(mask & (Pe > .4) & ~ea, p['slush']); t.fill(ea, p['earth'][1]); t.fill(ea & (Pe > .72), p['earth'][0])
+        t.fill(ea & ~np.roll(ea, -R(1.0), 0), p['earth'][2])
+        for (u, v) in sc.take(int([1, 2, 1, 2, 1, 2][kind] * dens), .12, .2, accept=ok):
+            sprout(t, u, v, p['sprout'], .8)
     if season == 'fall':
         for (u, v) in sc.take(int(rng.integers(0, 3) * dens), .1, accept=ok): leaf(t, u, v, 1.4, p['leaves'][int(rng.integers(2))], p['leafol'], rng.uniform(0, 6.3))
     for (u, v) in sc.take(int(rng.integers(2, 6) * dens), .08, .1, accept=ok): sparkle(t, u, v, '#ffffff' if kind % 2 else p['ice'], rng.uniform(.6, .9))
