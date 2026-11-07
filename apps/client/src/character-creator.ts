@@ -85,6 +85,11 @@ export function slotHasColor2(cat: CosmeticCatalogLike, s: WearableSlot): boolea
   return false;
 }
 
+/** Task 271: natural hair-palette keys a random beard / brows colour is rolled from. The full hair palette has dye
+ *  shades (teal, mint, sky…); a rolled teal beard covers the cheeks, mouth and chin and read as the eye colour
+ *  flooding the face. Dye shades stay available on the Face colour row. */
+export const FACE_NATURAL_COLOR_KEYS: readonly string[] = ["black", "espresso", "chestnut", "auburn", "ginger", "strawberry", "honey_blonde", "platinum", "ash", "silver"];
+export const naturalFaceColors = (cat: CosmeticCatalogLike): number[] => FACE_NATURAL_COLOR_KEYS.map((k) => cat.hairColors.findIndex((c) => c.key === k)).filter((i) => i >= 0);
 /** Uniform random starter look (Randomize); `rnd` is injectable for tests. */
 export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.random, body?: number): AppearanceValue {
   const pick = (n: number): number => Math.min(n - 1, Math.floor(rnd() * n));
@@ -97,7 +102,7 @@ export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.ra
     const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
     // Task 25: the face (beard/brows) rolls its own hair-palette colour — it no longer inherits the hair colour
     // (the old shared hairCol put the hair tint on the face slot for every random look, bald or not).
-    v.primary[i] = s === "hair" ? hairCol : s === "face" ? pick(p.hair) : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing);
+    v.primary[i] = s === "hair" ? hairCol : s === "face" ? (() => { const c = naturalFaceColors(cat); return c.length ? c[pick(c.length)]! : pick(p.hair); })() : s === "eyes" ? (() => { const c = colorChoices(cat, "eyes"); return c[pick(c.length)]!; })() : pick(p.clothing);
     // Task 26: hair/face secondary follows the primary — a random look must never carry the palette-default
     // black secondary, which turns the hair's highlight regions into black bars across the face.
     if (isHairish(s)) v.secondary[i] = v.primary[i]!; }
@@ -385,7 +390,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
       b.addEventListener("click", () => { look = { ...look, skinTone: i }; refresh(); }); skinChips.push(b); grid.append(b); });
     right.append(grid); }
   const c2 = (s: WearableSlot, label: string): void => { if (cat && slotHasColor2(cat, s)) row(label, `${s}:color2`); };
-  row("Hair", "hair"); row("Hair colour", "hair:color"); c2("hair", "Hair secondary colour"); row("Face / beard", "face"); c2("face", "Face secondary colour"); row("Eyes", "eyes");
+  row("Hair", "hair"); row("Hair colour", "hair:color"); c2("hair", "Hair secondary colour"); row("Face / beard", "face"); row("Face colour", "face:color"); c2("face", "Face secondary colour"); row("Eyes", "eyes");
   row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
   // Task 23: no clothing rows (top / bottom / shoes) and no shared secondary-colour row — a new survivor starts
   // with no clothes and crafts them in game. Say so plainly under the options.
