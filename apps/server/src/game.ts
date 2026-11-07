@@ -171,7 +171,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   }) : undefined;
   let localPlayerIds = 1; // no store: ids only need to be unique for this run
   const loadRadius = o.loadRadius ?? 2;
-  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
+  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4, maxLoadTimeMs: 2 });
   const defs = gameplayDefs(world);
   const resIds = new Map<number, number>();
   for (const [kind, key] of Object.entries(NODE_RESOURCES)) { try { resIds.set(Number(kind), defs.resourceId(key)); } catch { /* resource renamed: skip */ } }

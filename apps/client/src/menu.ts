@@ -3,7 +3,7 @@
  * with a progress bar, then the main menu (Singleplayer / Multiplayer / Settings).
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
-import { randomWorldSeed } from "@engine/world";
+import { sampleWorldPreview, worldPreviewSvg, randomWorldSeed } from "@engine/world";
 import { parseWorldSeed } from "./world-seed.js";
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { BUILD_HASH } from "./error-log.js";
@@ -94,6 +94,11 @@ box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:
 .boot .mp-status{font-weight:700}.boot .mp-status[data-state=online]{color:#2D5A2E}.boot .mp-status[data-state=offline]{color:#A0302A}
 .boot .mp-foot{font-size:12px;opacity:.8}
 .boot[data-page=world-seed] .panel{width:min(480px,94vw);gap:10px}
+.boot .world-preview{display:block;width:100%;height:clamp(80px,23vh,180px);object-fit:contain;border:2px solid #74432C;border-radius:8px;box-sizing:border-box;image-rendering:pixelated;background:#294537}
+.boot .preview-note{font-size:11px;line-height:1.2}
+.boot .world-preview[hidden]{display:none}.boot .world-preview[aria-busy=true]{opacity:.55}
+@media(max-height:860px){.boot[data-page=world-seed] .panel{max-height:calc(100dvh - 88px - var(--kb-inset,0px))}}
+@media(max-height:500px){.boot[data-page=world-seed] .panel{max-height:calc(100dvh - 16px - var(--kb-inset,0px))}.boot .world-preview{height:80px}.boot[data-page=world-seed] .panel{gap:6px}}
 @media (max-height:500px){.boot[data-page=world-seed] .logo,.boot[data-page=world-seed] .title{display:none}}
 @media (max-height:860px){.boot[data-page=world-seed]{justify-content:flex-start;gap:8px;padding-top:max(8px,env(safe-area-inset-top,0px))}.boot[data-page=world-seed] .title{font-size:28px}.boot[data-page=world-seed] .title small,.boot[data-page=world-seed] .lane,.boot[data-page=world-seed] .lbl{display:none}.boot[data-page=world-seed] .logo{max-height:56px}}
 @media (max-height:860px),(max-width:480px){.boot[data-page=world-seed] .panel{padding:12px 14px}.boot[data-page=world-seed] button{font-size:17px;padding:8px 14px}}
@@ -290,14 +295,28 @@ export class BootUI {
         seed.value = opts.initialSeed ?? String(generated); seed.dataset["autofocus"] = "1";
         const label = document.createElement("label"); label.textContent = "World seed (0–4294967295)"; label.htmlFor = seed.id;
         const chosen = document.createElement("p"); chosen.dataset["role"] = "chosen-seed"; chosen.setAttribute("aria-live", "polite");
-        const update = (): void => { const value = parseWorldSeed(seed.value, generated); chosen.textContent = value === undefined ? "Enter a whole number from 0 to 4294967295." : `World seed: ${value} · Keep this number to replay this world.`; };
+        const preview = document.createElement("img"); preview.className = "world-preview"; preview.dataset["role"] = "world-preview";
+        preview.alt = "Seeded terrain preview: blue water, green lowlands, shaded hills and cliffs";
+        const note = document.createElement("p"); note.className = "preview-note"; note.textContent = "Starter region · 384 × 256 tiles · North ↑. Shading shows relief. World streams beyond this view.";
+        let previewTimer = 0;
+        const draw = (value: number): void => {
+          preview.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(worldPreviewSvg(sampleWorldPreview(value)))}`;
+          preview.dataset["seed"] = String(value); preview.setAttribute("aria-busy", "false");
+        };
+        const update = (): void => {
+          const value = parseWorldSeed(seed.value, generated); clearTimeout(previewTimer);
+          chosen.textContent = value === undefined ? "Enter a whole number from 0 to 4294967295." : `World seed: ${value} · Keep this number to replay this world.`;
+          preview.hidden = value === undefined; preview.setAttribute("aria-busy", String(value !== undefined));
+          if (value !== undefined) previewTimer = window.setTimeout(() => draw(value), 100);
+        };
         seed.addEventListener("input", update); update();
         const next = (): void => { const value = parseWorldSeed(seed.value, generated); if (value === undefined) { seed.focus(); return; } enterFullscreen(); finish({ kind, seed: value }); };
         const random = mpButton("Random", "random-seed", () => { generated = randomWorldSeed(); seed.value = String(generated); update(); });
         seed.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); next(); } });
-        this.screen([["Create world", next], ["Back", back, "alt"]], back, "<h2>New world</h2>", label, mpRow(seed, random), chosen);
+        const footer = document.createElement("div"); footer.className = "sticky-footer"; footer.dataset["role"] = "sticky-footer";
+        this.screen([["Create world", next], ["Back", back, "alt"]], back, "<h2>New world</h2>", label, mpRow(seed, random), preview, note, chosen, footer);
         this.root.dataset["page"] = "world-seed";
-        this.cleanup = () => { delete this.root.dataset["page"]; };
+        this.cleanup = () => { clearTimeout(previewTimer); delete this.root.dataset["page"]; };
       };
       const main = (): void => {
         const extra: HTMLElement[] = [];

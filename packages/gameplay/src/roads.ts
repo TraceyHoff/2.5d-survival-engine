@@ -7,7 +7,7 @@
  */
 import { defineCommand, PlayerId, Transform, entityIndex, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
 import { emit, XpActivity } from "./events.js";
-import { installSpatialIndex } from "@engine/world";
+import { worldTileKey, installSpatialIndex } from "@engine/world";
 import raw from "../data/roads.json";
 import { BuildPiece, Dead, PieceOwner, Road, RoadSurface, Tribe } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
@@ -30,7 +30,7 @@ export const MASK_N = 1, MASK_E = 2, MASK_S = 4, MASK_W = 8;
 // ---- tile index (rebuilt lazily; road entities never move) --------------------------------------------------------
 interface RoadIdx { tiles: Map<number, Entity>; size: number; tick: number }
 const idxCache = new WeakMap<World, RoadIdx>();
-const key = (tx: number, ty: number): number => (tx + 32768) * 65536 + (ty + 32768);
+const key = worldTileKey;
 function roadIndex(world: World): RoadIdx {
   if (!world.isRegistered(Road)) return { tiles: new Map(), size: 0, tick: 0 };
   const st = world.store(Road); let c = idxCache.get(world);

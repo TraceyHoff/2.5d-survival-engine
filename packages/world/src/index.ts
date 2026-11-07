@@ -15,3 +15,5 @@ export * from "./emitters.js";
 export * from "./climate.js";
 export * from "./population.js";
 export * from "./waterDepth.js";
+
+export * from "./preview.js";

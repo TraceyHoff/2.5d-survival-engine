@@ -13,6 +13,8 @@ export interface ChunkManagerOptions {
   cacheSize?: number;
   /** Max chunk loads per update() (streaming budget). */
   maxLoadsPerUpdate?: number;
+  /** Soft wall-clock load budget; always admits one chunk to avoid starvation (no quality reduction). */
+  maxLoadTimeMs?: number;
 }
 export type ChunkLoadHook = (chunk: Chunk, nodes: readonly NodePlacement[]) => void;
 export type ChunkUnloadHook = (chunk: Chunk) => void;
@@ -76,8 +78,9 @@ export class ChunkManager extends TileMap {
       if (this.chunks.has(k)) { this.active.add(k); this.lru.delete(k); this.stats.cacheHits++; }
       else if (!queued.has(k) && !this.inflight.has(k)) { this.pending.push(k); queued.add(k); }
     }
-    let n = 0;
+    let n = 0; const started = performance.now();
     while (this.pending.length && n < this.maxLoads) {
+      if (n > 0 && performance.now() - started >= (this.opts.maxLoadTimeMs ?? Infinity)) break;
       const k = this.pending.shift()!; if (!want.has(k) || this.chunks.has(k) || this.inflight.has(k)) continue;
       const { cx, cy } = parseChunkKey(k); const g = this.opts.provider.load(cx, cy); n++;
       if (g instanceof Promise) {

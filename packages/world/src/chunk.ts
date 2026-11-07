@@ -121,3 +121,12 @@ export function decodeTileDelta(bytes: Uint8Array): { version: number; tiles: [i
 export function applyTileDelta(chunk: Chunk, bytes: Uint8Array): void {
   const { version, tiles } = decodeTileDelta(bytes); for (const [i, t] of tiles) chunk.set(i % CHUNK_SIZE, (i / CHUNK_SIZE) | 0, t); chunk.version = version;
 }
+
+/** Supported high-precision play/build domain (not a terrain-generation border). The generator remains
+ * unbounded; terrain/road tile indices previously aliased outside a 65,536-tile-wide square.
+ * Two 17-bit axes now cover the whole f32-safe square: 131,072 x 131,072 tiles (4x area).
+ * Runtime keys are rebuilt on load, so this does not change saved chunk/entity formats. */
+export const WORLD_TILE_HALF_EXTENT = F32_SAFE_TILE_RANGE;
+export const WORLD_TILE_DIAMETER = WORLD_TILE_HALF_EXTENT * 2;
+export const worldTileKey = (x: number, y: number): number => (x + WORLD_TILE_HALF_EXTENT) * WORLD_TILE_DIAMETER + y + WORLD_TILE_HALF_EXTENT;
+export const worldTileFromKey = (key: number): [number, number] => [Math.floor(key / WORLD_TILE_DIAMETER) - WORLD_TILE_HALF_EXTENT, (key % WORLD_TILE_DIAMETER) - WORLD_TILE_HALF_EXTENT];

@@ -35,7 +35,7 @@ export function randomWorldSeed(random: () => number = Math.random): number {
 }
 
 /** ADR-254: terrain height levels. Biome noise still drives tile bands; a separate height field adds hills, plateaus and ledges. */
-export const HEIGHT_MAX = 12;
+export const HEIGHT_MAX = 22;
 const HEIGHT_SALT = 0x6834; // "h4"
 const TERRACE_SALT = 0x7465; // "te"
 
@@ -81,6 +81,8 @@ export const NODE_GUARANTEE_RADIUS = 160;
 export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
   private bands: NonNullable<ProceduralOptions["bands"]>;
   private readonly water: WaterFeatureLayout | undefined;
+  private readonly regionWater = new Map<string, { seed: number; layout: WaterFeatureLayout }>();
+  private guaranteed: { kind: number; tx: number; ty: number }[] | undefined;
   /** kind -> band tile ids that may host it (from nodeKinds lists). */
   private readonly kindTiles: Map<number, number[]>;
   private readonly allKinds: number[];
@@ -95,7 +97,20 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     this.allKinds = [...this.kindTiles.keys()];
   }
   private forcedWater(tx: number, ty: number): boolean {
-    return !!this.water && isForcedWater(this.opts.seed, tx, ty, this.water);
+    if (!this.water) return false;
+    // Every 512-tile region has seeded features; region zero preserves ADR-255's starter layout.
+    const rx = Math.floor((tx + 256) / 512), ry = Math.floor((ty + 256) / 512);
+    if (rx === 0 && ry === 0) return isForcedWater(this.opts.seed, tx, ty, this.water);
+    const lx = tx - rx * 512, ly = ty - ry * 512;
+    if (Math.abs(lx) > 120 || Math.abs(ly) > 120) return false;
+    const key = `${rx},${ry}`; let region = this.regionWater.get(key);
+    if (!region) {
+      const seed = fnv1a(key, this.opts.seed >>> 0);
+      region = { seed, layout: waterFeatureLayout(seed) };
+      if (this.regionWater.size >= 16) this.regionWater.delete(this.regionWater.keys().next().value!);
+      this.regionWater.set(key, region);
+    }
+    return isForcedWater(region.seed, lx, ly, region.layout);
   }
   /** True when the final tile at (tx,ty) is water (biome or ADR-255 feature), without building cover. */
   private biomeOrForcedWater(tx: number, ty: number): boolean {
@@ -110,25 +125,39 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
    * multi-octave field adds hills and ridges; a terrace field snaps some areas into plateaus so neighbouring tiles
    * form clear ledges (drops of 2+ levels) that the cliff / gt_side passes can draw.
    */
-  heightAt(tx: number, ty: number): number {
+  heightAt(tx: number, ty: number): number { return this.heightFromNoise(tx, ty, this.noiseAt(tx, ty)); }
+  private heightFromNoise(tx: number, ty: number, biome: number): number {
     const seed = this.opts.seed >>> 0; const H = this.opts.heightMax ?? HEIGHT_MAX;
-    const biome = this.noiseAt(tx, ty);
     const field = 0.55 * valueNoise(seed ^ HEIGHT_SALT, tx, ty, 48)
       + 0.30 * valueNoise(seed ^ HEIGHT_SALT ^ 0x111, tx, ty, 18)
       + 0.15 * valueNoise(seed ^ HEIGHT_SALT ^ 0x222, tx, ty, 8);
-    // Plateau bands (0..3) × 3 levels → neighbouring bands differ by 3, which gt_side / cliff faces draw as a clear ledge.
+    // Plateau bands (0..3), scaled below: gentle starter hills grow into six-level wilderness cliffs.
     // Detail + a little biome keep rolling variation on top of each plateau so the ground is not a flat shelf.
     const plateau = Math.floor(valueNoise(seed ^ TERRACE_SALT, tx, ty, 28) * 4); // 0..3
     const detail = Math.floor(field * 2) + Math.floor(biome * 2); // 0..3
-    return Math.max(0, Math.min(H, plateau * 3 + detail));
+    // Gentle starter hills (all adjacent faces <=3); grow the relief over a wide transition,
+    // not a ring-shaped cliff. Beyond it, six-level terraces make real cliffs and deep valleys.
+    const distance = Math.max(Math.abs(tx), Math.abs(ty));
+    const blend = Math.max(0, Math.min(1, (distance - 160) / 224)), relief = 2 + 4 * blend;
+    const gentleDetail = Math.floor(field + biome);
+    const localDetail = Math.floor(gentleDetail + (detail - gentleDetail) * blend);
+    return Math.max(0, Math.min(H, Math.floor(plateau * relief) + localDetail));
   }
   /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). ADR-255: forced lake/river/pond override biome. */
   tileAt(tx: number, ty: number): number {
+    const n = this.noiseAt(tx, ty); return this.tileFromNoise(tx, ty, n, this.bandOf(n));
+  }
+  /** Survey a tile and its height together without constructing a chunk, sharing the biome noise work. */
+  sampleAt(tx: number, ty: number): { tile: number; height: number } {
+    const n = this.noiseAt(tx, ty);
+    return { tile: this.tileFromNoise(tx, ty, n, this.bandOf(n)), height: this.heightFromNoise(tx, ty, n) };
+  }
+  private tileFromNoise(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number]): number {
     if (this.forcedWater(tx, ty)) {
       const waterBand = this.bands.find((b) => b.tile === 1) ?? this.bands[0]!;
       return this.surface(tx, ty, 0, waterBand, true);
     }
-    const n = this.noiseAt(tx, ty); return this.surface(tx, ty, n, this.bandOf(n), false);
+    return this.surface(tx, ty, n, band, false);
   }
   /** Final ground tile: band tile, then ADR-246 mud, then ADR-249 cover. `forced` = ADR-255 water feature. */
   private surface(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number], forced = false): number {
@@ -178,7 +207,7 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
       const n = this.noiseAt(tx, ty);
       const band = this.bandOf(n);
-      const i = ly * CHUNK_SIZE + lx; const tile = this.tileAt(tx, ty); c.tiles[i] = tile; c.height[i] = this.heightAt(tx, ty);
+      const i = ly * CHUNK_SIZE + lx; const tile = this.tileFromNoise(tx, ty, n, band); c.tiles[i] = tile; c.height[i] = this.heightFromNoise(tx, ty, n);
       // No land resources on water (forced features or biome). Band chance still uses biome band kinds.
       if (tile !== 1 && tile !== 8 && band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) {
         nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) }); occupied.add(i);
@@ -197,9 +226,9 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     if (!this.allKinds.length) return;
     const seed = this.opts.seed >>> 0; const N = this.allKinds.length;
     const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
-    for (let i = 0; i < N; i++) {
-      const kind = this.allKinds[i]!;
-      const [tx, ty] = this.guaranteeTile(seed, kind, i, N);
+    if (x1 <= -NODE_GUARANTEE_RADIUS || x0 >= NODE_GUARANTEE_RADIUS || y1 <= -NODE_GUARANTEE_RADIUS || y0 >= NODE_GUARANTEE_RADIUS) return;
+    this.guaranteed ??= this.allKinds.map((kind, i) => { const [tx, ty] = this.guaranteeTile(seed, kind, i, N); return { kind, tx, ty }; });
+    for (const { kind, tx, ty } of this.guaranteed) {
       if (tx < x0 || tx >= x1 || ty < y0 || ty >= y1) continue;
       const li = (ty - y0) * CHUNK_SIZE + (tx - x0);
       if (occupied.has(li)) continue;

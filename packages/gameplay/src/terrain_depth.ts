@@ -3,6 +3,7 @@
  * without ESM cycles): TerrainEdit tile index and underground depth.
  */
 import { Transform, type Entity, type World } from "@engine/core";
+import { worldTileKey, worldTileFromKey } from "@engine/world";
 import { TerrainEdit } from "./components.js";
 
 export const TERRAIN = {
@@ -19,8 +20,8 @@ export const TERRAIN = {
 export const LEVEL_MIN = -30, LEVEL_MAX = 47;
 interface EditIdx { tiles: Map<number, Entity>; size: number; tick: number }
 const idxCache = new WeakMap<World, EditIdx>();
-export const tkey = (tx: number, ty: number): number => (tx + 32768) * 65536 + (ty + 32768);
-export const untkey = (k: number): [number, number] => [Math.floor(k / 65536) - 32768, (k % 65536) - 32768];
+export const tkey = worldTileKey;
+export const untkey = worldTileFromKey;
 export function editIndex(world: World): EditIdx {
   if (!world.isRegistered(TerrainEdit)) return { tiles: new Map(), size: 0, tick: 0 };
   const st = world.store(TerrainEdit); let c = idxCache.get(world);
