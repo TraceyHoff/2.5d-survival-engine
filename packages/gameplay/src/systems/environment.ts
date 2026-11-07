@@ -90,19 +90,23 @@ export function weatherSystem(world: World, dt: number): void {
   const time = timeOfDay(world, world.tick + 1);
   const si = worldSeason(world, env, time); // the season this step ends in (like clockSystem)
   // Task 23: snow already falling re-rolls at once once the seasonal base temperature reaches freezing.
+  const firstDay = timeOfDay(world).day === 0; // world age, not season age; includes loaded day-zero saves
+  const rainOk = !firstDay || !isRaining(w.kind);
   const snowOk = !isSnowing(w.kind) || snowAllowed(env, si, time);
   // endsAtTick u32 max = pinned (admin / tests / ?weather=): never re-rolled by the season guard
-  if (world.tick < w.endsAtTick && (w.endsAtTick === PINNED || (weatherAllowed(env, si, w.kind) && snowOk))) return;
+  if (rainOk && world.tick < w.endsAtTick && (w.endsAtTick === PINNED || (weatherAllowed(env, si, w.kind) && snowOk))) return;
   const table = weatherTable(world, env, si);
   // Heat waves never roll on the first day of a season: a new game starts in summer, and a heat wave on day
   // one kills before anyone can build shelter or stock water. Heat is re-enabled once the season is a day old.
   // Task 23: snow / blizzard never roll while the seasonal base temperature is at or above freezing.
   const rollTable = table.map((d) => {
+    if (firstDay && isRaining(d.kind)) return { ...d, weight: 0 };
     if (d.kind === WeatherKind.Heat && si.lengthDays > 0 && si.into < 1) return { ...d, weight: 0 };
     if (isSnowing(d.kind) && !snowAllowed(env, si, time)) return { ...d, weight: 0 };
     return d;
   });
-  const def = rollTable[weightedIndex(world, rollTable.map((d) => d.weight))]!;
+  // A custom all-rain table still needs a dry fallback on day zero.
+  const def = rollTable.some((d) => d.weight > 0) ? rollTable[weightedIndex(world, rollTable.map((d) => d.weight))]! : NEUTRAL;
   const from = w.kind as WeatherKind;
   w.kind = def.kind;
   w.intensity = world.rng.range(def.intensity[0], def.intensity[1]);

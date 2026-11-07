@@ -49,7 +49,7 @@ describe("ADR-239 season cycle", () => {
 
 describe("ADR-239 seasonal weather", () => {
   const roll = (season: number, n: number, seed = 7): Map<number, number> => {
-    const w = makeWorld({ liveWeather: true, dayLengthTicks: 1_000_000 }, seed); setSeason(w, season, 1.5); setTimeOfDay(w, 12); // 1.5 days in: past the first-day heat-wave ban, so summer can roll heat
+    const w = makeWorld({ liveWeather: true, dayLengthTicks: 1_000_000 }, seed); setSeason(w, season, 1.5); setTimeOfDay(w, 12, 1); // world day two; 1.5 days in: past the first-day heat-wave ban, so summer can roll heat
     const seen = new Map<number, number>();
     for (let i = 0; i < n; i++) { w.env(Weather).endsAtTick = 0; steps(w, 1); const k = w.env(Weather).kind; seen.set(k, (seen.get(k) ?? 0) + 1); }
     return seen;

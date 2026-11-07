@@ -60,7 +60,7 @@ describe("exposure", () => {
   function rainy() {
     const w = makeWorld();
     Object.assign(w.env(Weather), { kind: WeatherKind.Rain, intensity: 1, endsAtTick: 0xffffffff });
-    setTimeOfDay(w, 0.5 * 24);
+    setTimeOfDay(w, 0.5 * 24, 1); // ADR-270: rain is a day-two fixture
     return w;
   }
 

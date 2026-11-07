@@ -667,6 +667,9 @@ export class SpriteBatch {
     else { h = atlas.handOf(body); if (!h) return; behind = h.behind; }
     st[1]++;
     const r = this.heldRes; const hfa = atlas.fireAnim(hid); if (!atlas.resolve(hid, hfa >= 0 ? hfa : 0, facing, hfa >= 0 ? animT : 0, 0, r)) return; st[2]++; // ADR-218: held torches flicker (render clock)
+    // ADR-270: sprite origin is a packing pivot, not necessarily the visible handle.
+    // Rebase before rotation/mirroring so the authored grip lands exactly on either hand.
+    if (!socket) { const grip = atlas.handOf(r, "grip"); if (grip) { r.ax = grip.x; r.ay = grip.y; } }
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
     // Task 25: dye tint is packed 0xRRGGBB; writeOne wants (r<<24)|(g<<16)|(b<<8). 0 = no tint.

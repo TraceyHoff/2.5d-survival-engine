@@ -32,7 +32,7 @@ describe("ADR-260 spring season", () => {
     for (let h = 0; h < 24; h++) { const t = seasonalBaseTemp(env, mid, { t: h / 24, hours: h, day: 10, tickOfDay: 0, dayLengthTicks: 1 }); expect(t).toBeGreaterThanOrEqual(sp.tempRange[0] - 1e-6); expect(t).toBeLessThanOrEqual(sp.tempRange[1] + 1e-6); }
   });
   it("mid-spring weather rolls never snow or heat-wave", () => {
-    const w = makeWorld({ liveWeather: true, dayLengthTicks: 1_000_000 }, 3); setSeason(w, 3, 1.5); setTimeOfDay(w, 12);
+    const w = makeWorld({ liveWeather: true, dayLengthTicks: 1_000_000 }, 3); setSeason(w, 3, 1.5); setTimeOfDay(w, 12, 1); // ADR-270: sample weather after day zero
     const seen = new Set<number>();
     for (let i = 0; i < 2000; i++) { w.env(Weather).endsAtTick = 0; steps(w, 1); seen.add(w.env(Weather).kind); }
     for (const k of seen) { expect(isSnowing(k)).toBe(false); expect(k).not.toBe(WeatherKind.Heat); }

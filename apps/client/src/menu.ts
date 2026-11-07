@@ -3,6 +3,8 @@
  * with a progress bar, then the main menu (Singleplayer / Multiplayer / Settings).
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
+import { randomWorldSeed } from "@engine/world";
+import { parseWorldSeed } from "./world-seed.js";
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { BUILD_HASH } from "./error-log.js";
 import { mountUi } from "./ui-root.js";
@@ -18,7 +20,7 @@ declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
 /** {app.title}: Art's branding.json title (placeholder until the game is named). */
 export const APP_TITLE = BR.title;
-export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
+export type MenuChoice = { kind: "singleplayer"; seed?: number } | { kind: "multiplayer"; url: string } | { kind: "host"; seed?: number } | { kind: "join"; code: string };
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
 export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** Task 22: AI humans in multiplayer (new worlds) */ aiHumans?: boolean; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean; /** ADR-173: name tags over other players */ nameTags?: boolean; /** ADR-239/243: HUD temperature units (default F; C only with tempUnitChosen) */ tempUnit?: "C" | "F"; /** ADR-243: the player picked tempUnit themselves */ tempUnitChosen?: boolean }
 /** ADR-121: the world rules a NEW local / hosted world is created with (an existing save keeps its own). */
@@ -91,6 +93,10 @@ box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:
 .boot input:focus{outline:3px solid #FFD45A;outline-offset:1px}
 .boot .mp-status{font-weight:700}.boot .mp-status[data-state=online]{color:#2D5A2E}.boot .mp-status[data-state=offline]{color:#A0302A}
 .boot .mp-foot{font-size:12px;opacity:.8}
+.boot[data-page=world-seed] .panel{width:min(480px,94vw);gap:10px}
+@media (max-height:500px){.boot[data-page=world-seed] .logo,.boot[data-page=world-seed] .title{display:none}}
+@media (max-height:860px){.boot[data-page=world-seed]{justify-content:flex-start;gap:8px;padding-top:max(8px,env(safe-area-inset-top,0px))}.boot[data-page=world-seed] .title{font-size:28px}.boot[data-page=world-seed] .title small,.boot[data-page=world-seed] .lane,.boot[data-page=world-seed] .lbl{display:none}.boot[data-page=world-seed] .logo{max-height:56px}}
+@media (max-height:860px),(max-width:480px){.boot[data-page=world-seed] .panel{padding:12px 14px}.boot[data-page=world-seed] button{font-size:17px;padding:8px 14px}}
 /* ADR-262: portrait phones — the loading bar (lane) and its status label sit dead centre (both loading screens) */
 @media (orientation:portrait),(max-width:480px){.boot .lane{margin-left:auto;margin-right:auto}.boot .lbl{display:block;box-sizing:border-box;width:min(420px,76vw);margin-left:auto;margin-right:auto;text-align:center;overflow-wrap:anywhere}}
 @media (max-height:860px){.boot[data-page=multiplayer]{justify-content:flex-start;gap:8px;padding-top:max(8px,env(safe-area-inset-top,0px))}.boot[data-page=multiplayer] .title{font-size:28px}.boot[data-page=multiplayer] .title small{display:none}.boot[data-page=multiplayer] .logo{max-height:56px}.boot[data-page=multiplayer] .lane,.boot[data-page=multiplayer] .lbl{display:none}}
@@ -255,7 +261,7 @@ export class BootUI {
   /** notice: shown once on the main screen (e.g. "Host ended the session"), hook `.boot [data-role=notice]`. */
   /** slot: ?player slot whose browser saves "Manage saves" deletes (ADR-099). */
   /** page: open straight on a sub-page (ADR-236: a multiplayer session ending returns to the Multiplayer page). */
-  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string; page?: "multiplayer"; mp?: MultiplayerPageOpts }): Promise<MenuChoice> {
+  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string; page?: "multiplayer"; mp?: MultiplayerPageOpts; savedSeed?: (mode: "singleplayer" | "host") => Promise<number | undefined>; initialSeed?: string }): Promise<MenuChoice> {
     this.tipsOn(false); // the menu is not a loading screen
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
@@ -267,11 +273,37 @@ export class BootUI {
       const uninstallKb = kbWin ? installKeyboardViewport(this.root, kbWin) : undefined;
       const finish = (c: MenuChoice): void => { uninstallKb?.(); resolve(c); };
       let notice = opts.notice;
+      // This resolves before main.ts opens the character creator; no world exists yet.
+      const localWorld = async (kind: "singleplayer" | "host", back: () => void): Promise<void> => {
+        if (!opts.savedSeed) { enterFullscreen(); finish({ kind }); return; }
+        const status = document.createElement("p"); status.textContent = "Checking for an existing world…";
+        this.screen([["Back", back, "alt"]], back, "<h2>World</h2>", status);
+        try {
+          const saved = await opts.savedSeed(kind);
+          if (!status.isConnected) return; // Back was pressed during the store read
+          if (saved !== undefined) { enterFullscreen(); finish({ kind }); return; }
+        } catch (e) {
+          status.textContent = `Couldn't read the world: ${e instanceof Error ? e.message : String(e)}`; return;
+        }
+        let generated = randomWorldSeed();
+        const seed = mpInput("world-seed", "World seed", "Blank = random"); seed.inputMode = "numeric"; seed.id = "boot-world-seed";
+        seed.value = opts.initialSeed ?? String(generated); seed.dataset["autofocus"] = "1";
+        const label = document.createElement("label"); label.textContent = "World seed (0–4294967295)"; label.htmlFor = seed.id;
+        const chosen = document.createElement("p"); chosen.dataset["role"] = "chosen-seed"; chosen.setAttribute("aria-live", "polite");
+        const update = (): void => { const value = parseWorldSeed(seed.value, generated); chosen.textContent = value === undefined ? "Enter a whole number from 0 to 4294967295." : `World seed: ${value} · Keep this number to replay this world.`; };
+        seed.addEventListener("input", update); update();
+        const next = (): void => { const value = parseWorldSeed(seed.value, generated); if (value === undefined) { seed.focus(); return; } enterFullscreen(); finish({ kind, seed: value }); };
+        const random = mpButton("Random", "random-seed", () => { generated = randomWorldSeed(); seed.value = String(generated); update(); });
+        seed.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); next(); } });
+        this.screen([["Create world", next], ["Back", back, "alt"]], back, "<h2>New world</h2>", label, mpRow(seed, random), chosen);
+        this.root.dataset["page"] = "world-seed";
+        this.cleanup = () => { delete this.root.dataset["page"]; };
+      };
       const main = (): void => {
         const extra: HTMLElement[] = [];
         if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
         this.screen([
-          ["Singleplayer", () => { enterFullscreen(); finish({ kind: "singleplayer" }); }],
+          ["Singleplayer", () => { void localWorld("singleplayer", main); }],
           ["Multiplayer", multi],
           ["Delete progress", saves, "alt"],
           ["Settings", settings, "alt"],
@@ -286,7 +318,7 @@ export class BootUI {
         const extra: HTMLElement[] = [];
         if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
         const go = (c: MenuChoice): void => { enterFullscreen(); finish(c); };
-        const host = mpButton("Host game", "mp-host", () => go({ kind: "host" })); host.dataset["autofocus"] = "1";
+        const host = mpButton("Host game", "mp-host", () => { void localWorld("host", multi); }); host.dataset["autofocus"] = "1";
         extra.push(mpSection("Host", `Run the world in this browser${mp.hostCap ? ` · up to ${mp.hostCap} players` : ""}. The room code is in Pause → Session.`, host));
         const code = mpInput("room-code", "Room code", "ABC-234"); code.maxLength = 7; code.autocapitalize = "characters"; code.style.textTransform = "uppercase";
         const join = mpButton("Join", "mp-join", () => { const c = code.value.trim(); if (!c) { code.focus(); return; } go({ kind: "join", code: c }); });

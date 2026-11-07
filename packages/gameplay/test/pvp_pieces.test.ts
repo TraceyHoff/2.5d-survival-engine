@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Weather, type Entity, type World } from "@engine/core";
+import { setTimeOfDay, Weather, type Entity, type World } from "@engine/core";
 import {
   attachmentsOf, BuildPiece, Burning, damagePiece, defaultDefs, DOOR_BREACHED, DoorState, FIRE, Health, ignite, placePiece, RaidAlarm,
   sightBonusAt, snapPlacement, spawnPlayer, Tribe, WeatherKind,
@@ -50,6 +50,7 @@ describe("Burning", () => {
     if (!FIRE.flammableTiers.includes(tier)) return;
     const hp0 = w.getField(box, BuildPiece, "hp")!; steps(w, 60);
     expect(w.getField(box, BuildPiece, "hp")!).toBeLessThan(hp0);
+    setTimeOfDay(w, 12, 1); // ADR-270: storms resume after day zero
     Object.assign(w.env(Weather), { kind: WeatherKind.Storm }); steps(w, 20 * 20);
     expect(w.has(box, Burning)).toBe(false);
   });

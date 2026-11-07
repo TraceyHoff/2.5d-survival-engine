@@ -28,7 +28,7 @@ const testDefs = (): G.GameDefs => {
   raw.diseases.exposure = { coldSeconds: 5, heatSeconds: 5, sprintSeconds: 3, restSeconds: 2 };
   return G.loadDefs(raw, { lock: G.DEFAULT_ID_LOCK });
 };
-const rainy = (w: World): void => { Object.assign(w.env(Weather), { kind: WeatherKind.Rain, intensity: 1, endsAtTick: 0xffffffff }); };
+const rainy = (w: World): void => { setTimeOfDay(w, 12, 1); /* ADR-270: rain starts after day zero */ Object.assign(w.env(Weather), { kind: WeatherKind.Rain, intensity: 1, endsAtTick: 0xffffffff }); };
 const clear = (w: World): void => { Object.assign(w.env(Weather), { kind: WeatherKind.Clear, intensity: 1, endsAtTick: 0xffffffff }); };
 
 /** A 1-tile room at (10,10): walls on all 4 edges, roof at level 1 (same builder as Task 24). */

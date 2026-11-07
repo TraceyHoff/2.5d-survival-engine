@@ -122,8 +122,8 @@ export function aiHumansOn(o: Pick<LocalServerOptions, "mode" | "worldRules" | "
 }
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
   // ADR-254: every new playthrough gets a random seed (map / resources / animals differ). A save keeps its own
-  // seed via store meta; an explicit o.seed (?seed= / tests) wins. createGameServer still prefers meta.seed.
-  const seed = o.seed ?? o.store?.readMeta()?.seed ?? randomWorldSeed(); const mode: GameMode = o.mode ?? "singleplayer";
+  // seed via store meta; o.seed (menu / ?seed= / tests) applies only to a new world, matching createGameServer.
+  const seed = o.store?.readMeta()?.seed ?? o.seed ?? randomWorldSeed(); const mode: GameMode = o.mode ?? "singleplayer";
   const network = new LoopbackNetwork(seed);
   const transport = network.createServer();
   const serverTransport: ServerTransport = o.extraTransports?.length ? new MultiServerTransport([transport, ...o.extraTransports]) : transport;

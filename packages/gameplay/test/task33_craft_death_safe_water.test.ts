@@ -146,21 +146,21 @@ describe("Task 33: water wets you in clear weather", () => {
 describe("Task 33: disease rates rebalanced to realistic levels", () => {
   it("per-exposure chances are the new realistic values", () => {
     const tun = d.diseaseTuning;
-    expect(tun.causes.rawMeatChance).toBe(0.08);
-    expect(tun.causes.rawWaterChance).toBe(0.10);
-    expect(tun.causes.rottenFoodChance).toBe(0.25);
-    expect(tun.causes.sickFoodChance).toBe(0.05);
-    expect(tun.causes.woundChance).toBe(0.08);
-    expect(tun.transmission.chance).toBe(0.10);
+    expect(tun.causes.rawMeatChance).toBe(0.03);
+    expect(tun.causes.rawWaterChance).toBe(0.025);
+    expect(tun.causes.rottenFoodChance).toBe(0.10);
+    expect(tun.causes.sickFoodChance).toBe(0.02);
+    expect(tun.causes.woundChance).toBe(0.025);
+    expect(tun.transmission.chance).toBe(0.05);
   });
   it("a single raw-meat bite rarely infects, but repeated risky eating still does over time", () => {
     const w = makeWorld();
     const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 });
-    // 8% per bite: sample the rate itself — one bite is usually fine, ~1 in 12 bites sickens.
+    // ADR-270: 3% per bite; repeated unsafe meals remain a real risk.
     let hits = 0; const n = 1000;
     for (let i = 0; i < n; i++) if (w.rng.next() < d.diseaseTuning.causes.rawMeatChance) hits++;
-    expect(hits / n).toBeGreaterThan(0.04);
-    expect(hits / n).toBeLessThan(0.13);
+    expect(hits / n).toBeGreaterThan(0.01);
+    expect(hits / n).toBeLessThan(0.06);
     // And the disease itself is unchanged: food poisoning still contracts and still runs its course.
     expect(G.contractDisease(w, p, "food_poisoning")).toBe(true);
     expect(G.activeDiseases(w, p).map((a) => a.key)).toEqual(["food_poisoning"]);
@@ -235,7 +235,7 @@ describe("Task 33: disease data unchanged apart from the rates", () => {
     expect(cold.cure).toBe("honey_tea");
     const flu = d.diseases.find((x) => x.key === "influenza")!;
     expect(flu.durationSeconds).toBe(900);
-    expect(d.diseaseTuning.exposure.coldSeconds).toBe(180);
+    expect(d.diseaseTuning.exposure.coldSeconds).toBe(360);
     expect(d.vitals.hypothermiaBelow).toBe(35);
   });
 });

@@ -44,11 +44,11 @@ async function until<T>(r: Rig, p: Promise<T>, maxMs = 3000): Promise<T> {
   for (let t = 0; t < maxMs && !done; t += 50) await tick(r);
   if (err) throw err; if (!done) throw new Error("timeout"); return val as T;
 }
-async function rig(opts: { cap?: number; link?: FakeLinkOptions; aiHumans?: boolean } = {}): Promise<Rig> {
+async function rig(opts: { cap?: number; link?: FakeLinkOptions; aiHumans?: boolean; seed?: number } = {}): Promise<Rig> {
   const net = new FakeRtcNetwork(3); const sig = new FakeSignaling(net, opts.link);
   let x = 7; const random = (): number => ((x = (x * 1103515245 + 12345) >>> 0) / 2 ** 32);
   const store = new MemoryWorldStore();
-  const host = await startP2PHost({ signaling: sig, store, seed: 9, cap: opts.cap ?? 6, population: false, random, ...(opts.aiHumans === false ? { worldRules: { hordes: true, hordeGraceDays: 3, aiHumans: false } } : {}) });
+  const host = await startP2PHost({ signaling: sig, store, seed: opts.seed ?? 9, cap: opts.cap ?? 6, population: false, random, ...(opts.aiHumans === false ? { worldRules: { hordes: true, hordeGraceDays: 3, aiHumans: false } } : {}) });
   const hostSession = new ClientSession({ storage: new MapStorage(), slot: "h", sampleButtons: () => 0 });
   const r: Rig = { store, net, sig, host, hostSession, guests: [] };
   await until(r, hostSession.connect("p2p-host", "Hosty", host.hostTransport));
@@ -187,3 +187,10 @@ describe("P2P host e2e (host-authoritative, loopback data channels)", () => {
   });
 });
 
+
+// ADR-270: the host chooses one world seed; guests cannot replace it.
+it("hosting uses the chosen seed and joining keeps it", async () => {
+  const r = await rig({ seed: 424242 });
+  try { expect(r.host.local.game.world.seed).toBe(424242); await join(r, "Guest"); expect(r.host.local.game.world.seed).toBe(424242); }
+  finally { await end(r); }
+});
