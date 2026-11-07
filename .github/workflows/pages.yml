@@ -24,7 +24,7 @@ jobs:
       - name: Build client (offline mode, Pages base)
         working-directory: apps/client
         env:
-          BASE: /2.5d-survival-engine/
+          BASE: /SurVivaZ/
           VITE_DEFAULT_OFFLINE: "1"
         run: pnpm exec vite build
       - uses: actions/configure-pages@v5

@@ -4,7 +4,7 @@ _A cozy survival game built on the 2.5D Survival Engine._
 
 A cute, cartoony **2.5D isometric multiplayer co-op survival game** and its custom engine. It is browser-first and written in **TypeScript + WebGL2**. You gather resources, build bases, craft, tame pets, recruit AI helpers, farm, trade with other players and survive cold, rain, hunger, disease and the night, alone or with your clan. An authoritative Node server runs the same headless simulation as the browser client. The client predicts locally and interpolates everyone else.
 
-> **Status:** playable and live — [play in your browser](https://traceyhoff.github.io/2.5d-survival-engine/) (menu `vb320c3b5`). Most gameplay systems are implemented, tested and wired into the client: building, crafting, pets, farming, AI helpers, diseases, seasons, dyes and more. See [What's playable today](#whats-playable-today).
+> **Status:** playable and live — [play in your browser](https://traceyhoff.github.io/SurVivaZ/) (menu `vb320c3b5`). Most gameplay systems are implemented, tested and wired into the client: building, crafting, pets, farming, AI helpers, diseases, seasons, dyes and more. See [What's playable today](#whats-playable-today).
 
 ## Prerequisites
 
@@ -15,8 +15,8 @@ A cute, cartoony **2.5D isometric multiplayer co-op survival game** and its cust
 ## Quick start
 
 ```sh
-git clone https://github.com/TraceyHoff/2.5d-survival-engine.git
-cd 2.5d-survival-engine
+git clone https://github.com/TraceyHoff/SurVivaZ.git
+cd SurVivaZ
 corepack enable
 pnpm install --frozen-lockfile
 pnpm demo
@@ -43,7 +43,7 @@ Renderer demo URL params include `?time=0..24`, `weather=clear|rain|storm|snow|f
 
 ## Play in your browser
 
-**https://traceyhoff.github.io/2.5d-survival-engine/**
+**https://traceyhoff.github.io/SurVivaZ/**
 
 The GitHub Pages build is static, so it runs in **local/offline mode**: the authoritative server game module
 (`apps/server/src/game.ts`, the same code `pnpm demo` runs) is hosted in the page over `@engine/net`'s in-memory
@@ -230,7 +230,7 @@ None remaining — every animal key resolves to its own packed sprite when the p
 
 ## Handoff note for Grok — read this first (updated 2026-11-06, ~13:10 CST)
 
-You are picking up the 2.5d survival engine (repo `TraceyHoff/2.5d-survival-engine`, live at https://traceyhoff.github.io/2.5d-survival-engine/). The previous agent (Muse) is nearly out of the user's free weekly usage (resets Nov 10, 10:19 AM CST). Do the remaining work, then stop — do not start anything beyond the queue below without the user.
+You are picking up the 2.5d survival engine (repo `TraceyHoff/SurVivaZ`, live at https://traceyhoff.github.io/SurVivaZ/). The previous agent (Muse) is nearly out of the user's free weekly usage (resets Nov 10, 10:19 AM CST). Do the remaining work, then stop — do not start anything beyond the queue below without the user.
 
 ### Where things stand
 - Remote `main` was at **`b320c3b5`** (Task 34). **Task 35 (ADR-254) is implemented** on top of current main — see DECISIONS.md ADR-254. Previous note:: CI run 42275457127 job-level SUCCESS and Pages run 42275457130 SUCCESS, menu `vb320c3b5`. Local checkout is clean at the same commit (`~/workspace/work/survival-engine`, sparse checkout; never clone into /tmp, 512 MB tmpfs). Do NOT `git reset`, `git checkout -- .`, or re-clone.
@@ -241,7 +241,7 @@ You are picking up the 2.5d survival engine (repo `TraceyHoff/2.5d-survival-engi
 - **Art pass (separate from Tasks 35/36):** the user wants the arts/assets bot to replace the borrowed/reused artwork. The full inventory is in the README section "New creatures, items & art — status for the art pass" above — every creature, crop, piece and item still drawn from another sheet or a generic icon, with its current fallback target. Read that section first; `packages/gameplay/data/sprite_fallbacks.json` is the source of truth for what reuses what.
 
 ### How work gets done here (hard-won rules — follow them)
-- **Verify first, then commit locally, then ask the user for push approval — never push without the user tapping "Yes, push it" AND the separate snapshot approval card.** Pushes go through `/opt/hatch/bin/github push-files --owner TraceyHoff --repo 2.5d-survival-engine --branch main --message <msg> --source-dir ~/workspace/work/survival-engine --paths-file <file>`. The paths manifest must be NUL-delimited AND end with a trailing NUL. Keep any single snapshot comfortably under ~5 MB. The snapshot route carries **UTF-8 text files only — no binary PNGs** (embed art as base64 data URIs in a `.ts` file, or paint it in code as Task 34 does).
+- **Verify first, then commit locally, then ask the user for push approval — never push without the user tapping "Yes, push it" AND the separate snapshot approval card.** Pushes go through `/opt/hatch/bin/github push-files --owner TraceyHoff --repo SurVivaZ --branch main --message <msg> --source-dir ~/workspace/work/survival-engine --paths-file <file>`. The paths manifest must be NUL-delimited AND end with a trailing NUL. Keep any single snapshot comfortably under ~5 MB. The snapshot route carries **UTF-8 text files only — no binary PNGs** (embed art as base64 data URIs in a `.ts` file, or paint it in code as Task 34 does).
 - **Gate before pushing:** `./node_modules/.bin/vitest run` across gameplay/render/client/server (report exact per-suite counts; the 7 `better-sqlite3` server load failures and the sparse-checkout `pack.test.ts` KEYS.md failure are pre-existing, not regressions) AND typecheck every changed package **including test files** with the lockfile-pinned **TypeScript 5.9.3** — NOT the VM's local `tsc` (5.6.3), which missed a real CI failure in Task 34 (TS2769 `new ImageData` overload; see above). A usable 5.9.3 binary can be fetched with `npm pack typescript@5.9.3` into /tmp. `pnpm` is at `~/workspace/work/tools/node_modules/.bin/pnpm`; plain npm fails on `workspace:` protocol; never run `pnpm add`. Remove any `package.json`/`package-lock.json` diff from npm before pushing. Local `node_modules/@engine/*` symlinks are NOT committed and must never be pushed.
 - **CI-only failure classes the local VM hides:** (a) undeclared cross-package imports resolve locally via root symlinks but fail CI's strict pnpm linking — check every new import against the owning package's `package.json` deps, and never create a dep cycle (gameplay must not depend on persist); (b) the 7 unreadable server test files — grep-check shared-shape changes against them by reading them; (c) `pack.test.ts` — run it directly and confirm the only failure is the KEYS.md one. **Typecheck lesson from Task 30:** `AgentContext` lives in `@engine/core`, NOT the gameplay index — never write `G.AgentContext`.
 - **After pushing:** check CI + Pages via the GitHub Actions **jobs endpoint** (`/actions/runs/<id>/jobs`, and check-run annotations for failures) — the runs list goes stale. A deploy counts as live only when its Pages run is confirmed successful at job level; report the live menu version (`v<short hash>`). If CI fails, fix it the same way (find the exact error from annotations, fix, re-push).

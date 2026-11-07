@@ -16,7 +16,7 @@ const { servedManifestIndex } = await import("@engine/assets");
  *   art/pack/         <- packages/assets/pack (manifest, piece_variants, atlases/*, audio/<bus>/<name>.(ogg|opus|m4a|mp3) for the ADR-117 mixer; .wav masters excluded)
  *   art/survival_fx/  <- assets/survival_fx render_tuning.json + daynight_grading.json + textures/ + lut/
  *   art/ui/           <- assets/ui theme.json + fonts/** + branding/** + kit/** (Cozy Camp kit atlases 1x/2x) + screens/** + screen.schema.json + strings/en.json + input/** (glyphs/touch) + creator/** (ADR-115) + hooks/atlas
- * GitHub Pages serves the site under /<repo>/; set BASE (e.g. BASE=/2.5d-survival-engine/) for that build.
+ * GitHub Pages serves the site under /<repo>/; set BASE (e.g. BASE=/SurVivaZ/) for that build.
  */
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "../..");
