@@ -43,20 +43,22 @@ describe("ADR-144 binding labels (from the real profiles)", () => {
 });
 
 describe("ADR-144 step progress", () => {
-  test("do steps advance from a per-step baseline; info steps wait for Next", () => {
-    const st = mem(); const p = new TutorialProgress(TUTORIAL_STEPS, st, tutorialKey("1"));
+  test("do steps advance from a per-step baseline; info steps wait for Got it (ADR-275 lesson queue)", () => {
+    const st = mem(); const p = new TutorialProgress(TUTORIAL_STEPS, st, tutorialKey("1"), { gapMs: 0 });
     expect(p.shouldAutoStart(true)).toBe(true); expect(p.shouldAutoStart(false)).toBe(false);
-    p.start(); expect(p.step.id).toBe("welcome"); expect(p.observe({})).toBe(false); p.next();
+    p.start(); expect(p.gated({})).toBe(false); expect(p.step.id).toBe("move");
+    p.observe({ moved: 50 }); // baseline: walking done before this tip does not count
     expect(p.step.id).toBe("move");
-    p.observe({ moved: 50 }); // baseline: walking done before this step does not count
-    expect(p.step.id).toBe("move");
-    expect(p.observe({ moved: 54 })).toBe(true); expect(p.step.id).toBe("sprint");
+    expect(p.observe({ moved: 54 })).toBe(true); expect(p.seen.has("move")).toBe(true);
+    expect(p.gated({ moved: 54 })).toBe(false); expect(p.step.id).toBe("sprint"); p.next(); // walked 25+ tiles: the Run tip
+    expect(p.gated({ moved: 54 })).toBe(true); // nothing else triggered yet
+    expect(p.gated({ moved: 54, gain: 1 })).toBe(false); expect(p.step.id).toBe("inventory");
     // resume after reload
-    const q = new TutorialProgress(TUTORIAL_STEPS, st, tutorialKey("1"));
-    expect(q.active).toBe(true); expect(q.step.id).toBe("sprint"); expect(q.shouldAutoStart(false)).toBe(true);
+    const q = new TutorialProgress(TUTORIAL_STEPS, st, tutorialKey("1"), { gapMs: 0 });
+    expect(q.active).toBe(true); expect(q.step.id).toBe("inventory"); expect(q.seen.has("move")).toBe(true); expect(q.shouldAutoStart(false)).toBe(true);
     q.skip(); expect(new TutorialProgress(TUTORIAL_STEPS, st, tutorialKey("1")).shouldAutoStart(true)).toBe(false);
-    q.start(true); expect(q.step.id).toBe("welcome");
-    for (let k = 0; k < TUTORIAL_STEPS.length; k++) q.next(); expect(q.status).toBe("done");
+    q.start(true); expect(q.seen.size).toBe(0); expect(q.gated({})).toBe(false); expect(q.step.id).toBe("move");
+    for (let k = 0; k < TUTORIAL_STEPS.length; k++) { q.go(k); q.next(); } expect(q.status).toBe("done");
   });
   test("equip finishes when a tool is already in hand", () => {
     const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k"); p.start(); p.go(TUTORIAL_STEPS.findIndex((s) => s.id === "equip"));
@@ -84,14 +86,16 @@ describe("ADR-144 overlay placement", () => {
     expect(r.x < target.x + target.w && r.x + r.w > target.x && r.y < target.y + target.h && r.y + r.h > target.y).toBe(false);
     expect(r.x).toBeGreaterThanOrEqual(8); expect(r.x + r.w).toBeLessThanOrEqual(390 - 8 + 1e-6);
   });
-  test("card renders, Next/Back/Skip buttons work, device switch re-renders labels", () => {
+  test("card renders, Skip this tip / ✕ buttons work, device switch re-renders labels", () => {
     document.body.innerHTML = `<div id="game-root" style="width:390px;height:844px"></div>`;
     const root = document.getElementById("game-root")!; let dev: "keyboardMouse" | "gamepad" = "keyboardMouse";
     const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k"); p.start(); p.go(TUTORIAL_STEPS.findIndex((s) => s.id === "sprint"));
     const ui = mountTutorial({ root, progress: p, bindings: input() as unknown as BindingSource, device: () => dev, probe: () => ({}), hidden: () => false });
     ui.update(); expect(ui.el.hidden).toBe(false); expect(ui.el.textContent).toContain("Shift");
     dev = "gamepad"; ui.update(); expect(ui.el.dataset["device"]).toBe("gamepad"); expect(ui.el.textContent).not.toContain("Shift");
-    (ui.el.querySelector("[data-tut=back]") as HTMLElement).click(); expect(p.step.id).toBe("move");
+    expect(ui.el.querySelector(".tut-head [data-tut=next]")).not.toBeNull(); /* ADR-275 portrait: dismiss stays visible in the header */ expect(ui.el.querySelector("[data-tut=back]")).toBeNull(); expect(ui.el.textContent).not.toMatch(/\d+ of \d+/);
+    (ui.el.querySelector("[data-tut=next]") as HTMLElement).click(); expect(p.seen.has("sprint")).toBe(true); expect(ui.el.hidden).toBe(true);
+    p.go(TUTORIAL_STEPS.findIndex((s) => s.id === "look")); ui.update(); expect(ui.el.hidden).toBe(false);
     (ui.el.querySelector("[data-tut=skip]") as HTMLElement).click(); expect(p.status).toBe("skipped"); expect(ui.el.hidden).toBe(true);
     ui.destroy();
   });
@@ -128,9 +132,10 @@ describe("ADR-144 follow-up: touch ghost joystick, pad hold-Y skip, real placeme
     const held = { pressed: () => false, down: (a: string) => a === "Reload" };
     ui.frame(held, false); t += 600; ui.frame(held, false); expect(p.step.id).toBe("move");
     expect(parseInt((ui.el.querySelector(".tut-hold i") as HTMLElement).style.width)).toBeGreaterThan(50);
-    t += 500; ui.frame(held, false); expect(p.step.id).toBe("sprint");
-    t += 2000; ui.frame(held, false); expect(p.step.id).toBe("sprint"); // still held: no chain-skip
-    ui.frame({ pressed: () => false, down: () => false }, false); t += 100; ui.frame(held, false); t += 1100; ui.frame(held, false); expect(p.step.id).toBe("look");
+    t += 500; ui.frame(held, false); expect(p.seen.has("move")).toBe(true); expect(ui.el.hidden).toBe(true);
+    p.go(TUTORIAL_STEPS.findIndex((s) => s.id === "sprint")); ui.update();
+    t += 2000; ui.frame(held, false); expect(p.step.id).toBe("sprint"); expect(p.seen.has("sprint")).toBe(false); // still held: no chain-skip
+    ui.frame({ pressed: () => false, down: () => false }, false); t += 100; ui.frame(held, false); t += 1100; ui.frame(held, false); expect(p.seen.has("sprint")).toBe(true);
     spy.mockRestore(); ui.destroy();
   });
   test("place counts only a piece that really appeared, and only in build mode", () => {

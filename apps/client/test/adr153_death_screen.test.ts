@@ -51,7 +51,7 @@ describe("ADR-153 death screen", () => {
     r.w.destroy(bag); r.ui.frame(); expect(r.ui.compass.hidden).toBe(true);
   });
   test("tutorial: dying and respawning keeps the current step (resume), and the death card sits above the tutorial card", () => {
-    const tp = new TutorialProgress(TUTORIAL_STEPS, mem(), "tut-x"); tp.start(true); tp.next(); tp.next(); const at = tp.index;
+    const tp = new TutorialProgress(TUTORIAL_STEPS, mem(), "tut-x"); tp.start(true); tp.go(3); const at = tp.index;
     const r = rig(); kill(r); r.adv(RESPAWN_UNLOCK_S); r.ui.press(); revive(r);
     expect(tp.active).toBe(true); expect(tp.index).toBe(at);
     const z = Number(getComputedStyle(r.ui.el).zIndex || "90"); expect(z).toBeGreaterThan(45);

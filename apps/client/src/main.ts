@@ -68,7 +68,9 @@ import { EDIT_CHAR_KEY, creatorShotFromQuery, creatorShotLook, loadCharacter, pr
 import { sampleDayClock } from "./day-clock.js";
 import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "./tutorial/steps.js";
 import { mountTutorial } from "./tutorial/overlay.js";
-import { TutorialProber } from "./tutorial/probe.js";
+import { TutorialProber, type ProbeSample } from "./tutorial/probe.js";
+import { Health, Zombie, Progression, hasDisease, worldDays } from "@engine/gameplay";
+import { timeOfDay } from "@engine/core";
 import { Survival, heldTool, ResourceNode, toolHint, Animal, LootBag, openContainer } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
@@ -645,19 +647,34 @@ if (creatorShot) {
   if (params.get("autoconnect") !== "0") { connectTo(url, session.savedName ?? ""); void signalReady(); }
 }
 
+/** ADR-275 contextual-tip triggers: cheap reads of the local player (each guarded; a missing component just means "not yet"). */
+function tutorialTriggers(p: Entity | undefined, pt: { x: number; y: number } | undefined, sv: { stamina?: number; maxStamina?: number } | undefined): Partial<ProbeSample> {
+  const out: { -readonly [K in keyof ProbeSample]?: ProbeSample[K] } = { dead: !!deathUi?.dead };
+  if (p === undefined) return out;
+  try { out.nearNode = toolHint(world, p) !== undefined; } catch { /* none */ }
+  try { if (world.has(p, Health)) { const h = world.get(p, Health)!; out.hp = h.hp; out.hpMax = h.max; } } catch { /* none */ }
+  if (sv?.stamina !== undefined) out.stamina = (sv.stamina / Math.max(1, sv.maxStamina ?? 100)) * 100;
+  try { const t = timeOfDay(world); if (t.dayLengthTicks > 0) { out.hours = t.hours; out.day = worldDays(world); } } catch { /* none */ }
+  try { if (pt && world.isRegistered(Zombie)) { let best = Infinity; for (const z of world.query([Zombie, Transform])) { const t = world.get(z, Transform)!; best = Math.min(best, Math.hypot(t.x - pt.x, t.y - pt.y)); } if (best < Infinity) out.zombieDist = best; } } catch { /* none */ }
+  try { out.brokenLeg = hasDisease(world, p, "broken_leg"); } catch { /* none */ }
+  try { if (world.isRegistered(Progression) && world.has(p, Progression)) { const g = world.get(p, Progression) as unknown as { points: number; tpoints?: ArrayLike<number>; nodes?: ArrayLike<number> }; let pts = g.points; for (const v of Array.from(g.tpoints ?? [])) pts += v; let n = 0; for (const w of Array.from(g.nodes ?? [])) { let x = w >>> 0; while (x) { n += x & 1; x >>>= 1; } } out.skillPoints = pts; out.skillNodes = n; } } catch { /* none */ }
+  try { out.nearBed = bedNear(world, p) !== undefined; } catch { /* none */ }
+  try { out.nearBag = liftableNear(world, p) !== undefined; } catch { /* none */ }
+  return out;
+}
 const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
 tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input, device: promptDevice,
   hidden: () => session.player === undefined || !!deathUi?.dead || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
   probe: () => {
     const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; const c = menuCtx();
-    let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let campfires: number | undefined; let stations: number | undefined; let sv: { hunger: number; thirst: number } | undefined;
+    let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let campfires: number | undefined; let stations: number | undefined; let sv: { hunger: number; thirst: number; stamina?: number; maxStamina?: number } | undefined;
     if (c) { try { items = new Map(); for (const v of inventoryView(c)) if (v.item) items.set(v.name, (items.get(v.name) ?? 0) + v.count); } catch { items = undefined; }
       try { tk = heldTool(world, c.player, gameplayDefs(world)).kind; } catch { tk = 0; }
       try { if (pt && world.isRegistered(BuildPiece)) { pieces = 0; campfires = 0; stations = 0; const defs = gameplayDefs(world); for (const e of world.query([BuildPiece, Transform])) { const t = world.get(e, Transform)!; if ((t.x - pt.x) ** 2 + (t.y - pt.y) ** 2 < 144) { pieces++; const def = defs.pieces.get(world.getField(e, BuildPiece, "type") ?? -1); if (def?.key === "campfire") campfires++; if (def && def.station !== 0) stations++; /* StationKind.None = 0 */ } } } } catch { pieces = undefined; campfires = undefined; stations = undefined; }
-      try { if (world.has(c.player, Survival)) sv = world.get(c.player, Survival) as { hunger: number; thirst: number }; } catch { /* none */ } }
+      try { if (world.has(c.player, Survival)) sv = world.get(c.player, Survival) as { hunger: number; thirst: number; stamina: number; maxStamina: number }; } catch { /* none */ } }
     const av = input.vector("Aim");
     tutProber.sample({ pos: pt ? { x: pt.x, y: pt.y } : undefined, sprinting: input.down("Sprint"), zoom: iso?.renderer.camera.zoom, aiming: Math.hypot(av[0], av[1]) > 0.3 || input.down("Primary"),
-      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top, pieces, campfires, stations });
+      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top, pieces, campfires, stations, ...tutorialTriggers(p, pt, sv) });
     return tutProber.probe();
   } });
 input.onDeviceChange(() => tutorialUi?.update());

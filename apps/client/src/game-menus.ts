@@ -98,7 +98,7 @@ export interface GameMenusOptions {
   qualityInfo?: () => { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } | undefined;
   deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
-  /** ADR-144 tutorial controls: "Play the guide again" in Pause + Settings; "Next tip" / "Skip the guide" while it runs. */
+  /** ADR-144 tutorial controls: "Play the guide again" in Pause + Settings; "Dismiss this tip" / "Turn off tips" while tips are on (ADR-275). */
   tutorial?: { active(): boolean; replay(): void; next(): void; skip(): void };
   getGamepads?: UINavOptions["getGamepads"];
   pollGamepads?: boolean;
@@ -249,7 +249,7 @@ export class GameMenus {
     if (this.o.session?.()) items.push(["Session", () => this.open("session")]); // ADR-236: multiplayer status / room code / leave live here, not over the game
     for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([m.title, () => this.open(m.id)]); // station / camper open by walking up to one
     const tut = this.o.tutorial;
-    if (tut?.active()) items.push(["Guide: next tip", () => { this.nav.closeAll(); tut.next(); }], ["Skip the guide", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
+    if (tut?.active()) items.push(["Dismiss this tip", () => { this.nav.closeAll(); tut.next(); }], ["Turn off tips", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
     else if (tut) items.push(["Play the guide again", () => { this.nav.closeAll(); tut.replay(); }]);
     items.push(["Quit to main menu", () => { this.nav.closeAll(); this.o.onQuit(); }, "alt"]);
     return this.panel("pause", "Paused", [], items);

@@ -69,23 +69,23 @@ describe("map pinch zoom", () => {
   });
 });
 
-describe("tutorial checkpoint gates", () => {
-  test("real steps carry the requested checkpoints", () => {
+describe("tutorial checkpoints (ADR-275 triggers)", () => {
+  test("real lessons carry the requested triggers", () => {
     const build = TUTORIAL_STEPS[stepIdx("build")]!;
-    expect(build.gate?.({})).toBe(false); expect(build.gate?.({ "menu:build": 1 })).toBe(true);
+    expect(build.when?.({})).toBe(false); expect(build.when?.({ gainLog: 1 })).toBe(true);
     const station = TUTORIAL_STEPS[stepIdx("station")]!;
-    expect(station.gate?.({})).toBe(false); expect(station.gate?.({ campfire: 1 })).toBe(true);
+    expect(station.when?.({})).toBe(false); expect(station.when?.({ campfire: 1 })).toBe(true);
     const craftStation = TUTORIAL_STEPS[stepIdx("craft-station")]!;
-    expect(craftStation.gate?.({})).toBe(false); expect(craftStation.gate?.({ stationBuilt: 1 })).toBe(true);
-    expect(TUTORIAL_STEPS[stepIdx("move")]!.gate).toBeUndefined(); // early steps stay ungated
+    expect(craftStation.when?.({})).toBe(false); expect(craftStation.when?.({ stationBuilt: 1 })).toBe(true);
+    expect(TUTORIAL_STEPS[stepIdx("move")]!.when).toBeUndefined(); // only the first Walk tip is untriggered
   });
-  test("a gated step waits: no baseline, no advance, until the checkpoint; then it measures from there", () => {
-    const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k"); p.start(); p.go(stepIdx("build"));
-    expect(p.gated({})).toBe(true);
-    expect(p.observe({ build: 99 })).toBe(false); expect(p.step.id).toBe("build"); // done-signal before the gate does not count
-    expect(p.gated({ "menu:build": 1 })).toBe(false);
-    expect(p.observe({ "menu:build": 1, build: 99 })).toBe(false); // baseline captured at gate-open
-    expect(p.observe({ "menu:build": 1, build: 100 })).toBe(true); expect(p.step.id).toBe("rotate");
+  test("a triggered do-lesson measures from when it appeared", () => {
+    const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k", { gapMs: 0 }); p.start(); p.seen.add("move");
+    expect(p.gated({ build: 99 })).toBe(false); expect(p.step.id).toBe("ghost"); p.next();
+    expect(p.gated({ build: 99 })).toBe(false); expect(p.step.id).toBe("rotate"); p.next();
+    expect(p.gated({ build: 99 })).toBe(false); expect(p.step.id).toBe("place");
+    expect(p.observe({ build: 99, place: 3 })).toBe(false); // baseline captured when it appeared
+    expect(p.observe({ build: 99, place: 4 })).toBe(true); expect(p.seen.has("place")).toBe(true);
   });
   test("prober fires campfire / stationBuilt once when the first nearby one appears", () => {
     const b = new TutorialProber(); const base = { sprinting: false, aiming: false, menuOpen: false, toolKind: 0, buildActive: false, buildRot: 0 };
@@ -93,21 +93,18 @@ describe("tutorial checkpoint gates", () => {
     expect(b.probe()["campfire"]).toBeUndefined(); expect(b.probe()["stationBuilt"]).toBeUndefined();
     b.sample({ ...base, campfires: 1, stations: 1 });
     expect(b.probe()["campfire"]).toBe(1); expect(b.probe()["stationBuilt"]).toBe(1);
-    b.sample({ ...base, campfires: 2, stations: 1 }); // more of the same: no refire needed, gate stays open
+    b.sample({ ...base, campfires: 2, stations: 1 });
     expect(b.probe()["campfire"]).toBe(1);
   });
-  test("overlay shows the paused chip while gated, and the real card once the checkpoint opens", () => {
+  test("overlay shows nothing until a trigger fires (no paused chip), then the real card", () => {
     document.body.innerHTML = `<div id="game-root" style="width:390px;height:844px"></div>`;
     const root = document.getElementById("game-root")!;
-    const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k"); p.start(); p.go(stepIdx("build"));
+    const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k", { gapMs: 0 }); p.start(); p.seen.add("move");
     let probe: Record<string, number> = {};
     const ui = mountTutorial({ root, progress: p, bindings: input() as unknown as BindingSource, device: () => "keyboardMouse", probe: () => probe, hidden: () => false });
-    ui.update();
-    expect(ui.el.hidden).toBe(false); expect(ui.el.dataset["kind"]).toBe("gated");
-    expect(ui.el.textContent).toContain("Open the Build menu"); expect(ui.el.textContent).not.toContain("Pick the campfire");
-    (ui.el.querySelector("[data-tut=next]") as HTMLElement).click(); expect(p.step.id).toBe("rotate"); // Skip this step works from the chip
-    p.go(stepIdx("build")); probe = { "menu:build": 1 }; ui.update();
-    expect(ui.el.dataset["kind"]).toBe("do"); expect(ui.el.textContent).toContain("Pick the campfire");
+    ui.update(); expect(ui.el.hidden).toBe(true);
+    probe = { gainLog: 1 }; ui.update();
+    expect(ui.el.hidden).toBe(false); expect(ui.el.dataset["step"]).toBe("build"); expect(ui.el.textContent).toContain("Pick the campfire");
     ui.destroy();
   });
 });

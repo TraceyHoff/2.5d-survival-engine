@@ -93,7 +93,7 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 #tutorial button{pointer-events:auto;font:700 13px Fredoka,system-ui,sans-serif;min-height:34px;min-width:44px;border-radius:9px;border:2px solid #3B2433;background:#5A9A4A;color:#FFFAF0;padding:2px 10px;cursor:pointer}
 #tutorial button.alt{background:#C98A4B}#tutorial button.x{background:transparent;color:#61402E;border:none;min-width:34px;padding:0}
 #tutorial button:focus-visible{outline:3px solid #FFD45A;outline-offset:2px}
-#tutorial[data-device=touch] button{min-height:44px}#tutorial .tut-hint{font-size:11px;color:#61402E;margin-top:4px}
+#tutorial[data-device=touch] button{min-height:44px}#tutorial .tut-head button.hb{display:none}#tutorial .tut-hint{font-size:11px;color:#61402E;margin-top:4px}
 #tutorial .tut-wait{font-size:12px;color:#2D5A2E}
 #tutorial-spot{position:absolute;z-index:44;pointer-events:none;border:3px solid #FFD45A;border-radius:12px;box-shadow:0 0 0 3px rgba(59,36,51,.55),0 0 14px #FFD45A;animation:tutpulse 1.2s ease-in-out infinite;transition:left .15s,top .15s,width .15s,height .15s}
 #tutorial-arrow{position:absolute;z-index:44;pointer-events:none;font:24px system-ui;color:#FFD45A;text-shadow:0 0 3px #3B2433,0 0 3px #3B2433;transform:translate(-50%,-50%)}
@@ -106,7 +106,7 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 @media (prefers-reduced-motion:reduce){#tutorial-spot{animation:none}#tutorial{transition:none}}
 @media (min-width:1600px) and (min-height:900px){#tutorial{width:430px;font-size:18px;padding:12px 14px}#tutorial h3{font-size:21px}#tutorial .tut-key{font-size:16px}#tutorial button{font-size:17px;min-height:44px}#tutorial .tut-hint{font-size:14px}}
 @media (max-width:480px){#tutorial{width:min(280px,calc(100vw - 16px));font-size:13px;padding:6px 8px}#tutorial h3{font-size:14px}}
-@media (orientation:portrait){#tutorial{width:min(245px,calc(100vw - 16px));max-height:max(80px,calc(50dvh - 248px));overflow-y:auto;pointer-events:auto;overscroll-behavior:contain}}
+@media (orientation:portrait){#tutorial .tut-head button.hb{display:inline-block;font-size:12px}#tutorial .tut-btns{display:none}#tutorial .tut-head{position:sticky;top:0;background:inherit}#tutorial{width:min(245px,calc(100vw - 16px));max-height:max(80px,calc(50dvh - 248px));overflow-y:auto;pointer-events:auto;overscroll-behavior:contain}}
 @media (max-height:420px){#tutorial{width:min(260px,calc(100vw - 16px));padding:6px 8px;font-size:13px}#tutorial h3{font-size:14px}}`;
 
 export interface TutorialOverlayOptions {
@@ -128,30 +128,20 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
   o.root.append(ghost, spot, arrow, el);
   let yHeld = 0; let yStart = 0;
   const p = o.progress; let key = "";
+  /** ADR-275: one short, one-topic tip card (no "3 of 40" counter): Got it / Skip this tip, ✕ turns tips off. */
   const build = (d: TutDevice): void => {
-    const s = p.step; const n = p.steps.length; const isDo = !!s.done;
+    const s = p.step; const isDo = !!s.done;
     const nextKeys = d === "touch" ? "" : renderTokens("{A:Jump}", o.bindings, d);
-    el.innerHTML = `<div class="tut-head"><span>${esc(s.section)} · ${p.index + 1} of ${n}</span><button type="button" class="x" data-tut="skip" aria-label="Skip the guide" title="Skip the guide">✕</button></div>`
-      + `<div class="tut-bar"><i style="width:${Math.round(((p.index + 1) / n) * 100)}%"></i></div>`
+    el.innerHTML = `<div class="tut-head"><span>Tip · ${esc(s.section)}</span><button type="button" class="hb${isDo ? " alt" : ""}" data-tut="next">${isDo ? "Skip" : "Got it"}</button><button type="button" class="x" data-tut="skip" aria-label="Turn off tips" title="Turn off tips">✕</button></div>`
       + `<h3>${esc(s.title)}</h3><p data-role="tut-text">${renderTokens(stepText(s.text, d), o.bindings, d)}</p>`
-      + (isDo ? `<div class="tut-wait">Do it to go on.</div>` : "")
-      + `<div class="tut-btns">${p.index > 0 ? `<button type="button" class="alt" data-tut="back">Back</button>` : ""}`
-      + (isDo ? `<button type="button" class="alt" data-tut="next">Skip this step</button>` : `<button type="button" data-tut="next">${p.index === n - 1 ? "Done" : "Next"}</button>`) + `</div>`
-      + (d === "gamepad" ? `<div class="tut-hint">${isDo ? `Stuck? Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip <b class="tut-hold"><i></i></b>` : `${nextKeys} Next · ${renderTokens("{A:QuickUse}", o.bindings, d)} Back`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Next</div>` : "");
+      + (isDo ? `<div class="tut-wait">Try it now.</div>` : "")
+      + `<div class="tut-btns">` + (isDo ? `<button type="button" class="alt" data-tut="next">Skip this tip</button>` : `<button type="button" data-tut="next">Got it</button>`) + `</div>`
+      + (d === "gamepad" ? `<div class="tut-hint">${isDo ? `Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip <b class="tut-hold"><i></i></b>` : `${nextKeys} Got it`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Got it</div>` : "");
     el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = isDo ? "do" : "info";
-  };
-  /** Slim "guide paused" chip while the current step waits on its checkpoint: the hint, plus a way out. */
-  const buildPaused = (d: TutDevice): void => {
-    const s = p.step;
-    el.innerHTML = `<div class="tut-head"><span>${esc(s.section)} · Guide paused</span><button type="button" class="x" data-tut="skip" aria-label="Skip the guide" title="Skip the guide">✕</button></div>`
-      + `<p>${esc(s.gateHint ?? "Keep playing — the guide continues when you reach the next checkpoint.")}</p>`
-      + `<div class="tut-btns"><button type="button" class="alt" data-tut="next">Skip this step</button></div>`
-      + (d === "gamepad" ? `<div class="tut-hint">Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip this step</div>` : "");
-    el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = "gated";
   };
   el.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>("[data-tut]"); if (!b) return; e.stopPropagation();
-    const a = b.dataset["tut"]; if (a === "next") p.next(); else if (a === "back") p.back(); else if (a === "skip") p.skip();
+    const a = b.dataset["tut"]; if (a === "next") p.next(); else if (a === "skip") p.skip();
     o.onChange?.(); update();
   });
   // keep taps on the card from reaching the game canvas (touch controls / build placement)
@@ -182,16 +172,9 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
   };
   function update(): void {
     if (!p.active || o.hidden() || p.step.ghost === undefined || o.device() !== "touch") ghost.hidden = true;
-    if (!p.active || o.hidden()) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
+    if (!p.active || o.hidden()) { if (p.active) o.probe(); /* ADR-275: keep sampling (e.g. death → respawn) while hidden */ el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
     const d = o.device(); const probe = o.probe();
-    if (p.gated(probe)) {
-      // Checkpoint not reached yet: slim chip at the bottom, no spotlight, no card for the step itself.
-      const gk = `gated|${p.step.id}|${d}`;
-      if (gk !== key) { key = gk; buildPaused(d); }
-      el.hidden = false; spot.hidden = true; arrow.hidden = true; ghost.hidden = true;
-      const rr = rootRect(); el.style.left = `${Math.max(8, (rr.width - el.offsetWidth) / 2)}px`; el.style.top = `${Math.max(8, rr.height - el.offsetHeight - 16)}px`;
-      return;
-    }
+    if (p.gated(probe)) { el.hidden = true; spot.hidden = true; arrow.hidden = true; ghost.hidden = true; key = ""; return; } // ADR-275: nothing triggered yet
     if (p.observe(probe)) o.onChange?.();
     if (!p.active) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
     const k = `${p.step.id}|${d}`;
@@ -205,16 +188,15 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
     /** Per input update: info cards move on with Jump (A / Space); gamepad B goes back. Skipped while a menu is open. */
     frame(i: { pressed(a: string): boolean; down(a: string): boolean }, menuOpen: boolean): void {
       if (!p.active || menuOpen || el.hidden) { if (yStart > 0) yStart = 0; return; }
-      const d = o.device(); const gated = p.gated(o.probe());
-      if (d === "gamepad" && (p.step.done || gated)) { // ADR-144: hold Y (Reload) 1 s to skip an action card (also the way out of a gated step on gamepad)
+      const d = o.device();
+      if (d === "gamepad" && p.step.done) { // ADR-144: hold Y (Reload) 1 s to skip an action tip
         const down = i.down("Reload"); const now = performance.now();
         if (!down) { if (yStart) { yStart = 0; setHold(0); } }
         else if (yStart < 0) { /* wait for release after a skip */ }
         else { if (!yStart) yStart = now; yHeld = (now - yStart) / HOLD_MS; setHold(yHeld); if (yHeld >= 1) { yStart = -1; setHold(0); p.next(); o.onChange?.(); update(); return; } }
       }
-      // While gated, Jump/Back must not silently skip the waiting step — only the chip buttons (or hold-Y) skip it.
-      if (!p.step.done && d !== "touch" && !gated && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
-      else if (d === "gamepad" && !p.step.done && !gated && p.index > 0 && i.pressed("QuickUse")) { p.back(); o.onChange?.(); update(); }
+      // ADR-275: info tips close with Jump (A / Space); pad B (Cancel is the menu key) never steals the tip.
+      if (!p.step.done && d !== "touch" && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
     },
     destroy(): void { clearInterval(timer); removeEventListener("resize", update); el.remove(); ghost.remove(); spot.remove(); arrow.remove(); },
   };
