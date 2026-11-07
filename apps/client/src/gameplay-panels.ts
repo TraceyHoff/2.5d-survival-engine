@@ -13,9 +13,9 @@ import { revealAboveFooter } from "./back-history.js";
 import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
-import { iconImg } from "./game-icons.js";
+import { conditionIconImg, iconImg } from "./game-icons.js";
 import { installSlotDrag, slotRef, type SlotDrag, type SlotKind, type SlotRef } from "./slot-drag.js";
-import { iconForItem, ROADS, clanTintIndex,
+import { hasDisease, iconForItem, ROADS, clanTintIndex,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, takeAllIntent, LootBag, Container, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL, capacityView, capacityText,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
@@ -280,8 +280,13 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const bySlot = new Map(v.map((s) => [s.slot, s] as const)); const byC = new Map(boxE.map((s) => [s.slot, s] as const));
       const equipSlot = (s: (typeof v)[number]): void => send(s.equip === "hand" ? equipIntent(s.slot) : wearIntent(s.slot), s.equipped ? `Unequipped ${s.name}.` : `Equipped ${s.name}.`);
       const me = c.world.get(c.player, Transform); const wet = !!me && nearWater(c.world, me.x, me.y);
-      const useVerb = (s: (typeof v)[number]): string => { const empty = s.consume === "drink" && /Empty:/.test(s.tooltip); return empty ? (wet ? "Refill" : "Empty") : s.consume === "drink" ? "Drink" : "Eat"; };
-      const eat = (s: (typeof v)[number]): void => { const vb = useVerb(s); if (vb === "Empty") return kit.status(`${s.name} is empty — refill it at water.`); send(useIntent(s.slot), `${vb === "Refill" ? "Refilled" : vb === "Drink" ? "Drank" : "Ate"} ${s.name}.`); };
+      const useVerb = (s: (typeof v)[number]): string => { const empty = s.consume === "drink" && /Empty:/.test(s.tooltip); return empty ? (wet ? "Refill" : "Empty") : s.consume === "apply" ? "Apply" : s.consume === "drink" ? "Drink" : "Eat"; };
+      const eat = (s: (typeof v)[number]): void => {
+        const vb = useVerb(s);
+        if (vb === "Apply" && !gameplayDefs(c.world).items.get(s.item)?.cures.some(key => hasDisease(c.world, c.player, key))) return kit.status("No Broken Leg to heal — splint kept.");
+        if (vb === "Empty") return kit.status(`${s.name} is empty — refill it at water.`);
+        send(useIntent(s.slot), `${vb === "Refill" ? "Refilled" : vb === "Drink" ? "Drank" : vb === "Apply" ? "Applied" : "Ate"} ${s.name}.`);
+      };
       const store = (s: Ent): void => { if (cv) send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`); };
       const take = (s: Ent): void => { if (cv) send(withdrawIntent(cv.entity, s.item, s.count), `Took ${s.name} ×${s.count}.`); };
       const primary = (s: (typeof v)[number]): void => cv ? store(s) : s.consume ? eat(s) : s.equip ? equipSlot(s) : kit.status(s.tooltip.replace(/\n/g, " · "));
@@ -654,7 +659,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         const disRow = row("Diseases", sheet.diseases.length ? sheet.diseases.map((d) => d.name).join(", ") : "Healthy", "sheet-diseases");
         if (sheet.diseases.length) { // Task 31: one custom sprite per disease, in front of its name
           disRow.textContent = "Diseases: ";
-          for (const d of sheet.diseases) { disRow.append(iconImg(d.icon, 14, d.name)); disRow.append(` ${d.name} `); }
+          for (const d of sheet.diseases) { disRow.append(conditionIconImg(d.icon, 14, d.name)); disRow.append(` ${d.name} `); }
         }
         out.push(disRow);
         // Task 31: wet clothing insulates less — the sheet shows the effective total while wet
@@ -670,7 +675,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         }
         if (sheet.careSecondsLeft !== undefined) {
           const careRow = row("Cure", `in ~${fmtDur(sheet.careSecondsLeft)}${sheet.careMissing.length ? ` — still needs: ${sheet.careMissing.map((m) => CARE_NEED_LABEL[m] ?? m).join(", ")}` : " — keep it up"}`, "sheet-care");
-          const first = sheet.diseases[0]; if (first) careRow.prepend(iconImg(first.icon, 14, first.name));
+          const first = sheet.diseases[0]; if (first) careRow.prepend(conditionIconImg(first.icon, 14, first.name));
           out.push(careRow);
         }
         if (sheet.worn.length) for (const it of sheet.worn) out.push(row(it.slot, `${it.name} · +${it.insulation.toFixed(1)}°C`, "sheet-worn"));

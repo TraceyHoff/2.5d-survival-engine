@@ -150,7 +150,7 @@ describe("Task 31: cold, flu and the care cure", () => {
   });
 
   it("defs: flu is the 7th disease, worse than a cold, contagious, cured by Honey Tea", () => {
-    expect(d.diseases.map((x) => x.key)).toEqual(["food_poisoning", "dysentery", "common_cold", "heatstroke", "exhaustion", "wound_infection", "influenza"]);
+    expect(d.diseases.map((x) => x.key)).toEqual(["food_poisoning", "dysentery", "common_cold", "heatstroke", "exhaustion", "wound_infection", "influenza", "broken_leg"]);
     const cold = d.diseases.find((x) => x.key === "common_cold")!;
     const flu = d.diseases.find((x) => x.key === "influenza")!;
     expect(flu.hpDps).toBeGreaterThan(cold.hpDps);

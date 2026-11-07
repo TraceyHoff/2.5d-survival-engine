@@ -489,7 +489,8 @@
     "salad": 487,
     "truffle": 488,
     "truffle_stew": 489,
-    "soil": 490
+    "soil": 490,
+    "leg_splint": 491
   },
   "resources": {
     "fallen_branches": 1,
@@ -964,7 +965,8 @@
     "paint_brush": 374,
     "rice_bowl": 375,
     "salad": 376,
-    "truffle_stew": 377
+    "truffle_stew": 377,
+    "leg_splint": 378
   },
   "pieces": {
     "anvil": 1,

@@ -59,16 +59,18 @@ const nameOf = (c: MenuCtx, playerId: number): string => (playerId ? c.names?.ge
 const withNames = (w: World, l: readonly ItemCount[], who?: Entity) => l.map((i) => ({ item: i.item, name: itemName(w, i.item), count: i.count, have: who !== undefined ? countItem(w, who, i.item) : 0 }));
 
 // ---- inventory --------------------------------------------------------------------------------------
-export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string; /** ADR-128: context action for consumables ("eat" | "drink"), else undefined */ consume?: "eat" | "drink";
+export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string; /** ADR-128: context action for consumables ("eat" | "drink" | "apply"), else undefined */ consume?: "eat" | "drink" | "apply";
   /** ADR-135: how the slot equips ("hand" = main hand via EquipCmd, "wear" = gear slot via WearCmd) and whether it is equipped now */ equip?: "hand" | "wear"; equipped?: boolean }
 /** ADR-128: "eat" / "drink" for consumables (liquid containers and thirst-only food drink), undefined otherwise. */
-export function consumeKind(w: World, item: number): "eat" | "drink" | undefined {
+export function consumeKind(w: World, item: number): "eat" | "drink" | "apply" | undefined {
   const d = gameplayDefs(w).items.get(item); if (!d?.food) return undefined;
+  if (d.cures.length && !d.food.hunger && !d.food.thirst && !d.food.health) return "apply";
   return d.sips > 0 || (d.food.thirst > 0 && d.food.hunger <= 0) ? "drink" : "eat";
 }
 /** ADR-128: tooltip line(s) with food/water values ("Food +24 · Water +2 · Health +3"; containers add "Water 3/6 sips"). */
 export function foodTooltip(w: World, item: number, durability = 0): string {
   const d = gameplayDefs(w).items.get(item); const f = d?.food; if (!f) return "";
+  if (consumeKind(w, item) === "apply") return "Apply to heal " + d!.cures.map(key => gameplayDefs(w).diseases.find(x => x.key === key)?.name ?? key).join(", ") + ". Not consumed when unneeded.";
   const per = d.sips > 0 ? 1 / d.sips : 1; const r = (v: number): string => `${v > 0 ? "+" : ""}${Math.round(v * per * 10) / 10}`;
   const parts = [f.hunger ? `Food ${r(f.hunger)}` : "", f.thirst ? `Water ${r(f.thirst)}` : "", f.health ? `Health ${r(f.health)}` : ""].filter(Boolean);
   const line = parts.join(" · ") + (d.sips > 0 ? " per sip" : "");

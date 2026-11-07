@@ -17,9 +17,9 @@ function step(bits: number, analog?: { x: number; y: number }, dt = 1) {
 }
 describe("ADR-127 normalized movement", () => {
   const walk = G.defaultDefs().movement.walkSpeed;
-  it("walkSpeed is 2.6 and the effective cardinal (single key) speed equals it", () => {
-    expect(walk).toBe(2.6);
-    const { d, mul } = step(A.MoveUp); expect(mul).toBeCloseTo(1, 9); expect(d).toBeCloseTo(2.6, 4);
+  it("walkSpeed is 2.9 (ADR-274) and the effective cardinal (single key) speed equals it", () => {
+    expect(walk).toBe(2.9);
+    const { d, mul } = step(A.MoveUp); expect(mul).toBeCloseTo(1, 9); expect(d).toBeCloseTo(2.9, 4);
   });
   for (const [name, bits] of Object.entries(DIRS)) {
     it(`${name}: unit vector, moves walkSpeed (and walkSpeed x sprintMul sprinting)`, () => {

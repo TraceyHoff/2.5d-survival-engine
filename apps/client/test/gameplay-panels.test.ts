@@ -57,6 +57,21 @@ describe("gameplay panels (ADR-095 shell)", () => {
     s2.menus.open("inventory"); q("[data-role=slot][data-item]").click();
     expect(document.querySelector("[data-key=boil-0]")).toBeNull(); s2.menus.destroy();
   });
+  test("ADR-274: splint Apply is gamepad-usable and unneeded splints explain why they are kept", () => {
+    const { w, me, sent, menus } = setup(); G.addItem(w, me, id("leg_splint"), 1);
+    menus.open("inventory"); q("[data-role=slot][data-item]").click();
+    const apply = q("[data-key=use-0]"); expect(apply.textContent).toBe("Apply");
+    apply.focus(); menus.nav.activate(true); expect(sent).toHaveLength(0);
+    expect(document.body.textContent).toContain("No Broken Leg to heal");
+    G.contractDisease(w, me, "broken_leg"); menus.refresh(); q("[data-key=use-0]").focus(); menus.nav.activate(true);
+    expect(sent.at(-1)).toMatchObject({ cmd: G.UseCmd, args: { slot: 0 } }); menus.destroy();
+  });
+  test("ADR-274: handcraftable splint has its own icon and can be selected with A", () => {
+    const { w, me, sent, menus } = setup(); G.addItem(w, me, id("sticks"), 2); G.addItem(w, me, id("cloth"), 2);
+    menus.open("crafting"); const splint = q(`[data-key=recipe-${d.recipeId("leg_splint")}]`);
+    expect(splint.dataset["icon"]).toBe("leg_splint"); splint.focus(); menus.nav.activate(true);
+    expect(sent.at(-1)).toMatchObject({ cmd: G.QueueCraftCmd, args: { recipe: d.recipeId("leg_splint"), count: 1 } }); menus.destroy();
+  });
   test("crafting: Enter on a recipe sends queueCraft with the chosen count; queue jobs cancel", () => {
     const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 20); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);
     menus.open("crafting"); q("[data-key=count-5]").click();

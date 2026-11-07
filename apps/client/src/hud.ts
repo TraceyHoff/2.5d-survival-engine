@@ -4,11 +4,12 @@
  * Compact and anchored top-left inside the safe area (`--sat/--sal` from ./ui-root.ts), click-through (pointer-events:none)
  * so it never eats taps meant for the touch controls, which live in the lower half / right edge.
  */
+import { uiSprites } from "./ui-atlas.js";
 import { mountUi } from "./ui-root.js";
 import { Weather, Transform, type Entity, type World } from "@engine/core";
 import { dayCount, dayHours } from "./day-clock.js";
 import { activeDiseases, diseaseIcon, Diseases, Exposure, Health, RoomHeat, Survival, WET_ICON } from "@engine/gameplay";
-import { iconImg } from "./game-icons.js";
+import { conditionIconImg, iconImg } from "./game-icons.js";
 import { seasonAtDays } from "@engine/core";
 import { formatTemp, gaugeFrac, GAUGE_GRADIENT, hudAirTemp, hudShelteredTemp, loadTempUnit, SEASON_LABEL, tempBand, type TempUnit } from "./hud-temp.js";
 
@@ -21,25 +22,6 @@ const STATS = [
 const SEASON_ICON = ["ic_sun.png", "ic_leaf.png", "ic_snowflake.png"] as const;
 
 export interface HudOverrides { hours?: number; weather?: number; /** ADR-239 ?season= (0 summer, 1 fall, 2 winter) */ season?: number; /** tests: unit instead of Settings */ unit?: TempUnit }
-type Frame = { frame: { x: number; y: number; w: number; h: number }; nineSlice?: { l: number; t: number; r: number; b: number } };
-
-/** Art's ui_atlas sprites (assets/ui/atlas) as data URLs, so CSS can nine-slice them via border-image. */
-async function uiSprites(base: string): Promise<{ url(k: string): string | undefined; frame(k: string): Frame | undefined }> {
-  const empty = { url: () => undefined, frame: () => undefined };
-  try {
-    const j = await fetch(`${base}art/ui/atlas/ui_atlas.json`).then((r) => r.json()) as { frames: Record<string, Frame> };
-    const img = new Image(); img.src = `${base}art/ui/atlas/ui_atlas.png`; await img.decode();
-    const cache = new Map<string, string>();
-    return {
-      frame: (k) => j.frames[k],
-      url: (k) => {
-        const f = j.frames[k]; if (!f) return undefined; let u = cache.get(k);
-        if (!u) { const c = document.createElement("canvas"); c.width = f.frame.w; c.height = f.frame.h; c.getContext("2d")!.drawImage(img, f.frame.x, f.frame.y, f.frame.w, f.frame.h, 0, 0, f.frame.w, f.frame.h); u = c.toDataURL(); cache.set(k, u); }
-        return u;
-      },
-    };
-  } catch { return empty; }
-}
 const SPRITE_KEYS = ["health", "hunger", "thirst", "stamina"] as const;
 
 /** Days to evaluate the temperature at when ?season= / ?time= override the view (middle of the overridden season). */
@@ -185,7 +167,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
       const keys = `${actives.map((d) => d.key).join(",")}|wet:${wet >= 0.05 ? Math.round(wet * 20) : 0}`;
       if (chips.dataset["keys"] !== keys) {
         chips.dataset["keys"] = keys; chips.innerHTML = "";
-        for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.append(iconImg(diseaseIcon(d.key), 11, d.name), ` ${d.short}`); c.title = d.name; c.style.background = d.color; chips.append(c); }
+        for (const d of actives) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = d.key; c.append(conditionIconImg(diseaseIcon(d.key), 11, d.name), ` ${d.short}`); c.title = d.name; c.style.background = d.color; chips.append(c); }
         if (wet >= 0.05) { const c = document.createElement("span"); c.className = "dchip"; c.dataset["disease"] = "wet"; c.append(iconImg(WET_ICON, 11, "Wet"), ` Wet ${Math.round(wet * 100)}%`); c.title = "Wet — dry indoors or by a fire"; c.style.background = "#4A7A9E"; chips.append(c); }
         if (!ro) publishHudBottom(); // no ResizeObserver: chips are the only content that changes the HUD height
       }

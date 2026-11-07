@@ -5,7 +5,7 @@
  */
 import { stanceMode, STANCE } from "../stance.js";
 import { StanceMode } from "../components.js";
-import { contractDisease, cureDiseasesForItem } from "../diseases.js";
+import { contractDisease, cureDiseasesForItem, hasDisease } from "../diseases.js";
 import { addModifier, defineResource, entityIndex, evaluate, ModOp, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState, snapStamina } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -71,6 +71,11 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
     const food = defs.items.get(item)?.food; if (!food) continue;
     const idef = defs.items.get(item)!;
     if (world.tick < (ready.get(e) ?? 0)) { emit(world, ConsumeFailed, { entity: e, item, reason: ConsumeFail.Cooldown }); continue; }
+    // Cure-only medical supplies are applied, not eaten. A healthy human keeps their splint.
+    const cureOnly = idef.cures.length > 0 && food.hunger === 0 && food.thirst === 0 && food.health === 0;
+    if (cureOnly && !idef.cures.some(key => hasDisease(world, e, key))) {
+      emit(world, ConsumeFailed, { entity: e, item, reason: ConsumeFail.NotNeeded }); continue;
+    }
     // liquid containers (water_flask, canteen): one sip of food/sips per use, the container stays; empty -> refill at water
     const per = idef.sips > 0 ? 1 / idef.sips : 1;
     if (idef.sips > 0 && readSlots(world, e).durability(slot) <= 0) {

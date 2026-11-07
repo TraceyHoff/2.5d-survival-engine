@@ -9,9 +9,9 @@ import { ladderBetween, terrainMoveBlocked } from "../building/terrain-ladder.js
  */
 import { roadSpeedMul } from "../roads.js";
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
-import { diseaseMoveMul } from "../diseases.js";
-import { Anim, AnimState, DamageCause, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
-import { gameplayDefs } from "../config.js";
+import { contractDisease, diseaseMoveMul } from "../diseases.js";
+import { Anim, AnimState, DamageCause, Health, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
+import { gameplayDefs, isAuthority } from "../config.js";
 import { skillMul } from "../skills/tree.js";
 import { GameplayHoldBits as A, INPUT } from "../input_hooks.js";
 import { isLCorner, rotParts, StructureIndexRes, type StructureIndex } from "../building/structure.js";
@@ -188,14 +188,22 @@ export function terrainFallDamage(tiles: number): number {
 }
 /** Ground height is rendered separately from Transform.z (the building floor). Apply each crossed face once,
  * on the authority only via applyDamage; a full-height ladder protects both ascent and descent. */
-export function applyTerrainFall(world: World, e: Entity, x: number, y: number, nx: number, ny: number): void {
+export function applyTerrainFall(world: World, e: Entity, x: number, y: number, nx: number, ny: number, dt = 1 / 20): void {
+  if (!isAuthority(world) || world.isReplaying || world.has(e, Dead)) return;
   const terrain = world.getResource(TerrainRes); if (!terrain) return;
   let tx = Math.floor(x), ty = Math.floor(y); const ux = Math.floor(nx), uy = Math.floor(ny);
   const idx = world.getResource(StructureIndexRes);
   const cross = (bx: number, by: number): void => {
     if (!ladderBetween(idx, tx, ty, bx, by)) {
-      const damage = terrainFallDamage(terrain.heightAt(tx, ty) - terrain.heightAt(bx, by));
-      if (damage > 0) applyDamage(world, e, damage, 0 as Entity, DamageCause.Fall);
+      const drop = terrain.heightAt(tx, ty) - terrain.heightAt(bx, by);
+      const damage = terrainFallDamage(drop);
+      if (damage > 0) {
+        const before = world.getField(e, Health, "hp") ?? 0;
+        applyDamage(world, e, damage, 0 as Entity, DamageCause.Fall);
+        const after = world.getField(e, Health, "hp") ?? 0;
+        // The shared human input path serves players and AI humans. Lethal falls never injure corpses.
+        if (drop >= 5 && after > 0 && after < before && world.has(e, Survival)) contractDisease(world, e, "broken_leg", dt);
+      }
     }
     tx = bx; ty = by;
   };
@@ -224,15 +232,15 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
     const sp = gameplayDefs(world).movement.walkSpeed * speedMultiplier(world, e, sprint === 1) * (swim ? swimSpeedMulAt(world, t.x, t.y) : 1) * dt;
     let x = t.x, y = t.y;
     x = bodyAxisMove(world, x, y, x + dx * sp, 0, level, swim);
-    if (level === 0) applyTerrainFall(world, e, t.x, t.y, x, y);
+    if (level === 0) applyTerrainFall(world, e, t.x, t.y, x, y, dt);
     const beforeY = y;
     y = bodyAxisMove(world, x, y, y + dy * sp, 1, level, swim);
-    if (level === 0) applyTerrainFall(world, e, x, beforeY, x, y);
+    if (level === 0) applyTerrainFall(world, e, x, beforeY, x, y, dt);
     // ADR-212 doorway assist: pushing straight into a wall beside an opening slides the body toward the opening's centre
     const assistX = x, assistY = y;
     if (x === t.x && dx && !dy) y = doorAssist(world, x, y, dx, 0, sp, level, swim);
     else if (y === t.y && dy && !dx) x = doorAssist(world, x, y, dy, 1, sp, level, swim);
-    if (level === 0) applyTerrainFall(world, e, assistX, assistY, x, y);
+    if (level === 0) applyTerrainFall(world, e, assistX, assistY, x, y, dt);
     if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: turnFacing(t.facing ?? 0, Math.atan2(dy, dx), dt) });
   }
   settleStandZ(world, e, dt); // ADR-212: decks are walked on at deck-top height

@@ -94,6 +94,7 @@ export function diseaseMoveMul(world: World, e: Entity): number {
  */
 export const WET_ICON = "ic_thirst.png";
 export function diseaseIcon(key: string): string {
+  if (key === "broken_leg") return "broken_leg";
   if (key === "common_cold") return "ic_snowflake.png";
   if (key === "influenza") return "ic_temp.png";
   return "ic_health.png";
