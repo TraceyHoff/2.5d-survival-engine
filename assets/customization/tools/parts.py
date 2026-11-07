@@ -858,11 +858,26 @@ def draw_acc(c, spec):
         c.add(hv(c) + 4, mask)
     elif st == "bandana":
         def bd():
-            p, _ = tsurf(c, 0, 7.5, .5) if f > -.3 else tsurf(c, 180, 7.5, .5)
-            m = cv.part(c.solid([(c.off(K["tc"], 0, 0, K["B"]["try_"] - 1.8), 6.4), (c.off(K["tc"], 0, 0, K["B"]["try_"] + .4), 5.6)]), "P", lw=1.0, shade=.22, hl=.12)
-            if f > -.3:
-                cv.part([(p[0] - 4.6, p[1] - 1.5), (p[0] + 4.6, p[1] - 1.5), (p[0], p[1] + 5)], "P", lw=1.0, shade=.22, hl=.12)
-                for dx, dy in ((-1.8, .3), (1.6, .2), (0, 2.6)): cv.fill(circle((p[0] + dx, p[1] + dy), .55), "S0", tm=(0, 1))
+            Z = K["B"]["try_"] - .7; tc = K["tc"]
+            def npt(az, dz, r):
+                a = math.radians(az); return c.p(c.off(tc, math.sin(a) * r, math.cos(a) * r * .8, Z + dz))
+            def vis(az):
+                a = math.radians(az); return c.nv(math.sin(a), math.cos(a))
+            def flap():
+                l, rr, t = npt(-48, .3, 6.2), npt(48, .3, 6.2), npt(0, -5.6, 6.9)
+                cv.part([l, rr, t], "P", lw=1.0, shade=.22, hl=.12)
+                for dx, dy in ((-1.7, -.3), (1.7, -.3), (0, 1.9)):
+                    q = npt(0 + dx * 9, -1.6 - dy, 6.8)
+                    cv.fill(circle(q, .55), "S0", tm=(0, 1))
+            def knot():
+                k = npt(180, .6, 6.0)
+                for s_ in (-1, 1):
+                    e = npt(180 + s_ * 14, -4.6, 6.6)
+                    cv.part(c.tube(c.off(tc, math.sin(math.radians(180)) * 6, -6 * .8, Z + .4), c.off(tc, math.sin(math.radians(180 + s_ * 16)) * 6.6, math.cos(math.radians(180 + s_ * 16)) * 6.6 * .8, Z - 4.4), 1.25, .7), "P", lw=.9, shade=.22, hl=.1)
+                cv.part(circle(k, 1.7, 1.35), "P", lw=.9, shade=.25, hl=.15)
+            cv.part(c.solid([(c.off(tc, 0, 0, Z - 1.1), 6.4), (c.off(tc, 0, 0, Z + 1.1), 5.6)]), "P", lw=1.0, shade=.22, hl=.12)
+            if vis(0) > -.35: flap()
+            if vis(180) > -.25: knot()
         c.add(K["tv"] + .3, bd)
     elif st == "earrings":
         def er():
