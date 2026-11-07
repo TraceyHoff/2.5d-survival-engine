@@ -272,8 +272,11 @@ export function autonomyBehaviors(): GameBehavior[] {
         { name: "healthy", curve: { type: "step", at: 0.45 }, input: (c) => c.self.hp }],
       run: (c, o) => {
         const z = c.memory.nearest("zombie", c.self.x, c.self.y, 0.3); if (!z || c.self.hp < 0.35) return false;
-        const d = toward(o, c.self.x, c.self.y, z.x, z.y, 1); if (d > 10) return false;
-        if (d < 1.3) { o.moveX = 0; o.moveY = 0; o.actions.push(defendAction(c)); } // ADR-107: primary button strikes a zombie in melee reach; ADR-252: then guards
+        const d = goTo(c, o, z.x, z.y, 1); if (d > 10) return false;
+        if (d < 1.3) {
+          o.moveX = 0; o.moveY = 0; o.aimX = (z.x - c.self.x) / Math.max(d, 1e-6); o.aimY = (z.y - c.self.y) / Math.max(d, 1e-6);
+          o.actions.push(defendAction(c) === "block" ? "block" : `attack:${z.id}`);
+        } // Dedicated combat primary, not the hand/interact gather action; then guard.
         else if (c.self.tick - c.bb.num("fightSeen", -1e9) > DEFEND_CYCLE) c.bb.set("fightFrom", undefined);
       } },
     // dusk / night or cold: fuel and light the home campfire (open -> deposit wood -> toggle, the station panel's steps)
@@ -286,8 +289,8 @@ export function autonomyBehaviors(): GameBehavior[] {
         if (goTo(c, o, f.x, f.y, 0.8) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("fireAt", c.self.tick); return false; } return; }
         o.moveX = 0; o.moveY = 0; const at = c.bb.num("fireStepAt", -1e9); if (c.self.tick - at < 8) return;
         const step = c.self.tick - at > 60 ? 0 : c.bb.num("fireStep"); // a stale sequence restarts
-        c.bb.set("fireStepAt", c.self.tick); c.bb.set("fireStep", step + 1);
         if (o.actions.some((a) => /^c(open|close|deposit|withdraw)(:|$)/.test(a))) return;
+        c.bb.set("fireStepAt", c.self.tick); c.bb.set("fireStep", step + 1);
         if (step === 0) o.actions.push(`copen:${f.id}`);
         else if (step === 1 && c.world.woodSlot) o.actions.push(`cdeposit:${f.id}:${c.world.woodSlot.item}:${Math.min(8, c.world.woodSlot.count)}`);
         else if (step === 2) o.actions.push(`fire:${f.id}`);

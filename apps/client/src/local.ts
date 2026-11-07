@@ -7,7 +7,7 @@
  * mode: "multiplayer" allows human bots only when AI humans are on (Task 22 world rule; a save keeps its own value).
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd, agentStanceInput, fillStanceSensors, stanceMode, StanceMode, GameplayEdgeBits } from "@engine/gameplay";
+import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, agentOutputIntents, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd, agentStanceInput, fillStanceSensors, stanceMode, StanceMode, GameplayEdgeBits } from "@engine/gameplay";
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
@@ -179,6 +179,9 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const sampleOf = (vp: VirtualPlayer): { buttons: number; aimX: number; aimY: number; edges?: number } => {
     const f = agentOutputFrame(vp.output, 0, NO_COMMANDS); // GameplayActions bits 0-5 == Act bits
     let buttons = f.actions & ACT_MASK; const st = agentStanceInput(vp.output);
+    // The generic Primary bit aliases legacy Gather. Targeted combat must use the
+    // dedicated Attack control: hand/interact deliberately never damages a foe.
+    if (agentOutputIntents(vp.output).some((i) => i.kind === "attack")) buttons = (buttons & ~Act.Gather) | Act.Attack;
     if (st.guard) buttons |= Act.Guard; if (st.crouch) buttons |= Act.Crouch;
     if (st.rest) { const e = serverEntityOf(vp.client.clientId); const tick = game.world.tick;
       if (e !== undefined && stanceMode(game.world, e) !== StanceMode.Sleep && tick - (restAt.get(vp) ?? -1e9) >= REST_EVERY) { restAt.set(vp, tick); return { buttons, aimX: f.aimX, aimY: f.aimY, edges: GameplayEdgeBits.Rest }; } }

@@ -106,6 +106,13 @@ describe("ADR-252 stances (ADR-244)", () => {
     expect(seq).toEqual(["gather", "block", "block", "gather", "block", "block"]);
     c.self.stamina = 0.1; c.self.tick = 70; expect(G.defendAction(c as never)).toBe("gather"); // winded: no guard
   });
+  it("defend emits a targeted combat attack, never hand/interact, then holds guard", () => {
+    const ctx = fakeCtx({ zombie: { id: 7, x: 1, y: 0 }, self: { hp: 1 } });
+    const c = { ...ctx, world: { ...ctx.world, seen: [], home: { x: 0, y: 0 }, playerName: "AI" } };
+    const defend = G.autonomyBehaviors().find((b) => b.name === "defend")!;
+    let o = out(); defend.run(c, o); expect(o.actions).toEqual(["attack:7"]); expect(o.moveX).toBe(0); expect(o.aimX).toBe(1);
+    c.self.tick = 20; o = out(); defend.run(c, o); expect(o.actions).toEqual(["block"]);
+  });
   it("sneak: crouch toggles when a zombie lurks 4..10 tiles away, at most every CROUCH_EVERY ticks; stands up beyond 13", () => {
     const c = fakeCtx({ zombie: { x: 7, y: 0 } }); let o = out(); G.stancePolicy(c, o, "gather"); expect(o.actions).toEqual(["crouch"]);
     c.world.crouched = false; c.self.tick = 10; o = out(); G.stancePolicy(c, o, "gather"); expect(o.actions).toEqual([]); // throttled

@@ -1,7 +1,7 @@
 /** ADR-266: finite, persisted earthworks for a NEW 2x2 shelter. No edits beneath an existing building. */
 import { Transform, type Entity, type World } from "@engine/core";
 import { isWaterId } from "@engine/world";
-import { AttachKind, BuildPiece, EdgeSide, Fuel } from "../components.js";
+import { AttachKind, EdgeSide, Fuel } from "../components.js";
 import { hasPrivilege, snapPlacement, validatePlacement } from "../building/place.js";
 import { structures } from "../building/structure.js";
 import { resolveAttachment } from "../building/links.js";
@@ -56,20 +56,29 @@ export function nextTerrainWork(world: World, self: Entity, p: TerrainBasePlan):
     return { k: "ladder", x: p.x + .5, y: p.y + 2 };
   }
   const soil = [...gameplayDefs(world).items.values()].find((d) => d.key === "soil")?.id;
+  // Gather the complete pad's Soil before raising anything. A blocked/exhausted quarry
+  // must not leave half a mound beneath the ordinary shelter's foundation plan.
+  let soilNeeded = 0;
+  for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+    const x = p.x + dx, y = p.y + dy, h = t.heightAt(x, y);
+    if (h !== p.height && !hasPrivilege(world, self, x + .5, y + .5)) { p.abandoned = true; return undefined; }
+    soilNeeded += Math.max(0, p.height - h);
+  }
+  if (soilNeeded > 0 && (soil === undefined || countItem(world, self, soil) < soilNeeded)) {
+    let fullBag = false;
+    for (const q of p.quarry) if (t.heightAt(q.x, q.y) > q.bottom && terrainDigAt(world, q.x, q.y) > -3) {
+      const why = editTerrain(world, self, q.x, q.y, -1, true);
+      if (why === TerrainFail.InventoryFull) fullBag = true;
+      if (why === TerrainFail.None || why === TerrainFail.TooFar) return { k: "terrain", x: q.x, y: q.y, dir: -1, stand: { x: p.x - .5, y: p.y + 2.5 } };
+    }
+    if (!fullBag) p.abandoned = true; return undefined; // pause for ordinary surplus stashing when capacity is temporary
+  }
   // South row first, so the entrance ladder is always on completed terrain.
   for (const dy of [1, 0]) for (const dx of [0, 1]) {
     const x = p.x + dx, y = p.y + dy, h = t.heightAt(x, y); if (h === p.height) continue;
-    if (!hasPrivilege(world, self, x + .5, y + .5)) { p.abandoned = true; return undefined; }
     const dir = h < p.height ? 1 : -1;
-    if (dir > 0 && (soil === undefined || countItem(world, self, soil) < 1)) {
-      for (const q of p.quarry) if (t.heightAt(q.x, q.y) > q.bottom && terrainDigAt(world, q.x, q.y) > -3) {
-        const why = editTerrain(world, self, q.x, q.y, -1, true);
-        if (why === TerrainFail.None || why === TerrainFail.TooFar) return { k: "terrain", x: q.x, y: q.y, dir: -1, stand: { x: p.x - .5, y: p.y + 2.5 } };
-      }
-      p.abandoned = true; return undefined;
-    }
     const why = editTerrain(world, self, x, y, dir, true);
-    if (why !== TerrainFail.None && why !== TerrainFail.TooFar) { p.abandoned = true; return undefined; }
+    if (why !== TerrainFail.None && why !== TerrainFail.TooFar) { if (why !== TerrainFail.InventoryFull) p.abandoned = true; return undefined; }
     return { k: "terrain", x, y, dir, stand };
   }
   if (!ladder) { p.abandoned = true; return undefined; } // the outside landing was changed: do not silently pick another entrance

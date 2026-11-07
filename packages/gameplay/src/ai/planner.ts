@@ -382,10 +382,10 @@ export function makePlan(p: PlanInput): Plan {
           const key = work.k === "ladder" ? "ladder" : "campfire";
           r.obtainPiece(key, { id: `earth:${key}`, key, x: work.x - p.earth.x, y: work.y - p.earth.y, level: 0 });
         } else if (work?.k === "fuel") {
-          if (woodId !== undefined && r.obtain(woodId, 4)) r.step = { k: "light", piece: work.piece };
+          if (woodId !== undefined && (countItem(world, work.piece, woodId) > 0 || (world.getField(work.piece, Fuel, "burnUntilTick") ?? 0) > world.tick || r.obtain(woodId, 4))) r.step = { k: "light", piece: work.piece };
         }
       }
-      if (r.step || r.leaves.size || r.hunt.size) { for (const k of keepAll) r.keep.add(k); const o = out(g, r); return o; }
+      if (r.step || r.leaves.size || r.hunt.size) return out(g, r);
       if (!p.earth.done && !p.earth.abandoned) return out(g, r); // don't lay foundations before the planned earthworks
       continue;
     }
@@ -424,12 +424,12 @@ export function makePlan(p: PlanInput): Plan {
       if (!ix.reachable.has(d.id)) { blocked.push(name); continue; }
       if ((inv.get(d.id) ?? 0) > 0) { for (let i = 0; i < sl.items.length; i++) if (sl.items[i] === d.id && sl.counts[i]) { r.step = { k: "wear", invSlot: i }; break; } return out(g, r); }
       r.obtain(d.id, 1); }
-    if (r.step || r.leaves.size || r.hunt.size) { for (const k of keepAll) r.keep.add(k); const o = out(g, r); o.blocked = blocked; return o; }
+    if (r.step || r.leaves.size || r.hunt.size) { const o = out(g, r); o.blocked = blocked; return o; }
     if (r.locked) { blocked.push(`locked:${r.locked}`); if (buildsPiece(g)) held = true; continue; }
     if (r.stuck) blocked.push(name);
   }
   return { goal: "idle", leaves: [], hunt: [], keep: keepAll, blocked };
-  function out(g: Goal, r: Resolver): Plan { return { goal: goalName(g), ...(r.step ? { step: r.step } : {}), leaves: [...r.leaves], hunt: [...r.hunt], keep: r.keep, blocked: [] }; }
+  function out(g: Goal, r: Resolver): Plan { for (const k of keepAll) r.keep.add(k); return { goal: goalName(g), ...(r.step ? { step: r.step } : {}), leaves: [...r.leaves], hunt: [...r.hunt], keep: r.keep, blocked: [] }; }
 }
 export const itemKey = (defs: GameDefs, key: string): number | undefined => plannerIndex(defs).item.get(key)?.id;
 export { countItem };

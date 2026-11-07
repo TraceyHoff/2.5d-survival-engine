@@ -582,7 +582,8 @@ export class IsoRenderer implements Renderer {
     const hh = this.iso.tileH / 2;
     const minKey = rect.y0 / hh - 64, maxKey = (rect.y1 + 2048) / hh + 64;
     this.depthU[0] = minKey; this.depthU[1] = 1 / (maxKey - minKey);
-    if (this.prepareQuarter && this.tilemap) { this.tiles.prepareView(this.tilemap, this.atlas, this.activeKeys); this.prepareQuarter = false; }
+    // Keep preparing while pages settle: a later atlas revision invalidates all destination meshes.
+    if (this.prepareQuarter && this.tilemap) this.tiles.prepareView(this.tilemap, this.atlas, this.activeKeys);
     this.updateBuildingTiers(world, rect);
     this.sprites.prepare({
       world, alpha, rect, atlas: this.atlas, depthMin: minKey, depthRange: maxKey - minKey, tickHz: this.tickHz, style,
@@ -670,7 +671,7 @@ export class IsoRenderer implements Renderer {
 
     stats.staticChunks = this.sprites.staticChunksDrawn; stats.staticInstances = this.sprites.staticInstances;
     stats.cpuMs = performance.now() - t0;
-    if (this.tilemap && this.w > 0 && this.h > 0 && !this.atlas.settling && !gl.isContextLost()) this.completeFrames++;
+    if (this.tilemap && this.w > 0 && this.h > 0 && !this.atlas.settling && !gl.isContextLost()) { this.prepareQuarter = false; this.completeFrames++; }
   }
 
 

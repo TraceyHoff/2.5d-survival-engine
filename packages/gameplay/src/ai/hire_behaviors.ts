@@ -201,7 +201,14 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
       const earthScan = scanBase(world, defs, earthBase);
       view.base = earthBase; view.bs = { ...earthScan, ...(earthScan.storage ? {} : bs.storage ? { storage: bs.storage } : {}) };
       view.plan = makePlan({ world, self, defs, base: earthBase, bs: view.bs, fails: mem.fails, earth: mem.hireEarth, shelterOnly: true });
-      view.needs = view.plan.leaves; delete view.surplus; // keep Soil and reserved ladder/build materials
+      view.needs = view.plan.leaves;
+      // Preserve Soil / planned materials, but let ordinary surplus stashing free
+      // addable slots when earthworks pause on a full pack (wood keeps its 12 stock).
+      if (view.surplus) {
+        const keep = view.plan.keep;
+        view.surplus = view.surplus.filter(({ item }) => defs.items.get(item)?.key === "wood" || !keep.has(item));
+        if (!view.surplus.length) delete view.surplus;
+      }
       const step = view.plan.step;
       if (step?.k === "craft" && step.station === StationKind.None) { view.craftRecipe = step.recipe; view.craftCount = step.count; view.craftTicks = step.ticks; }
       markAiDirty(agent, world.tick);

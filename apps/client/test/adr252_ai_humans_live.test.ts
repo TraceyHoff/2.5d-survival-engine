@@ -3,7 +3,7 @@
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { Appearance, Transform, setTimeOfDay, type CosmeticCatalogLike, type Entity } from "@engine/core";
 import { MemoryWorldStore } from "@engine/persist";
-import { BASE_SLOTS, Health, StanceMode, setSpawnPoints, spawnZombie, Inventory, ContainerClosed, ContainerOpened, PiecePlaced, Stance, addItem, gameplayDefs, grantSkillUnlocks, movementBlocked, pieceCost, isBaseStoragePiece } from "@engine/gameplay";
+import { BASE_SLOTS, Health, StanceMode, setSpawnPoints, spawnZombie, Inventory, aiMemoryOf, TerrainRes, structures, EdgeSide, ContainerClosed, ContainerOpened, PiecePlaced, Stance, addItem, gameplayDefs, grantSkillUnlocks, movementBlocked, pieceCost, isBaseStoragePiece } from "@engine/gameplay";
 import { loadServerCatalog } from "@engine/server";
 import { createLocalServer, type LocalServer } from "../src/local.js";
 
@@ -83,6 +83,7 @@ describe("ADR-252 AI humans live", () => {
 });
 
 describe("ADR-252 AI humans live: base, bed sleep (ADR-244), defence with block", () => {
+  const completedEarthworks = new Set<string>();
   const modes = new Map<string, number>(); const pieces = new Map<number, Set<string>>(); let sleptInBed = 0; let movedAsleep = 0; let zDead = false; let botAlive = true;
   beforeAll(async () => {
     const l = await createLocalServer({ store: new MemoryWorldStore(), seed: 11, bots: 2, maxBots: 2, population: false });
@@ -105,7 +106,8 @@ describe("ADR-252 AI humans live: base, bed sleep (ADR-244), defence with block"
       const baseKeys = ["foundation", "wall_corner_outer", "wall_doorway", "door_wood", "roof_flat", "bed"];
       let nightAt: number | undefined; let fightAt: number | undefined;
       for (let i = 0; i < 5200 && !zDead; i++) {
-        if (nightAt === undefined && (i === 2200 || bots.every((e) => baseKeys.every((k) => pieces.get(e)?.has(k))))) {
+        // The finite earthworks stage precedes the existing shelter; keep the total 5200-tick bound.
+        if (nightAt === undefined && (i === 3600 || bots.every((e) => baseKeys.every((k) => pieces.get(e)?.has(k))))) {
           nightAt = i; setTimeOfDay(W, 23);
         }
         if (nightAt !== undefined && fightAt === undefined && (i - nightAt >= 1000 || (sleptInBed > 500 && (modes.get(`night:${StanceMode.Sleep}`) ?? 0) > 500))) {
@@ -116,11 +118,17 @@ describe("ADR-252 AI humans live: base, bed sleep (ADR-244), defence with block"
           // Isolate defence from navigation around the just-built stations: use an
           // unoccupied clear spawn patch, keeping the sleeper's stance until threatened.
           const fighter = bots[0]!; const arena = l.game.spawnPoints[2]!;
+          prev.delete(fighter); // the fixture teleport is not motion while asleep
           W.set(fighter, Transform, { x: arena.x, y: arena.y, z: 0 });
           W.setField(fighter, Stance, "bedNetId", 0);
           z = spawnZombie(W, [...d.zombies.values()][0]!.id, arena.x + 1, arena.y);
         }
         await pump(l, i);
+        for (const bot of l.bots) {
+          const earth = aiMemoryOf(bot.agent).earth; if (!earth?.done || earth.abandoned || completedEarthworks.has(earth.kind)) continue;
+          const terrain = W.resource(TerrainRes);
+          if ([0,1].every(dy => [0,1].every(dx => terrain.heightAt(earth.x+dx,earth.y+dy) === earth.height)) && structures(W).ladder(earth.x,earth.y+2,EdgeSide.North)) completedEarthworks.add(earth.kind);
+        }
         const phase = fightAt !== undefined ? "fight" : nightAt !== undefined ? "night" : "day";
         for (const e of bots) {
           const m = W.getField(e as Entity, Stance, "mode") ?? 0; const k = `${phase}:${m}`; modes.set(k, (modes.get(k) ?? 0) + 1);
@@ -131,6 +139,9 @@ describe("ADR-252 AI humans live: base, bed sleep (ADR-244), defence with block"
       }
     } finally { await l.stop(); }
   }, 240_000);
+  it("bots autonomously finish both a raised pad and underground room with entrance ladders", () => {
+    expect(completedEarthworks).toEqual(new Set(["pad", "pit"]));
+  });
   it("bots build the 2x2 base, the hearth and a bed", () => {
     expect(pieces.size).toBe(2);
     for (const s of pieces.values()) for (const k of ["foundation", "wall_corner_outer", "wall_doorway", "door_wood", "roof_flat", "bed"]) expect(s.has(k), k).toBe(true);

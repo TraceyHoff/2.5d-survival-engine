@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { Transform, type Entity, type World } from "@engine/core";
+import { idleOutput, installPermissions, Membership, Transform, type Entity } from "@engine/core";
 import { TileMap, WATER_TILE } from "@engine/world";
 import * as G from "../src/index.js";
 import { nextTerrainWork, planTerrainBase } from "../src/ai/terrain_base.js";
 import { aiMemoryOf, makePlan, scanBase } from "../src/ai/planner.js";
 import { fillHireSensors } from "../src/ai/hire_behaviors.js";
 import { fillGoalSensors } from "../src/ai/autonomy.js";
-import { fillPlanSensors } from "../src/ai/base_behaviors.js";
+import { baseBehaviors, fillPlanSensors, goTo, lowFire } from "../src/ai/base_behaviors.js";
 import { walkerWaypoint } from "../src/systems/creature_nav.js";
 import { type AgentWorldView } from "../src/agents.js";
 import { makeWorld } from "./helpers.js";
@@ -38,6 +38,27 @@ describe("ADR-265 full-height face-mounted ladders", () => {
     expect(G.candidateStability(w, G.snapPlacement(w, req(d)) as G.Snapped)).toBeGreaterThan(0);
     G.structures(w).removePiece(r.ok ? r.piece : 0 as Entity);
     expect(G.movementBlocked(w, .5, 1.5, .5, 2.5, 0)).toBe(true);
+  });
+  it.each([[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]])("base-navigation direction %s,%s round-trips through player isometric input without rotating the ladder approach",(x,y)=>{
+    const {w,p}=setup();installPermissions(w);const a=G.makeAgent(G.makeAgentIdentity(1,1),1),v=G.buildAgentView(w,p,a,{x:0,y:0})!;
+    const c={...v,world:{...v.world,base:{x:0,y:0}},bb:a.bb,memory:a.memory,traits:a.identity.traits,rng:a.rng,agent:a},out=idleOutput();
+    goTo(c,out,v.self.x+x,v.self.y+y);const f=G.agentOutputFrame(out,0,G.registerGameplayCommands()),d=Math.hypot(x,y);
+    const digital=G.moveVector(f.actions),analog=G.moveVector(f.actions,{x:f.moveX,y:f.moveY});
+    expect(digital.dx).toBeCloseTo(x/d);expect(digital.dy).toBeCloseTo(y/d);expect(analog.dx).toBeCloseTo(x/d);expect(analog.dy).toBeCloseTo(y/d);
+    expect(f.aimX).toBeCloseTo(x/d);expect(f.aimY).toBeCloseTo(y/d);
+  });
+  it("AI human input follows the ladder route out of and back into a pit without teleporting",()=>{
+    const {w,p,d}=setup();installPermissions(w);for(let y=0;y<2;y++)for(let x=0;x<2;x++)G.setTerrainDig(w,x,y,-25);
+    expect(G.tryPlace(w,p,req(d)).ok).toBe(true);w.set(p,Transform,{x:1.05,y:1.9});
+    const a=G.makeAgent(G.makeAgentIdentity(1,1),1),v=G.buildAgentView(w,p,a,{x:0,y:0})!,reg=G.registerGameplayCommands();
+    for(const goal of [{x:3.5,y:1.5},{x:.5,y:.5}]){
+      for(let n=0;n<300;n++){
+        const t=w.get(p,Transform)!;if(Math.hypot(t.x-goal.x,t.y-goal.y)<.6)break;
+        const c={...v,self:{...v.self,x:t.x,y:t.y,tick:w.tick},world:{...v.world,base:{x:0,y:0}},bb:a.bb,memory:a.memory,traits:a.identity.traits,rng:a.rng,agent:a},out=idleOutput();
+        goTo(c,out,goal.x,goal.y);const frame=G.agentOutputFrame(out,w.tick,reg);G.applyMovementInput(w,p,frame.actions,.05);w.tick++;
+      }
+      const t=w.get(p,Transform)!;expect(Math.hypot(t.x-goal.x,t.y-goal.y),JSON.stringify({goal,t,wp:walkerWaypoint(w,p,t.x,t.y,goal.x,goal.y)})).toBeLessThan(.6);
+    }
   });
   it("rejects flat land, duplicate faces, water, foreign claims and blocked landings", () => {
     const { w, p, d, map } = setup();
@@ -87,8 +108,14 @@ describe("ADR-266 finite autonomous terrain bases", () => {
         const result=G.tryPlace(w,p,{...req(d,step.x,step.y),piece:d.pieceId(step.k==="ladder"?"ladder":"campfire")});
         expect(result.ok,JSON.stringify({step,result})).toBe(true); if(step.k==="ladder")ladder=true;
       } else {
-        // Container/fire APIs are covered separately; model the command's resulting lit state here.
-        w.set(step.piece,G.Fuel,{lit:1,burnUntilTick:99999}); lit=true;
+        // Exercise the same authoritative open / deposit / toggle commands as the AI, not a Fuel-state shortcut.
+        w.set(p,Transform,{x:.5,y:1.5});
+        G.setIntent(w,p,{action:G.IntentAction.OpenContainer,target:step.piece});G.containerSystem(w);
+        G.setIntent(w,p,{action:G.IntentAction.Deposit,target:step.piece,item:d.itemId("wood"),count:4});G.containerSystem(w);
+        const a=G.makeAgent(G.makeAgentIdentity(1,1),1),view:AgentWorldView={seen:[],home:{x:0,y:0},playerName:"owner"};
+        fillPlanSensors(w,p,view,a,d,G.readSlots(w,p));expect(view.panel).toBeUndefined(); // a fire is NOT a carcass to loot
+        G.setIntent(w,p,{action:G.IntentAction.ToggleFire,target:step.piece});G.fuelSystem(w,.05);
+        expect(w.getField(step.piece,G.Fuel,"lit")).toBe(1);G.closeContainer(w,p);lit=true;
       }
       w.tick++;
     }
@@ -97,6 +124,41 @@ describe("ADR-266 finite autonomous terrain bases", () => {
     expect(kind==="pit"?digs:raises).toBe(kind==="pit"?12:8); if(kind==="pit")expect(lit).toBe(true);
     for(let y=0;y<2;y++)for(let x=0;x<2;x++){expect(w.resource(G.TerrainRes).heightAt(x,y)).toBe(plan.height);if(kind==="pit")expect(G.isUnderground(w,x,y)).toBe(true);}
     const before=G.countItem(w,p,soil);for(let n=0;n<20;n++)expect(nextTerrainWork(w,p,plan)).toBeUndefined();expect(G.countItem(w,p,soil)).toBe(before);
+  });
+  it("lights already-deposited underground fuel without withdrawing another wood stack or toggling it back off",()=>{
+    const {w,p,d}=setup();installPermissions(w);const earth=planTerrainBase(w,p,{x:0,y:0},"pit")!;
+    for(let y=0;y<2;y++)for(let x=0;x<2;x++)G.setTerrainDig(w,x,y,-3);
+    expect(G.tryPlace(w,p,req(d)).ok).toBe(true);
+    const placed=G.tryPlace(w,p,{...req(d,1.5,.5),piece:d.pieceId("campfire")});expect(placed.ok).toBe(true);if(!placed.ok)return;
+    const fire=G.resolveAttachment(w,placed.piece,G.AttachKind.Fire)!;G.addItem(w,fire,d.itemId("wood"),4);G.removeItem(w,p,d.itemId("wood"),50);
+    const plan=makePlan({world:w,self:p,defs:d,base:{x:0,y:0},bs:scanBase(w,d,{x:0,y:0}),fails:{},earth,terrainOnly:true});
+    expect(plan.step).toEqual({k:"light",piece:fire});expect(plan.leaves).toHaveLength(0);
+    w.set(p,Transform,{x:.5,y:1.5});const a=G.makeAgent(G.makeAgentIdentity(1,1),1),v=G.buildAgentView(w,p,a,{x:0,y:0})!;
+    const c={...v,world:{...v.world,plan},bb:a.bb,memory:a.memory,traits:a.identity.traits,rng:a.rng,agent:a};
+    const behavior=baseBehaviors().find(b=>b.name==="base_work")!,out=idleOutput();behavior.run!(c,out);
+    expect(out.actions).toEqual([`fire:${fire}`]);G.setIntent(w,p,{action:G.IntentAction.ToggleFire,target:fire});G.fuelSystem(w,.05);
+    expect(w.getField(fire,G.Fuel,"lit")).toBe(1);const next=idleOutput();behavior.run!(c,next);expect(next.actions).toEqual([]);
+    expect(nextTerrainWork(w,p,earth)).toBeUndefined();expect(earth.done).toBe(true);
+    G.removeItem(w,fire,d.itemId("wood"),G.countItem(w,fire,d.itemId("wood")));w.setField(fire,G.Fuel,"burnUntilTick",w.tick+100);w.tick+=80; // low, still-lit fire; expire the base-scan cache
+    const maintenance={...c,self:{...c.self,phase:"day" as const},world:{...c.world,base:{x:0,y:0},bs:scanBase(w,d,{x:0,y:0}),cold:false,winter:false}};
+    expect(lowFire(maintenance)?.id).toBe(placed.piece); // keep underground light fueled at noon, not only at night
+    expect(lowFire({...maintenance,world:{...maintenance.world,base:{x:5,y:5}}})).toBeUndefined();
+  });
+  it("reacquires the south ladder doorway instead of following a stale crossing phase through a pit's west wall",()=>{
+    const {w,p,d}=setup();installPermissions(w);for(let y=0;y<2;y++)for(let x=0;x<2;x++)G.setTerrainDig(w,x,y,-3);
+    expect(G.tryPlace(w,p,req(d)).ok).toBe(true);w.set(p,Transform,{x:-.3,y:.8});
+    const a=G.makeAgent(G.makeAgentIdentity(1,1),1),v=G.buildAgentView(w,p,a,{x:0,y:0})!,bs=scanBase(w,d,{x:0,y:0});
+    bs.door={id:1,x:.5,y:2,open:true};a.bb.set("doorPhase",1);
+    const c={...v,world:{...v.world,base:{x:0,y:0},bs},bb:a.bb,memory:a.memory,traits:a.identity.traits,rng:a.rng,agent:a},out=idleOutput();
+    goTo(c,out,.5,1.25);expect(a.bb.num("doorPhase")).toBe(0);expect(out.moveY).toBeGreaterThan(0);expect(out.moveX).toBeLessThanOrEqual(0);
+  });
+  it("does not leave a half-raised shelter footprint when its finite quarry cannot supply enough Soil",()=>{
+    const {w,p,d}=setup();const plan=planTerrainBase(w,p,{x:0,y:0},"pad")!;
+    G.addItem(w,p,d.itemId("soil"),1);
+    for(const q of plan.quarry)q.bottom=w.resource(G.TerrainRes).heightAt(q.x,q.y);
+    expect(nextTerrainWork(w,p,plan)).toBeUndefined();expect(plan.abandoned).toBe(true);
+    for(let y=0;y<2;y++)for(let x=0;x<2;x++)expect(w.resource(G.TerrainRes).heightAt(x,y)).toBe(0);
+    expect(G.countItem(w,p,d.itemId("soil"))).toBe(1);
   });
   it("chooses terrain commands through the real plan and net command pipeline",()=>{
     const {w,p,d}=setup();const earth=planTerrainBase(w,p,{x:0,y:0},"pit")!;
@@ -125,9 +187,10 @@ describe("ADR-266 finite autonomous terrain bases", () => {
     // Changing jobs must NOT issue terrain work.
     w.setField(p,G.Worker,"job",G.WorkerJob.Follow);fillHireSensors(w,p,view,a);expect(view.plan).toBeUndefined();
   });
-  it("stops a finite plan on full bag/no shovel, refuses a foreign quarry, and protects BOTH tiles supporting an edge",()=>{
+  it("pauses a finite plan on full bag/no shovel, refuses a foreign quarry, and protects BOTH tiles supporting an edge",()=>{
     const {w,p,d}=setup();const plan=planTerrainBase(w,p,{x:0,y:0},"pit")!;
-    w.set(p,G.Inventory,{maxWeight:.1});expect(nextTerrainWork(w,p,plan)).toBeUndefined();expect(plan.abandoned).toBe(true);
+    w.set(p,G.Inventory,{maxWeight:.1});expect(nextTerrainWork(w,p,plan)).toBeUndefined();expect(plan.abandoned).not.toBe(true);
+    w.set(p,G.Inventory,{maxWeight:0});expect(nextTerrainWork(w,p,plan)?.k).toBe("terrain");
     expect(G.terrainDigAt(w,0,1)).toBe(0);expect(G.countItem(w,p,d.itemId("soil"))).toBe(0);
     const {w:w2,p:p2,d:d2}=setup();const plan2=planTerrainBase(w2,p2,{x:0,y:0},"pad")!;
     w2.set(p2,Transform,{x:-.5,y:2.5});
@@ -140,6 +203,31 @@ describe("ADR-266 finite autonomous terrain bases", () => {
     G.removeItem(w2,p2,d2.itemId("stone_shovel"),1);expect(G.editTerrain(w2,p2,1,1,-1)).toBe(G.TerrainFail.NoShovel);
   });
 
+  it("retains Soil even when a capacity-blocked earthworks plan has no action step",()=>{
+    const {w,p,d}=setup();const earth=planTerrainBase(w,p,{x:0,y:0},"pit")!;
+    G.mapSlots(w,p,v=>{for(let i=0;i<v.addLimit;i++){const item=i===0?d.itemId("soil"):i===1?d.itemId("stone_shovel"):d.itemId("wood");v.put(i,item,d.items.get(item)!.maxStack,w.tick,d.items.get(item)!.maxDurability,0);}return true;});
+    const plan=makePlan({world:w,self:p,defs:d,base:{x:0,y:0},bs:scanBase(w,d,{x:0,y:0}),fails:{},earth,terrainOnly:true});
+    expect(plan.goal).toBe("earthworks");expect(plan.step).toBeUndefined();expect(plan.keep.has(d.itemId("soil"))).toBe(true);expect(earth.abandoned).not.toBe(true);
+  });
+  it("full pack with an empty hotbar pauses digging and invokes existing junk cleanup to free an actual Soil slot",()=>{
+    const {w,p,d}=setup();const a=G.makeAgent(G.makeAgentIdentity(1,1),1);aiMemoryOf(a).base={x:0,y:0};aiMemoryOf(a).earth=planTerrainBase(w,p,{x:0,y:0},"pit")!;
+    G.mapSlots(w,p,v=>{for(let i=0;i<v.addLimit;i++){const item=i===0?d.itemId("dye"):i===1?d.itemId("stone_shovel"):d.itemId("wood");v.put(i,item,d.items.get(item)!.maxStack,w.tick,d.items.get(item)!.maxDurability,0);}return true;});
+    const plan=aiMemoryOf(a).earth!;expect(nextTerrainWork(w,p,plan)).toBeUndefined();expect(plan.abandoned).not.toBe(true);
+    const view:AgentWorldView={seen:[],home:{x:0,y:0},playerName:"owner"};w.register(Membership);G.fillAgentSensors(w,p,view);expect(view.invSpaceFree).toBe(0);fillPlanSensors(w,p,view,a,d,G.readSlots(w,p));expect(view.junk?.item).toBe(d.itemId("dye"));
+    G.removeItem(w,p,view.junk!.item,view.junk!.count);expect(nextTerrainWork(w,p,plan)?.k).toBe("terrain");expect(G.countItem(w,p,d.itemId("soil"))).toBe(0);
+  });
+  it("hired Maintain can stash excess wood while a full-pack earthworks plan retains Soil",()=>{
+    const {w,p,d}=setup(),a=G.makeAgent(G.makeAgentIdentity(1,1),1);
+    w.set(p,G.Worker,{owner:77,job:G.WorkerJob.Maintain,homeX:0,homeY:0});
+    const sn=G.snapPlacement(w,{piece:d.pieceId("basic_storage_box"),x:3.5,y:3.5,level:0,rot:0,tier:0,variant:0});
+    expect(typeof sn).toBe("object");if(typeof sn!=="number")G.placePiece(w,p,sn,{pay:false});
+    aiMemoryOf(a).hireEarth=planTerrainBase(w,p,{x:0,y:0},"pit")!;
+    G.mapSlots(w,p,v=>{for(let i=0;i<v.addLimit;i++){const item=i===0?d.itemId("soil"):i===1?d.itemId("stone_shovel"):d.itemId("wood");v.put(i,item,d.items.get(item)!.maxStack,w.tick,d.items.get(item)!.maxDurability,0);}return true;});
+    const view:AgentWorldView={seen:[],home:{x:0,y:0},playerName:"owner"};fillHireSensors(w,p,view,a);
+    expect(view.plan?.goal).toBe("earthworks");expect(view.plan?.step).toBeUndefined();
+    expect(view.plan?.keep.has(d.itemId("soil"))).toBe(true);expect(view.surplus?.some(s=>s.item===d.itemId("soil"))).not.toBe(true);
+    expect(view.surplus?.some(s=>s.item===d.itemId("wood")&&s.count>0)).toBe(true);expect(aiMemoryOf(a).hireEarth?.abandoned).not.toBe(true);
+  });
   it("hired Maintain gathers its OWNER plan's missing ladder materials, not a personal-base goal",()=>{
     const {w,p,d}=setup();const a=G.makeAgent(G.makeAgentIdentity(1,1),1);
     w.set(p,G.Worker,{owner:77,job:G.WorkerJob.Maintain,homeX:0,homeY:0});

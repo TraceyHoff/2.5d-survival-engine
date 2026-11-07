@@ -84,12 +84,16 @@ export function reachableSpotNear(world: World, ox: number, oy: number, z: numbe
 /** AI humans emit movement input rather than teleporting: use the same cached ladder-aware route. */
 export function walkerWaypoint(world: World, e: Entity, x: number, y: number, gx: number, gy: number): { x: number; y: number } | undefined {
   if (!navNeeded(world, x, y, gx, gy)) return { x: gx, y: gy };
-  return waypoint(world, structures(world), e, x, y, gx, gy, 0, gameplayDefs(world).movement.bodyRadius,
-    (tx, ty) => terrainBlocksWalker(world, tx, ty));
+  const r = gameplayDefs(world).movement.bodyRadius;
+  // Digital human input moves a full ~0.13 tiles per tick: a 0.04 creature lane
+  // oscillates forever across the centre. Keep a body-clear lane with half-step tolerance.
+  const lane = Math.max(LANE, Math.min(.15, .5 - r - .02));
+  return waypoint(world, structures(world), e, x, y, gx, gy, 0, r,
+    (tx, ty) => terrainBlocksWalker(world, tx, ty), lane);
 }
 
 // ---- internals -------------------------------------------------------------------------------------------------
-function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: number, gx: number, gy: number, level: number, r: number, blocked: TileBlocked): { x: number; y: number; final: boolean } | undefined {
+function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: number, gx: number, gy: number, level: number, r: number, blocked: TileBlocked, lane = LANE): { x: number; y: number; final: boolean } | undefined {
   const m = nav(world); const gtx = Math.floor(gx), gty = Math.floor(gy); const now = world.tick;
   let st = m.get(e);
   if (st && !st.clear && st.reached && st.ver === idx.version && now < st.until && now >= st.strict && Math.abs(gtx - st.gtx) + Math.abs(gty - st.gty) === 1 && enterable(idx, gtx, gty, level, blocked)
@@ -130,8 +134,8 @@ function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: nu
   // lateral samples), so first slide back onto that lane when the body is off it
   const nx = p[st.i * 2]!, ny = p[st.i * 2 + 1]!;
   if (Math.abs(nx - ctx) + Math.abs(ny - cty) === 1) {
-    if (nx !== ctx && Math.abs(y - (cty + 0.5)) > LANE) return { x, y: cty + 0.5, final: false };
-    if (ny !== cty && Math.abs(x - (ctx + 0.5)) > LANE) return { x: ctx + 0.5, y, final: false };
+    if (nx !== ctx && Math.abs(y - (cty + 0.5)) > lane) return { x, y: cty + 0.5, final: false };
+    if (ny !== cty && Math.abs(x - (ctx + 0.5)) > lane) return { x: ctx + 0.5, y, final: false };
   }
   return { x: nx + 0.5, y: ny + 0.5, final: false };
 }

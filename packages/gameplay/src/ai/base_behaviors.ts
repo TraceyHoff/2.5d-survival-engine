@@ -1,4 +1,4 @@
-import { editIndex } from "../terrain_depth.js";
+import { editIndex, isUnderground } from "../terrain_depth.js";
 import { walkerWaypoint } from "../systems/creature_nav.js";
 import { planTerrainBase } from "./terrain_base.js";
 /**
@@ -15,9 +15,9 @@ import { storageDepositActions, storageWithdrawActions } from "./storage_api.js"
 import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { Animal, AttachKind, BotHome, BuildPiece, Container, Dead, Fuel, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
+import { Animal, AttachKind, BotHome, BuildPiece, Container, Dead, Fuel, LootBag, NO_SLOT, StanceMode, Survival, Viewing, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
-import { hasBrushInHotbar, readSlots, slotFreshness } from "../inventory.js";
+import { countItem, hasBrushInHotbar, readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { StationKind, type GameDefs } from "../defs.js";
 import { animalDefs } from "../population.js";
@@ -119,13 +119,13 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
     if (hh && (!world.isAlive(hh.id as Entity) || world.has(hh.id as Entity, Dead))) { bumpStat(a, "hunts", tick); a.bb.set("huntHit", undefined); a.bb.set("skinAt", { x: hh.x, y: hh.y, until: tick + SKIN_TTL, tries: 0 }); }
     const sk = a.bb.get<{ until: number }>("skinAt"); if (sk && tick > sk.until) a.bb.set("skinAt", undefined);
     const vc = world.has(self, Viewing) ? world.getField(self, Viewing, "container") ?? 0 : 0;
-    if (vc && world.isAlive(vc as Entity) && world.has(vc as Entity, Container) && readSlots(world, vc as Entity).counts.some((n) => n > 0)) view.panel = { id: vc }; }
+    if (vc && world.isAlive(vc as Entity) && world.has(vc as Entity, LootBag) && world.has(vc as Entity, Container) && readSlots(world, vc as Entity).counts.some((n) => n > 0)) view.panel = { id: vc }; }
   // junk: with <= 2 free slots, drop a stack nothing on the ladder uses (grain / scrap clutter). ADR-252 / ADR-247: never seeds
   // (each species' seed only drops from its own plant): they go to the base box with the other surplus instead
-  { let free = 0; for (let i = 0; i < slots.items.length; i++) if (!slots.items[i] || !slots.counts[i]) free++;
+  { let free = 0; for (let i = 0; i < slots.addLimit; i++) if (!slots.items[i] || !slots.counts[i]) free++;
     const stages = spoilStages(defs);
     for (let i = 0; i < slots.items.length && !view.junk; i++) { const it = slots.items[i]!; if (it && slots.counts[i] && defs.items.get(it)?.food && stages[spoilStageIndex(slotFreshness(world, self, i), stages)]?.sick) view.junk = { item: it, count: slots.counts[i]! }; }
-    if (free <= 2 && !view.junk) for (let i = 0; i < slots.items.length; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it) || isSeedItem(defs, it)) continue;
+    if (free <= 2 && !view.junk) for (let i = 0; i < slots.addLimit; i++) { const it = slots.items[i]!; if (!it || !slots.counts[i] || ix.useful.has(it) || plan.keep.has(it) || isSeedItem(defs, it)) continue;
       // Task 25: dye is purposeful material while the bot holds a paint brush (it will be consumed by the dye action,
       // never junk-dropped in a loop); a brush-less bot keeps the Task 16 behaviour (dye is junk).
       if (it === ix.item.get("dye")?.id && hasBrushInHotbar(world, self)) continue;
@@ -146,7 +146,10 @@ export function noteTripWanted(view: AgentWorldView, needs: Set<number>, wantedK
 
 // ---------------- movement helpers ----------------
 const toward = (o: { moveX: number; moveY: number; aimX: number; aimY: number }, fx: number, fy: number, tx: number, ty: number, s = 1): number => {
-  const dx = tx - fx, dy = ty - fy, d = Math.hypot(dx, dy) || 1; o.moveX = (dx / d) * s; o.moveY = (dy / d) * s; o.aimX = dx / d; o.aimY = dy / d; return d;
+  const dx = tx - fx, dy = ty - fy, d = Math.hypot(dx, dy) || 1;
+  // Navigation goals are world-relative; AgentOutput movement is player screen input.
+  o.moveX = ((dx - dy) / d) * Math.SQRT1_2 * s; o.moveY = ((dx + dy) / d) * Math.SQRT1_2 * s;
+  o.aimX = dx / d; o.aimY = dy / d; return d;
 };
 const stop = (o: { moveX: number; moveY: number }): void => { o.moveX = 0; o.moveY = 0; };
 /** Door-aware walk: crossing the base wall goes through the door (open, pass, close behind) like a player. Returns the distance to (tx, ty). */
@@ -163,7 +166,15 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
       const near = inS ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : { x: b.x + DOOR_OUT.x, y: b.y + DOOR_OUT.y };
       const far = inS ? { x: b.x + DOOR_OUT.x, y: b.y + DOOR_OUT.y } : { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y };
       const dn = Math.hypot(near.x - c.self.x, near.y - c.self.y);
-      if (dn > 0.45 && c.bb.num("doorPhase") === 0) { toward(o, c.self.x, c.self.y, near.x, near.y, s); return d; }
+      // A cached crossing phase is valid only while actually in the doorway corridor.
+      // Navigation around a pit can return us to the outside of a different wall.
+      const crossing = c.bb.num("doorPhase") === 1 && Math.abs(c.self.x - near.x) < .45
+        && c.self.y >= Math.min(near.y, far.y) - .3 && c.self.y <= Math.max(near.y, far.y) + .3;
+      if (dn > 0.45 && !crossing) {
+        c.bb.set("doorPhase", 0);
+        const w = worldOf(c), wp = w && editIndex(w).size ? walkerWaypoint(w, c.agent.bb.num("selfEntity") as Entity, c.self.x, c.self.y, near.x, near.y) : undefined;
+        toward(o, c.self.x, c.self.y, wp?.x ?? near.x, wp?.y ?? near.y, s); return d;
+      }
       if (!door.open) { stop(o); if (c.self.tick - c.bb.num("doorAt", -1e9) > 20) { o.actions.push(`door:${door.id}`); c.bb.set("doorAt", c.self.tick); } return d; }
       c.bb.set("doorPhase", 1); c.bb.set("doorShut", 1); toward(o, c.self.x, c.self.y, far.x, far.y, 0.6); return d;
     }
@@ -198,7 +209,11 @@ export const REFUEL_DEPOSIT = 10;
  * does not burn the wood pile keeping a summer-midday campfire lit. */
 export const WORK_FIRES: ReadonlySet<string> = new Set(["furnace", "wood_stove", "stove_iron", "cook_range", "clay_oven"]);
 const workFire = (key: string): boolean => WORK_FIRES.has(key);
-const fireNeeds = (c: Ctx, key: string): boolean => workFire(key) || night(c.self.phase) > 0 || c.world.cold === true || c.world.winter === true;
+const fireNeeds = (c: Ctx, key: string): boolean => {
+  const w = worldOf(c), b = c.world.base;
+  return workFire(key) || night(c.self.phase) > 0 || c.world.cold === true || c.world.winter === true
+    || !!(w && b && isUnderground(w, b.x, b.y)); // an underground room is dark even at noon
+};
 /** Task 30: the lowest-fuel lit fire at the bot's base that needs refuelling now (all heat fires, not just
  * the campfire — fireplace, stove, furnace, torch stand included). Hired workers read the owner's base
  * scan (fillHireSensors re-anchors bs), so the same behaviour tends the player's fires. */
@@ -229,6 +244,14 @@ export function baseBehaviors(): GameBehavior[] {
           const wood = plannerIndex(gdefs(c)).item.get("wood"); if (!wood) return fail();
           const p = worldOf(c)?.get(s.piece, Transform); if (!p) return fail();
           if (goTo(c, o, p.x, p.y) > 2.2) return; stop(o);
+          const w = worldOf(c)!;
+          // Deposited fuel belongs to this job. Do not switch back to withdrawing a new
+          // stack, or restart the open/deposit sequence before the staged fire is lit.
+          if (w.getField(s.piece, Fuel, "lit")) return false;
+          if (countItem(w, s.piece, wood.id) > 0 || (w.getField(s.piece, Fuel, "burnUntilTick") ?? 0) > w.tick) {
+            if (cooled(c, "earthLightAt", 20)) { o.actions.push(`fire:${s.piece}`); c.bb.set("earthLightAt", c.self.tick); }
+            return;
+          }
           containerSeq(c, o, s.piece, depositAndLight(s.piece, wood.id, 4)); return;
         }
         if (s.k === "wear") { if (cooled(c, "wearAt", 60)) { o.actions.push(`wear:${s.invSlot}`); c.bb.set("wearAt", c.self.tick); mark(c, "wears"); } return false; }

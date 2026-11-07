@@ -45,13 +45,13 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
   if (slots) {
     let empty = 0, bestFood = -1, bestWater = -1, fScore = 0, wScore = 0;
     for (let i = 0; i < slots.items.length; i++) {
-      const it = slots.items[i]!; if (!it || !slots.counts[i]) { empty++; continue; }
+      const it = slots.items[i]!; if (!it || !slots.counts[i]) { if (i < slots.addLimit) empty++; continue; }
       const f = defs.items.get(it)?.food; if (!f || f.health < 0) continue;
       if (spoilStages(defs)[spoilStageIndex(slotFreshness(world, self, i), spoilStages(defs))]?.sick) continue; // spoiled food makes you sick (negative regen): a player bins it
       if (f.hunger > fScore) { fScore = f.hunger; bestFood = i; }
       if (f.thirst > wScore) { wScore = f.thirst; bestWater = i; }
     }
-    view.invSpaceFree = slots.items.length ? empty / slots.items.length : 0;
+    view.invSpaceFree = slots.addLimit ? empty / slots.addLimit : 0;
     if (bestFood >= 0) view.food = bestFood; if (bestWater >= 0) view.water = bestWater;
     const have = (item: number, n: number): boolean => countItem(world, self, item) >= n;
     // ADR-203: goal tools first (stone axe / pickaxe / spear); other hand recipes keep the next goal tool's ingredients and the campfire cost
