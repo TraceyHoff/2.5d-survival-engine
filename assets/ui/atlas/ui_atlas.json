@@ -5405,6 +5405,35 @@
     "hud",
     "temperature"
    ]
+  },
+  "broken_leg": {
+   "frame": {
+    "x": 696,
+    "y": 62,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "tags": [
+    "icon",
+    "hud",
+    "status"
+   ]
   }
  },
  "meta": {

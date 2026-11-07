@@ -89354,6 +89354,23 @@
         }
       },
       "placeholder": "road_paved_m15"
+    },
+    {
+      "key": "leg_splint",
+      "category": "item",
+      "atlas": "nature_icons",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            123
+          ],
+          "fps": 1
+        }
+      }
     }
   ]
 }
