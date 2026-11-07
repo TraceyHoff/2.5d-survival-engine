@@ -3,7 +3,7 @@
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { Appearance, Transform, setTimeOfDay, type CosmeticCatalogLike, type Entity } from "@engine/core";
 import { MemoryWorldStore } from "@engine/persist";
-import { BASE_SLOTS, Health, StanceMode, setSpawnPoints, spawnZombie, ContainerClosed, ContainerOpened, PiecePlaced, Stance, addItem, gameplayDefs, grantSkillUnlocks, movementBlocked, pieceCost, isBaseStoragePiece } from "@engine/gameplay";
+import { BASE_SLOTS, Health, StanceMode, setSpawnPoints, spawnZombie, Inventory, ContainerClosed, ContainerOpened, PiecePlaced, Stance, addItem, gameplayDefs, grantSkillUnlocks, movementBlocked, pieceCost, isBaseStoragePiece } from "@engine/gameplay";
 import { loadServerCatalog } from "@engine/server";
 import { createLocalServer, type LocalServer } from "../src/local.js";
 
@@ -91,7 +91,11 @@ describe("ADR-252 AI humans live: base, bed sleep (ADR-244), defence with block"
       const bots = l.bots.map((b) => l.game.players.get(b.client.clientId)!.entity);
       const iid = (k: string) => [...d.items.values()].find((i) => i.key === k)!.id; const pc = (k: string) => [...d.pieces.values()].find((p) => p.key === k)!;
       for (const e of bots) { // a head start (skills + materials) so the ladder reaches the bed quickly; everything else is the bots' own doing
+        // ADR-266: this fixture preloads the entire new terrain stage too; capacity refusal has focused coverage.
+        W.set(e, Inventory, { maxWeight: 0 });
         grantSkillUnlocks(W, e); addItem(W, e, iid("stone_axe"), 1); addItem(W, e, iid("stone_pickaxe"), 1);
+        addItem(W, e, iid("stone_shovel"), 1); addItem(W, e, iid("sticks"), 6);
+        addItem(W, e, iid("wood"), 10); addItem(W, e, iid("stone"), 4);
         for (const k of ["campfire", "basic_storage_box", "workbench", "bed", "campfire"]) for (const c of pieceCost(d, pc(k), pc(k).fixedTier)) addItem(W, e, c.item, c.count);
         for (const sl of BASE_SLOTS) for (const c of pieceCost(d, pc(sl.key), sl.tier ?? 0)) addItem(W, e, c.item, c.count);
         addItem(W, e, iid("wood"), 60); addItem(W, e, iid("stone"), 40);

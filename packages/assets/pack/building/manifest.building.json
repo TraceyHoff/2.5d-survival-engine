@@ -1349,6 +1349,40 @@
    ],
    "residency": "stream",
    "ktx2": "atlases/basic_storage_box.ktx2"
+  },
+  {
+   "key": "ladder",
+   "image": "atlases/ladder.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 4,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/ladder@2x.png",
+     "ktx2": "atlases/ladder@2x.ktx2"
+    }
+   ],
+   "residency": "stream",
+   "ktx2": "atlases/ladder.ktx2"
+  },
+  {
+   "key": "ladder_icon",
+   "image": "atlases/ladder_icon.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/ladder_icon@2x.png",
+     "ktx2": "atlases/ladder_icon@2x.ktx2"
+    }
+   ],
+   "residency": "stream",
+   "ktx2": "atlases/ladder_icon.ktx2"
   }
  ],
  "sprites": [
@@ -50805,6 +50839,75 @@
     ]
    },
    "rotationArt": "unique4"
+  },
+  {
+   "key": "ladder",
+   "category": "building",
+   "atlas": "ladder",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "ladder",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ],
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ]
+    ]
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "build_ladder",
+   "category": "item",
+   "atlas": "ladder_icon",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
   }
  ],
  "clanPalettes": [

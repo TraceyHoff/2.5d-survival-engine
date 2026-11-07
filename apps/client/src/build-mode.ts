@@ -1,3 +1,4 @@
+import { buildFailText } from "./build-hud.js";
 /**
  * Client build mode: the Build panel's "Place" starts it; it pushes the input "Building" context so the Build.* bindings
  * apply on every device, and every frame turns the aim into `preview` via @engine/gameplay buildPreviewFor
@@ -13,7 +14,7 @@
  *    the compact HUD carries floor ▲▼ and the contextual Repair / Upgrade / Demolish buttons.
  *  - a placed piece under the aim is the `target`; `context` lists its labelled actions (shown only when targeted).
  */
-import { BuildPiece, buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, structures, upgradeIntent,
+import { BuildPiece, snapPlacement, validatePlacement, buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, structures, upgradeIntent,
   type BuildPreview, type BuildSelection, type MenuCtx, type MenuIntent, type PieceTarget, type PlacementAim } from "@engine/gameplay";
 import { Transform } from "@engine/core";
 import { rotateScreenVec } from "@engine/input";
@@ -119,7 +120,16 @@ export class BuildMode {
   /** Touch: world point under the finger (tap positions, drag adjusts). */
   setTouchPoint(p: { x: number; y: number } | undefined): void { this.touchPoint = p; this.disarm(); this.refresh(); }
   /** Place at the current preview; false when invalid / not sent. */
-  place(): boolean { this.refresh(); const p = this.preview; if (!p?.valid) return false; return this.o.send(placePreviewIntent(p)); }
+  place(): boolean {
+    // Confirm the model the ghost was drawn from. HUD clicks, stick release and camera
+    // movement must not resolve a different aim inside confirmation.
+    const p = this.preview, c = this.o.ctx(); if (!p || !c) { this.toast = "Choose a build location"; return false; }
+    const sn = snapPlacement(c.world, { piece: p.piece, tier: p.tier, variant: p.variant, level: p.level, ...p.request });
+    const reason = typeof sn === "number" ? sn : validatePlacement(c.world, c.player, sn);
+    p.reason = reason; p.valid = reason === 0;
+    if (reason) { this.toast = buildFailText(reason); return false; }
+    const sent = this.o.send(placePreviewIntent(p)); this.toast = sent ? "Building…" : "Not connected"; return sent;
+  }
   private disarm(): void { this.demolishArmedAt = -Infinity; }
   get demolishArmed(): boolean { return this.now() - this.demolishArmedAt < DEMOLISH_CONFIRM_MS; }
   /** Contextual Repair / Upgrade / Demolish on the targeted piece. Demolish needs a second press unless `confirmed`. */
@@ -197,7 +207,7 @@ export class BuildMode {
     if (lvl) this.setLevel(lvl);
     else if (i.pressed("Build.TierNext")) this.cycleTier(1); else if (i.pressed("Build.TierPrev")) this.cycleTier(-1);
     else if (i.pressed("Build.PieceNext")) this.cyclePiece(1); else if (i.pressed("Build.PiecePrev")) this.cyclePiece(-1);
-    if (i.pressed("Build.RotateCW")) this.rotate(1); else if (i.pressed("Build.RotateCCW")) this.rotate(-1); else this.refresh(true);
+    if (i.pressed("Build.RotateCW")) this.rotate(1); else if (i.pressed("Build.RotateCCW")) this.rotate(-1); else if (!(i.pressed("Build.PlaceConfirm") && !this.confirmLatch)) this.refresh(true);
     if (i.pressed("Build.RepairMode")) this.act("repair");
     else if (i.pressed("Build.UpgradeMode")) this.act("upgrade");
     else if (i.pressed("Build.DemolishMode")) this.act("demolish", dev === "gamepad"); // pad: the 500ms hold is the confirmation

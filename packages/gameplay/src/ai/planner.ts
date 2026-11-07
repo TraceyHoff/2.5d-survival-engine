@@ -1,3 +1,5 @@
+import { nextTerrainWork, type TerrainBasePlan } from "./terrain_base.js";
+import { hasShovel } from "../terrain.js";
 /**
  * ADR-252: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
  * goal ladder (tools -> campfire -> basic storage box (ADR-250) -> workbench -> 2x2 base -> hearth -> bed -> knife / weapon ->
@@ -41,7 +43,7 @@ export function fireState(world: World, defs: GameDefs, e: Entity): { lit: boole
 
 // ---------------- long-term memory ----------------
 export interface AiStats { trips: number; tripMax: number; deposits: number; withdraws: number; repairs: number; refuels: number; crafts: number; stationCrafts: number; built: number; hunts: number; loots: number; wears: number; relocations: number; bestTier: number; snoozed: number }
-export interface AiMemory { v: 1; base?: { x: number; y: number }; stats: AiStats; fails: Record<string, number>; blocked: string[]; snooze?: Record<string, number> }
+export interface AiMemory { v: 1; base?: { x: number; y: number }; stats: AiStats; earth?: TerrainBasePlan; hireEarth?: TerrainBasePlan; fails: Record<string, number>; blocked: string[]; snooze?: Record<string, number> }
 const newStats = (): AiStats => ({ trips: 0, tripMax: 0, deposits: 0, withdraws: 0, repairs: 0, refuels: 0, crafts: 0, stationCrafts: 0, built: 0, hunts: 0, loots: 0, wears: 0, relocations: 0, bestTier: 0, snoozed: 0 });
 const aiDirty = new WeakMap<Agent, number>();
 /** The agent's AiMemory (identity.ai, validated / created on first use). */
@@ -224,6 +226,8 @@ const gameplayDefsOf = (world: World): GameDefs | undefined => world.getResource
 
 // ---------------- the planner ----------------
 export type Step =
+  | { k: "terrain"; x: number; y: number; dir: number; stand: { x: number; y: number } }
+  | { k: "light"; piece: Entity }
   | { k: "withdraw"; item: number; count: number }
   | { k: "craft"; recipe: number; count: number; station: StationKind; ticks: number }
   | { k: "build"; piece: number; x: number; y: number; level: number; rot?: number; tier?: number; slot: string; stand: { x: number; y: number } }
@@ -232,12 +236,13 @@ export type Step =
   | { k: "upgrade"; piece: number; tier: number };
 export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: number[]; keep: Set<number>; blocked: string[] }
 
-type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" } | { k: "bed" } | { k: "furnish"; key: string; slot?: BaseSlot } | { k: "upgrade" };
+type Goal = { k: "earthworks" } | { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" } | { k: "bed" } | { k: "furnish"; key: string; slot?: BaseSlot } | { k: "upgrade" };
 export const GOAL_LADDER: readonly Goal[] = [
   { k: "tool", kind: ToolKind.Axe, tier: 1, name: "axe" }, { k: "tool", kind: ToolKind.Pickaxe, tier: 1, name: "pickaxe" },
   // ADR-252 / ADR-250: campfire -> starter storage box -> workbench (isBaseStoragePiece: any storage piece satisfies the box goal)
   { k: "piece", key: "campfire" }, { k: "piece", key: STARTER_STORAGE_PIECE }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" },
   { k: "wear", key: "torch" }, // ADR-252 / ADR-217: a held light in the off hand keeps zombies out of its 5.5-tile ring at dusk / night
+  { k: "earthworks" }, // Yard stations stay outside the finite footprint/quarry.
   { k: "base" }, { k: "hearth" },
   { k: "bed" },
   // Task 28: furnish the home like a player would (table inside, light by the door, shelf + trough + salt barrel
@@ -267,7 +272,7 @@ export const isWinter = (world: World): boolean => seasonAt(world).weights[2] >=
 const EVENING = (have: number): Goal[] => [{ k: "item", key: "wood", count: Math.max(8, Math.min(150, NIGHT_WOOD - have)) }];
 const spendsFuel = (g: Goal): boolean => (g.k === "item" && (g.key === "wood" || g.key === "stone")) || (g.k === "piece" && g.key === "campfire") || g.k === "hearth" || g.k === "cook";
 
-export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean; /** ADR-252 / ADR-239: winter (cold all day): fire + a day's fuel come first */ winter?: boolean }
+export interface PlanInput { earth?: TerrainBasePlan; terrainOnly?: boolean; shelterOnly?: boolean; world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean; /** ADR-252 / ADR-239: winter (cold all day): fire + a day's fuel come first */ winter?: boolean }
 class Resolver {
   avail = new Map<number, number>(); inv = new Map<number, number>(); visiting = new Set<number>();
   step?: Step; leaves = new Set<number>(); hunt = new Set<number>(); keep = new Set<number>(); stuck = false; /** ADR-221: a piece / station not learned yet */ locked?: string;
@@ -350,10 +355,11 @@ export function makePlan(p: PlanInput): Plan {
   for (const d of ix.tools) if (allCount(d.id) > 0) tool.set(d.tool!.kind, Math.max(tool.get(d.tool!.kind) ?? 0, d.tool!.tier));
   const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
   const blocked: string[] = []; const keepAll = new Set<number>();
+  if (p.earth && !p.earth.done) { const soil = ix.item.get("soil"); if (soil) keepAll.add(soil.id); }
   const pre: Goal[] = []; if (p.freezing) pre.push(...EMERGENCY); if (p.hungry) pre.push({ k: "cook" });
   if (p.winter && !p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < WINTER_WOOD) { if (!fire) pre.push(GOAL_LADDER[0]!, { k: "piece", key: "campfire" }); pre.push({ k: "item", key: "wood", count: Math.max(8, WINTER_WOOD - inFire) }); } }
   if (p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < NIGHT_WOOD) { if (!fire) pre.push(GOAL_LADDER[0]!, { k: "piece", key: "campfire" }); pre.push(...EVENING(inFire)); } } // ADR-252: a stone axe and the fire first (5 wood + 4 stone), then its night of fuel
-  const ladder = pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
+  const ladder: readonly Goal[] = p.terrainOnly ? [{ k: "earthworks" }] : p.shelterOnly ? [{ k: "earthworks" }, { k: "base" }, { k: "hearth" }, { k: "bed" }] : pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
   let held = false; // ADR-252: a locked build goal holds the later ones (campfire -> box -> workbench order); item / tool goals go on
   for (const g of ladder) {
     if (p.snooze && (p.snooze[goalName(g)] ?? 0) > world.tick) continue; // gave up on it for now (no source found in time)
@@ -366,6 +372,23 @@ export function makePlan(p: PlanInput): Plan {
       if (allCount(d.id) >= g.count) { if (d.weapon || d.tool) { r.obtain(d.id, 1); if (r.step) return out(g, r); } keepAll.add(d.id); continue; } r.obtain(d.id, g.count, false); }
     else if (g.k === "piece") { name = g.key; const def = ix.piece.get(g.key); if (!def || !p.base) continue; if (def.station !== StationKind.None ? p.bs?.stations.has(def.station) : isBaseStoragePiece(def) ? !!p.bs?.storage : false) continue;
       if (!pieceCost(defs, def, 0).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; } r.obtainPiece(g.key); }
+    else if (g.k === "earthworks") {
+      name = "earthworks"; if (!p.earth || p.earth.done || p.earth.abandoned) continue;
+      if (!hasShovel(world, self)) { r.obtainTool(ToolKind.Shovel, 1); }
+      else {
+        const work = nextTerrainWork(world, self, p.earth);
+        if (work?.k === "terrain") r.step = work;
+        else if (work?.k === "ladder" || work?.k === "light") {
+          const key = work.k === "ladder" ? "ladder" : "campfire";
+          r.obtainPiece(key, { id: `earth:${key}`, key, x: work.x - p.earth.x, y: work.y - p.earth.y, level: 0 });
+        } else if (work?.k === "fuel") {
+          if (woodId !== undefined && r.obtain(woodId, 4)) r.step = { k: "light", piece: work.piece };
+        }
+      }
+      if (r.step || r.leaves.size || r.hunt.size) { for (const k of keepAll) r.keep.add(k); const o = out(g, r); return o; }
+      if (!p.earth.done && !p.earth.abandoned) return out(g, r); // don't lay foundations before the planned earthworks
+      continue;
+    }
     else if (g.k === "base") { name = "base"; if (!p.base) continue; const missing = BASE_SLOTS.filter((s) => !p.bs?.pieces.has(s.id) && (p.fails[s.id] ?? 0) < 6 && (s.key !== "door_wood" || p.bs?.pieces.has("wd")) && (s.level === 0 || BASE_SLOTS.filter((f) => f.key === "foundation").every((f) => p.bs?.pieces.has(f.id))));
       if (!missing.length) continue; const pd = (sl: BaseSlot): PieceDef | undefined => ix.piece.get(sl.key);
       const next = missing.find((sl) => { const d = pd(sl); return !!d && pieceUnlocked(world, self, d, d.tiered ? sl.tier ?? 0 : d.fixedTier); }) ?? missing[0]!; // ADR-221: walls go on while the roof tier is learned

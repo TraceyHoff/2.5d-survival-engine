@@ -28,6 +28,8 @@ export const enum BuildFail {
   SkillLocked = 22,
   /** Task 25: painting / dyeing needs a paint brush in the hotbar. */
   NoBrush = 23,
+  /** ADR-265: a terrain ladder needs two different-height dry landings. */
+  NoTerrainFace = 24,
 }
 export const enum DestroyCause { Damage = 1, Collapse = 2, Demolish = 3 }
 

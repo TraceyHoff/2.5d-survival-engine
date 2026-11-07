@@ -1152,7 +1152,8 @@
     "salt_barrel": 183,
     "curing_box": 184,
     "cold_store": 185,
-    "apiary": 186
+    "apiary": 186,
+    "ladder": 187
   },
   "zombies": {
     "zombie_brute": 1,

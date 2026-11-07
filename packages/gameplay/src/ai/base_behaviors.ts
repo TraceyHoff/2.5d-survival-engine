@@ -1,3 +1,6 @@
+import { editIndex } from "../terrain_depth.js";
+import { walkerWaypoint } from "../systems/creature_nav.js";
+import { planTerrainBase } from "./terrain_base.js";
 /**
  * ADR-252: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
  * emits the action strings a human client sends (craft / build / copen / cdeposit / cwithdraw / cclose / fire / door /
@@ -43,6 +46,7 @@ const animalsCache = { defs: undefined as ReturnType<typeof animalDefs> | undefi
 
 /** Planner pass on a sense tick: base anchor, plan, needs (returned), craft / hunt / loot / stash sensors. */
 export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView, a: Agent, defs: GameDefs, slots: ReturnType<typeof readSlots>): Set<number> | undefined {
+  a.bb.set("selfEntity", self);
   const mem = aiMemoryOf(a); const tick = world.tick; const t = world.get(self, Transform); if (!t) return undefined;
   // Task 28: a hired bot whose base moved (BotHome, set by hire relocation) follows the move instead of
   // rebuilding at the old site — the planner re-anchors on the new home from the next sense tick.
@@ -68,7 +72,13 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
   const freezing = body < 36.4 && woodBag < 7 && !(bs?.complete) && !(bs?.stations.get(StationKind.Campfire)?.lit);
   const winter = isWinter(world); if (winter) view.winter = true;
   const evening = dayT >= 0.45 && dayT < 0.66; // h11-h16: stock the night's fuel (NIGHT_WOOD) before the cold sets in
-  const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, winter, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
+  if (base && !mem.earth && !bs?.pieces.size) {
+    const earth = planTerrainBase(world, self, base, (hash(a.identity.id) * 4294967296) & 1 ? "pit" : "pad");
+    if (earth) { mem.earth = earth; markAiDirty(a, tick); }
+  }
+  if (mem.earth && base && (mem.earth.x !== base.x || mem.earth.y !== base.y)) delete mem.earth;
+  const earthActive = mem.earth && !mem.earth.done && !mem.earth.abandoned;
+  const plan = makePlan({ ...(mem.earth ? { earth: mem.earth } : {}), world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, winter, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; if (earthActive) markAiDirty(a, tick); a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
   { // patience: a goal with no step and no leaf gathered for GOAL_PATIENCE ticks is snoozed half a day (persisted), like a player giving up on reeds
     let leafN = 0; for (let i = 0; i < slots.items.length; i++) if (slots.items[i] && plan.leaves.includes(slots.items[i]!)) leafN += slots.counts[i] ?? 0;
     const gs = a.bb.get("goalSeen") as { g: string; last: number; n: number } | undefined;
@@ -159,13 +169,15 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
     }
     c.bb.set("doorPhase", 0);
   }
-  toward(o, c.self.x, c.self.y, tx, ty, s); return d;
+  const w = worldOf(c); const wp = w && editIndex(w).size ? walkerWaypoint(w, c.agent.bb.num("selfEntity") as Entity, c.self.x, c.self.y, tx, ty) : undefined;
+  toward(o, c.self.x, c.self.y, wp?.x ?? tx, wp?.y ?? ty, s); return d;
 }
 /** ADR-252: container work goes through the ADR-250 storage API (storageDepositActions / storageWithdrawActions): the
  *  sequence (open -> one op -> close) is played one action per think tick (CONTAINER_STEP ticks apart), like a player
  *  clicking through the panel; the server validates every step. Returns true when the last action went out. */
 export const CONTAINER_STEP = 10;
 export function containerSeq(c: Ctx, o: { actions: string[] }, id: number, seq: readonly string[]): boolean {
+  if (o.actions.some((a) => /^c(open|close|deposit|withdraw)(:|$)/.test(a))) return false;
   const at = c.bb.num("cseqAt", -1e9); if (c.self.tick - at < CONTAINER_STEP) return false;
   const key = `${id}|${seq[1] ?? ""}`; const i = c.self.tick - at > 6 * CONTAINER_STEP || c.bb.get<string>("cseqKey") !== key ? 0 : c.bb.num("cseqStep");
   c.bb.set("cseqAt", c.self.tick); c.bb.set("cseqKey", key);
@@ -209,6 +221,16 @@ export function baseBehaviors(): GameBehavior[] {
       run: (c, o) => {
         const s = c.world.plan?.step; const bs = c.world.bs; if (!s) return false;
         const fail = (): false => { c.bb.set("workFail", c.self.tick); return false; };
+        if (s.k === "terrain") {
+          if (goTo(c, o, s.stand.x, s.stand.y) > .55) { if (stuckOn(c, s.stand.x, s.stand.y)) return fail(); return; }
+          stop(o); if (cooled(c, "earthAt", 20)) { o.actions.push(`terrain:${s.x}:${s.y}:${s.dir}`); c.bb.set("earthAt", c.self.tick); } return;
+        }
+        if (s.k === "light") {
+          const wood = plannerIndex(gdefs(c)).item.get("wood"); if (!wood) return fail();
+          const p = worldOf(c)?.get(s.piece, Transform); if (!p) return fail();
+          if (goTo(c, o, p.x, p.y) > 2.2) return; stop(o);
+          containerSeq(c, o, s.piece, depositAndLight(s.piece, wood.id, 4)); return;
+        }
         if (s.k === "wear") { if (cooled(c, "wearAt", 60)) { o.actions.push(`wear:${s.invSlot}`); c.bb.set("wearAt", c.self.tick); mark(c, "wears"); } return false; }
         if (s.k === "withdraw") { const sb = bs?.storage; if (!sb) return fail();
           // Container reach is 2.5 tiles: stop as soon as the box is reachable instead of pushing to 1.6

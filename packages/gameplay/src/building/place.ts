@@ -12,7 +12,7 @@ export const CLAN_PALETTE_COUNT = 16;
 /** BuildPiece.tint for a clan: 1..CLAN_PALETTE_COUNT index into assets clanPalettes (ADR-077; wrapped since ADR-230). */
 import { spawnCrop } from "../farming.js";
 export const clanTintIndex = (clanId: number): number => clanId > 0 ? 1 + ((clanId - 1) % CLAN_PALETTE_COUNT) : 0;
-import { installSpatialIndex, SUBTILE, WaterDepth, waterDepthAt } from "@engine/world";
+import { isWaterId, installSpatialIndex, SUBTILE, WaterDepth, waterDepthAt } from "@engine/world";
 import {
   AttachKind, BuildPiece, Container, ContainerViewers, CraftingStation, DoorState, EdgeSide, Emitter, Fuel, Health,
   PieceLink, PieceStability, PrivilegeZone, Tribe, Zombie,
@@ -292,8 +292,22 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
     }
     if (hi - lo > (def.maxSlope >= 0 ? def.maxSlope : b.maxSlope)) return BuildFail.Terrain;
   }
+  // ADR-265: terrain face, not a wall socket. Check BOTH landing tiles and their claims.
+  if (def.features.terrainLadder) {
+    if (!terrain || slot.z !== 0) return BuildFail.Terrain;
+    const pair = SIdx.edgeTiles(slot.tx, slot.ty, slot.side);
+    for (const [x, y] of pair) {
+      if (!terrain.tileAt(x, y) || terrain.loaded?.(x, y) === false || isWaterId(terrain.tileAt(x, y))) return BuildFail.Terrain;
+      if (!hasPrivilege(world, builder, x + 0.5, y + 0.5)) return BuildFail.NoPrivilege;
+      for (let layer = 1; layer <= 3; layer++) { const c = idx.cell(x, y, 0, layer); if (c && idx.def(c)?.solid) return BuildFail.Blocked; }
+    }
+    if (terrain.heightAt(...pair[0]) === terrain.heightAt(...pair[1])) return BuildFail.NoTerrainFace;
+    if (idx.ladder(slot.tx, slot.ty, slot.side)) return BuildFail.Occupied;
+    if (idx.edgeBlocker(slot.tx, slot.ty, 0, slot.side)) return BuildFail.Blocked;
+  }
   // occupancy
-  if (def.placement === Placement.Edge && def.features.mount) { // ADR-112: hung on a wall face
+  if (def.features.terrainLadder) { /* its independent face slot was checked above */ }
+  else if (def.placement === Placement.Edge && def.features.mount) { // ADR-112: hung on a wall face
     const w = sn.parent ? idx.def(sn.parent) : undefined; if (!w || w.placement !== Placement.Edge || w.features.mount || !w.blocksPath) return BuildFail.NoSocket;
     if (idx.mount(slot.tx, slot.ty, slot.z, slot.side, slot.rot)) return BuildFail.Occupied;
   } else if (def.placement === Placement.Edge) {

@@ -1,3 +1,4 @@
+import { TerrainCmd } from "../terrain.js";
 import { DyeCmd } from "../dye.js";
 import { DropItemCmd, PetOfferCmd } from "../pets.js";
 /**
@@ -66,6 +67,7 @@ export type AgentOutputWithCommands = AgentOutput & { commands?: AgentCommand[] 
 /** Action string -> a net command (buy, use, craft, place, plus open of a stall). Other actions return undefined and stay frame-only. */
 /** Entity fields hold the bot's replica entity; the host (local.ts sendAgentCommands -> NetClient.sendCommand) maps them to NetIds. */
 export function actionCommand(action: string): AgentCommand | undefined {
+  if (action.startsWith("terrain:")) { const n = action.split(":").slice(1).map(Number); return n.length === 3 && n.every(Number.isInteger) && Math.abs(n[2]!) === 1 ? { type: TerrainCmd.name, payload: { x: n[0]!, y: n[1]!, dir: n[2]! } } : undefined; }
   const party = partyActionCommand(action); if (party !== null) return party;
   const clan = clanActionCommand(action); if (clan !== null) return clan;
   const veh = vehicleActionCommand(action); if (veh !== null) return veh;
@@ -149,7 +151,7 @@ function vehicleActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "upgrade", "copen", "cclose", "cdeposit", "fire", "cwithdraw", "wear", "door", "drop", "dye"]);
+const COMMAND_ACTIONS = new Set(["terrain", "venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "upgrade", "copen", "cclose", "cdeposit", "fire", "cwithdraw", "wear", "door", "drop", "dye"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay

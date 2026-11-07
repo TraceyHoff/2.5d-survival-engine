@@ -1,3 +1,5 @@
+import { TerrainRes } from "../world.js";
+import { terrainMoveBlocked } from "../building/terrain-ladder.js";
 /**
  * ADR-215 creature navigation: animals and pets collide with building pieces and path around them.
  *
@@ -19,7 +21,7 @@ import { defineResource, Transform, type Entity, type World } from "@engine/core
 import { EdgeSide } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { isLCorner, structures, StructureIndexRes, type StructureIndex } from "../building/structure.js";
-import { bodyAxisMove, cornerPostBoxes, settleStandZ, solidCell } from "./movement.js";
+import { bodyAxisMove, cornerPostBoxes, settleStandZ, solidCell, terrainBlocksWalker } from "./movement.js";
 
 /** Per-tile terrain veto of the caller (animals / pets: unwalkable population tiles). */
 export type TileBlocked = (tx: number, ty: number) => boolean;
@@ -31,9 +33,11 @@ const nav = (w: World): Map<Entity, NavState> => { let m = w.getResource(NavRes)
  *  distance); cache lifetimes (ticks): open sight, unreached route, found route, string-pull pick; strict lanes after a stall. */
 export const NAV = { radius: 24, maxNodes: 1200, detour: 12, clearTicks: 60, repathTicks: 40, keepTicks: 120, pullTicks: 8, lookahead: 4, strictTicks: 40 } as const;
 
-/** True when the structure index has pieces anchored near the segment (else callers keep the legacy straight step). */
+/** Structures OR a height-step across the segment require routing, even on an otherwise empty map. */
 export function navNeeded(world: World, x0: number, y0: number, x1: number, y1: number): boolean {
-  const idx = world.getResource(StructureIndexRes); return !!idx && idx.count > 0 && idx.anyPieceNear(x0, y0, x1, y1);
+  const idx = world.getResource(StructureIndexRes);
+  if (idx && idx.count > 0 && idx.anyPieceNear(x0, y0, x1, y1)) return true;
+  return !!world.getResource(TerrainRes) && !ray(idx ?? structures(world), x0, y0, x1, y1, 0, undefined);
 }
 
 /**
@@ -77,11 +81,19 @@ export function reachableSpotNear(world: World, ox: number, oy: number, z: numbe
   return { x: ox, y: oy };
 }
 
+/** AI humans emit movement input rather than teleporting: use the same cached ladder-aware route. */
+export function walkerWaypoint(world: World, e: Entity, x: number, y: number, gx: number, gy: number): { x: number; y: number } | undefined {
+  if (!navNeeded(world, x, y, gx, gy)) return { x: gx, y: gy };
+  return waypoint(world, structures(world), e, x, y, gx, gy, 0, gameplayDefs(world).movement.bodyRadius,
+    (tx, ty) => terrainBlocksWalker(world, tx, ty));
+}
+
 // ---- internals -------------------------------------------------------------------------------------------------
 function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: number, gx: number, gy: number, level: number, r: number, blocked: TileBlocked): { x: number; y: number; final: boolean } | undefined {
   const m = nav(world); const gtx = Math.floor(gx), gty = Math.floor(gy); const now = world.tick;
   let st = m.get(e);
   if (st && !st.clear && st.reached && st.ver === idx.version && now < st.until && now >= st.strict && Math.abs(gtx - st.gtx) + Math.abs(gty - st.gty) === 1 && enterable(idx, gtx, gty, level, blocked)
+    && (level !== 0 || !terrainMoveBlocked(world, st.gtx, st.gty, gtx, gty))
     && !(gtx !== st.gtx ? idx.edgeBlocker(Math.max(gtx, st.gtx), gty, level, EdgeSide.West) : idx.edgeBlocker(gtx, Math.max(gty, st.gty), level, EdgeSide.North))) {
     // goal stepped one open edge on (a pet's walking owner): extend the route instead of searching again
     const p = st.path; const k = p.length;
@@ -167,6 +179,7 @@ function ray(idx: StructureIndex, x0: number, y0: number, x1: number, y1: number
 }
 /** One tile-boundary crossing of a sight ray (terrain veto optional). */
 function crossOk(idx: StructureIndex, ax: number, ay: number, bx: number, by: number, level: number, blocked: TileBlocked | undefined): boolean {
+  if (level === 0 && terrainMoveBlocked(idx.world, ax, ay, bx, by)) return false;
   if (blocked && blocked(bx, by)) return false;
   if (bx !== ax ? idx.edgeBlocker(Math.max(ax, bx), ay, level, EdgeSide.West) : idx.edgeBlocker(ax, Math.max(ay, by), level, EdgeSide.North)) return false;
   return !solidCell(idx, bx, by, level);
@@ -214,6 +227,7 @@ function route(idx: StructureIndex, sx: number, sy: number, gx: number, gy: numb
       const nx = cx + (k === 0 ? 1 : k === 1 ? -1 : 0), ny = cy + (k === 2 ? 1 : k === 3 ? -1 : 0);
       if (!inWin(nx, ny)) continue; const nid = (ny - oy) * W + (nx - ox); if (CLOSED[nid] === stamp) continue;
       const g = G[cur]! + 1; if (g + h(nx, ny) > fMax) continue;
+      if (level === 0 && terrainMoveBlocked(idx.world, cx, cy, nx, ny)) continue;
       if (nx !== cx ? idx.edgeBlocker(Math.max(cx, nx), cy, level, EdgeSide.West) : idx.edgeBlocker(cx, Math.max(cy, ny), level, EdgeSide.North)) continue;
       if (ENTER[nid] !== stamp) { ENTER[nid] = stamp; ENTER_OK[nid] = enterable(idx, nx, ny, level, blocked) ? 1 : 0; }
       if (!ENTER_OK[nid]) continue;

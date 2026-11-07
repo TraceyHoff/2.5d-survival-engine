@@ -31,6 +31,7 @@ export const BUILD_FAIL_TEXT: Readonly<Record<number, string>> = {
   8: "Spot taken", 9: "Blocked", 10: "Needs a socket", 11: "Needs support", 12: "Not enough materials",
   21: "Corner: use a corner piece here", // Task 30: BuildFail.CornerSlot (was the generic fallback)
   22: "Locked: learn it in the skill tree", // ADR-221 BuildFail.SkillLocked
+  24: "Ladder needs a height-step face",
   23: "Needs a paint brush in the hotbar", // Task 25 BuildFail.NoBrush
 };
 export const buildFailText = (reason: number | undefined): string => (reason && BUILD_FAIL_TEXT[reason]) || "Can't place here";

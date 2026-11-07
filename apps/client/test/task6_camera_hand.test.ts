@@ -14,7 +14,7 @@ describe("rotation transition (no distortion, no blink)", () => {
     for (const t of [0, 0.1, 0.25, 0.5, 0.75, 1]) {
       const f = rotateCrossfadeAt(t);
       expect(f.opacity).toBeGreaterThanOrEqual(0); expect(f.opacity).toBeLessThanOrEqual(1);
-      expect(f.scale).toBeGreaterThanOrEqual(ROTATE_CROSSFADE_MIN_SCALE); expect(f.scale).toBeLessThanOrEqual(1);
+      expect(f.scale).toBe(1);
     }
     expect(rotateCrossfadeAt(0.5).opacity).toBe(0.5);
   });
@@ -36,8 +36,8 @@ describe("rotation transition (no distortion, no blink)", () => {
     // Renderer + input follow the NEW view immediately (live canvas underneath); the old view is an overlay.
     expect(c.view).toBe(1); expect(v).toBe(1); expect(input.viewQuarter).toBe(1);
     expect(document.body.contains(overlay)).toBe(true); expect(overlay.dataset["role"]).toBe("rotate-fade");
-    frame(0); expect(overlay.style.opacity).toBe("1"); expect(overlay.style.transform).toBe("scale(1)");
-    frame(50); expect(overlay.style.opacity).toBe("0.5"); expect(overlay.style.transform).toMatch(/^scale\(0\.97/); expect(overlay.style.transform).not.toMatch(/matrix/);
+    frame(0); expect(overlay.style.opacity).toBe("1"); expect(overlay.style.transform).toBe("");
+    frame(50); expect(overlay.style.opacity).toBe("0.5"); expect(overlay.style.transform).toBe("");
     expect(v).toBe(1); // still the new view underneath, never black
     frame(200); expect(document.body.contains(overlay)).toBe(false); expect(v).toBe(1); expect(input.viewQuarter).toBe(1);
     c.dispose();

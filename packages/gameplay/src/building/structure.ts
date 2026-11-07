@@ -149,6 +149,7 @@ export class StructureIndex {
   }
   /** Piece at a PieceLink-style slot key. layer 4 = opening hosted by the piece at that slot. */
   atSlot(tx: number, ty: number, z: number, side: EdgeSide, layer: number): Entity | 0 {
+    if (layer === 3 && side !== EdgeSide.None && this.ladder(tx, ty, side)) return this.ladder(tx, ty, side);
     if (layer === LAYER_OPENING) {
       const parent = side !== EdgeSide.None ? this.edge(tx, ty, z, side) : this.deck(tx, ty, z);
       return parent ? this.opening(parent) : 0;
@@ -158,12 +159,18 @@ export class StructureIndex {
   /** Is this deck usable as a floor for walls/furniture (not a roof)? */
   isDeck(e: Entity | 0): e is Entity { return e !== 0 && !this.def(e)?.roof; }
 
+  /** ADR-265: terrain ladders share an edge with a doorway, but never replace it. */
+  readonly ladders = new Map<number, Entity>();
+  ladder(tx: number, ty: number, side: EdgeSide): Entity | 0 { return this.ladders.get(edgeKey(tx, ty, 0, side)) ?? 0; }
+
   // ---- add / remove ----
   /** Indexes a piece entity at a slot (no rule checks). Returns false if occupied. */
   addPiece(e: Entity, slot: Slot, parent: Entity | 0 = 0): boolean {
     const def = this.def(e); if (!def) return false;
     let gridId = 0;
-    if (def.placement === Placement.Opening) {
+    if (def.features.terrainLadder) {
+      const k = edgeKey(slot.tx, slot.ty, 0, slot.side); if (this.ladders.has(k)) return false; this.ladders.set(k, e);
+    } else if (def.placement === Placement.Opening) {
       if (!parent || this.openings.has(parent)) return false;
       this.openings.set(parent, e);
     } else if (def.placement === Placement.Edge && def.features.mount) {
@@ -197,7 +204,8 @@ export class StructureIndex {
     const inf = this.info.get(e); if (!inf) return;
     this.info.delete(e);
     const { slot: s, def } = inf; this.coarse(s.tx, s.ty, def, -1);
-    if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
+    if (def.features.terrainLadder) this.ladders.delete(edgeKey(s.tx, s.ty, 0, s.side));
+    else if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
     else if (def.placement === Placement.Edge && def.features.mount) { const k = `${edgeKey(s.tx, s.ty, s.z, s.side)}:${s.rot & 2}`; if (this.mounts.get(k) === e) this.mounts.delete(k); }
     else if (def.placement === Placement.Edge) { const k = edgeKey(s.tx, s.ty, s.z, s.side); if (this.edges.get(k) === e) this.edges.delete(k); }
     else if (isLCorner(def)) for (const a of lCornerArms(s.tx, s.ty, s.rot)) { const k = edgeKey(a.tx, a.ty, s.z, a.side); if (this.edges.get(k) === e) this.edges.delete(k); }
@@ -285,6 +293,7 @@ export class StructureIndex {
   /** Same for a hypothetical placement (validation / ghost). `self` is excluded from results. */
   supportsAt(def: PieceDef, s: Slot, parent: Entity | 0, self: Entity | 0 = 0, out: [Entity, number][] = []): { root: boolean; list: [Entity, number][] } {
     out.length = 0; const z = s.z;
+    if (def.features.terrainLadder) return { root: z === 0, list: out };
     if (def.placement === Placement.Opening || def.features.mount) { if (parent) out.push([parent, 0]); return { root: false, list: out }; }
     if (def.placement === Placement.Edge) {
       for (const [x, y] of StructureIndex.edgeTiles(s.tx, s.ty, s.side)) { const d = this.deck(x, y, z); if (this.isDeck(d)) out.push([d, 1]); }

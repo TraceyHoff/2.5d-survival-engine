@@ -6,7 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { Transform, type Entity, type World } from "@engine/core";
 import {
-  addItem, buildPreviewFor, defaultDefs, Placement, placePiece, pieceCost, snapPlacement, spawnPlayer, tryPlace, validatePlacement, type PieceDef,
+  addItem, buildPreviewFor, defaultDefs, TerrainRes, Placement, placePiece, pieceCost, snapPlacement, spawnPlayer, tryPlace, validatePlacement, type PieceDef,
 } from "../src/index.js";
 import { makeWorld, steps, spawnLearned } from "./helpers.js";
 
@@ -23,6 +23,8 @@ function base(): { w: World; me: Entity } {
   // a room on tile (2,2) (all interior edges): doorway N, window frame S, walls W/E; floor with a hatch frame above it
   put("wall_doorway", 2.5, 2); put("wall_window", 2.5, 3); put("wall", 2, 2.5, 0, 1); put("wall", 3, 2.5, 0, 1);
   put("floor_hatch_frame", 2.5, 2.5, 1);
+  // ADR-265: a dedicated dry terrain face outside the flat base, for the physical ladder.
+  const terrain = w.getResource(TerrainRes) ?? { tileAt: () => 4, heightAt: () => 0 }; w.setResource(TerrainRes, { tileAt: (x, y) => terrain.tileAt(x, y), heightAt: (x, y) => x === 0 && y === -1 ? -3 : terrain.heightAt(x, y) });
   steps(w, 2);
   return { w, me };
 }

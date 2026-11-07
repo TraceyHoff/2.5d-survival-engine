@@ -126,6 +126,9 @@ export class IsoRenderer implements Renderer {
   private readonly settleHold = new SettleHold();
   /** Frames skipped while an atlas rebuild settled (diag / tests). */
   heldFrames = 0;
+  /** Presentation serial: unchanged on held, lost-context or incomplete frames. */
+  completeFrames = 0;
+  private prepareQuarter = false;
   private applyQuality(): void {
     // @2x pages were dead code before: setPageScale was never called, so Ultra / Full rendered
     // 1x pages into a native-DPR backbuffer -- a sharp canvas holding soft art. Wire the preset's
@@ -365,7 +368,7 @@ export class IsoRenderer implements Renderer {
   get viewRotation(): number { return this.camera.view; }
   /** ADR-253: snap the view to quarter `q` keeping `pivot` (default: the view centre) fixed on screen. All passes read the
    *  shared IsoConfig, so terrain, sprites, buildings, lights and shadows follow on the next frame. */
-  setViewRotation(q: number, pivot?: { x: number; y: number; z?: number }): void { this.camera.setView(q, pivot); }
+  setViewRotation(q: number, pivot?: { x: number; y: number; z?: number }): void { this.camera.setView(q, pivot); this.prepareQuarter = true; }
   /** Gameplay components the renderer reads (BuildPiece, AnimState). */
   bindGameplay(b: GameplayBindings): void { this.bindings = { ...this.bindings, ...b }; }
   /** ADR-256: grazed grass lookup (world tile coords) + revision so TileTerrain chunk caches rebuild. */
@@ -579,6 +582,7 @@ export class IsoRenderer implements Renderer {
     const hh = this.iso.tileH / 2;
     const minKey = rect.y0 / hh - 64, maxKey = (rect.y1 + 2048) / hh + 64;
     this.depthU[0] = minKey; this.depthU[1] = 1 / (maxKey - minKey);
+    if (this.prepareQuarter && this.tilemap) { this.tiles.prepareView(this.tilemap, this.atlas, this.activeKeys); this.prepareQuarter = false; }
     this.updateBuildingTiers(world, rect);
     this.sprites.prepare({
       world, alpha, rect, atlas: this.atlas, depthMin: minKey, depthRange: maxKey - minKey, tickHz: this.tickHz, style,
@@ -666,6 +670,7 @@ export class IsoRenderer implements Renderer {
 
     stats.staticChunks = this.sprites.staticChunksDrawn; stats.staticInstances = this.sprites.staticInstances;
     stats.cpuMs = performance.now() - t0;
+    if (this.tilemap && this.w > 0 && this.h > 0 && !this.atlas.settling && !gl.isContextLost()) this.completeFrames++;
   }
 
 

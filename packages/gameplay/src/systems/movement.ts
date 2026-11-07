@@ -1,3 +1,4 @@
+import { terrainMoveBlocked } from "../building/terrain-ladder.js";
 /**
  * Player movement (moved from apps/server protocol.ts). Same function on the server and in client prediction:
  * screen-aligned iso directions from action bits (GameplayActions MoveUp/Down/Left/Right/Sprint occupy bits 0..4,
@@ -56,6 +57,7 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   const defs = gameplayDefs(world); const terrain = world.getResource(TerrainRes);
   const tx0 = Math.floor(x0), ty0 = Math.floor(y0), tx1 = Math.floor(x1), ty1 = Math.floor(y1);
   if (terrain) { const tile = terrain.tileAt(tx1, ty1); if (defs.worldgen.unwalkableTiles.has(tile) && !(swim && defs.movement.swimTiles.has(tile)) && waterDepthAt(terrain.tileAt, tx1, ty1, defs.movement.shallowRadius) !== WaterDepth.Shallow) return true; }
+  if (level === 0 && terrainMoveBlocked(world, tx0, ty0, tx1, ty1)) return true;
   const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return false;
   if (tx1 !== tx0 && idx.edgeBlocker(Math.max(tx0, tx1), ty0, level, EdgeSide.West)) return true;
   if (ty1 !== ty0 && idx.edgeBlocker(tx1, Math.max(ty0, ty1), level, EdgeSide.North)) return true;

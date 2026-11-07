@@ -103,6 +103,14 @@ export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: num
   const h = renderTileHeight((c.tiles as Uint16Array | undefined)?.[i] ?? 0, c.height[i] ?? 0); // ADR-182: swimmers sit on the flat water surface
   return h < 0 ? z + h : Math.max(z, h); // ADR-263: sim z is clamped >= 0, so a shovel pit (negative height) lowers the body
 }
+/** ADR-265: ground surfaces on the two sides of the snapped terrain face. */
+export function ladderFaceHeights(tiles: TileMap | undefined, x: number, y: number, rot: number): { low: number; high: number } {
+  const tx = Math.floor(x), ty = Math.floor(y);
+  const a = groundZ(tiles, tx + .5, ty + .5, 0);
+  const b = (rot & 1) ? groundZ(tiles, tx - .5, ty + .5, 0) : groundZ(tiles, tx + .5, ty - .5, 0);
+  return { low: Math.min(a, b), high: Math.max(a, b) };
+}
+
 /** ADR-162: groundZ for a build piece; a lift above its level floor (decor on a table) is kept on top of a terrain step. */
 export function pieceGroundZ(tiles: TileMap | undefined, x: number, y: number, z: number, lh: number): number {
   const off = z - Math.round(z / lh) * lh; return off > 1e-3 ? groundZ(tiles, x, y, z - off) + off : groundZ(tiles, x, y, z);
@@ -355,34 +363,51 @@ export class IsoView {
   }
 
   private ghost: BuildGhost | undefined;
-  /** ADR-228: drawn ghost position (eased toward the preview), when it was drawn, and the preview shape it showed. */
-  private ghostEase: { x: number; y: number; t: number; shape: string } | undefined;
   /** Build-placement ghost from the client's buildMode.preview (call every frame; undefined removes it). Free-rotation
    *  pieces (rotSteps 16) are shown at the nearest quarter turn, triangles (12) on their exact art row (pieceArtRow); Tri/Free
    *  pieces pivot at the exact snapped x/y; variant goes by name (defs variantNames). */
   private lastTiles: TileMap | undefined;
   /** ADR-196: world z the ghost is drawn at (terrain-lifted), for the snap overlay. */
   ghostZ: number | undefined;
+  private presentedPivot: { x: number; y: number; z: number } | undefined;
+  rotationPivot(): { x: number; y: number; z: number } | undefined { return this.presentedPivot; }
+  private ladderSections = new Map<Entity, Entity[]>();
   syncGhost(p: import("@engine/gameplay").BuildPreview | undefined, net: World): void {
     if (!p && !this.ghost) return;
     this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
-    if (!p) { if (this.ghost.entity !== null) this.pieceScales.delete(this.ghost.entity); this.ghost.sync(null); this.ghostZ = undefined; this.ghostEase = undefined; return; }
+    if (!p) { if (this.ghost.entity !== null) this.pieceScales.delete(this.ghost.entity); this.ghost.sync(null); this.ghostZ = undefined; return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
     const def = gameplayDefs(net).pieces.get(p.piece);
     // ADR-142: lifted onto the terrain step like the placed piece (view mirror `ground`); at z=0 it sank under raised ground
     this.ghostZ = pieceGroundZ(this.lastTiles, p.x, p.y, p.z, gameplayDefs(net).building.levelHeight);
-    // ADR-228: ease the drawn ghost toward the (throttled) preview; a new piece / rotation / level / long jump snaps
-    const now = performance.now(), G = this.ghostEase; const shape = `${p.piece}|${p.tier}|${p.variant}|${p.rot}|${p.level}|${p.valid ? 1 : 0}|${this.ghostZ}`;
-    let gx = p.x, gy = p.y;
-    if (G && G.shape.split("|").slice(0, 5).join("|") === shape.split("|").slice(0, 5).join("|") && Math.hypot(p.x - G.x, p.y - G.y) < GHOST_EASE_SNAP) {
-      const k = 1 - Math.exp(-Math.min(0.1, Math.max(0, (now - G.t) / 1000)) * GHOST_EASE_RATE);
-      gx = G.x + (p.x - G.x) * k; gy = G.y + (p.y - G.y) * k; if (Math.abs(p.x - gx) < 0.01 && Math.abs(p.y - gy) < 0.01) { gx = p.x; gy = p.y; }
-      if (gx === G.x && gy === G.y && shape === G.shape) { G.t = now; return; } // settled and unchanged: nothing to re-sync
-    }
-    this.ghostEase = { x: gx, y: gy, t: now, shape };
+    // ADR-268: the visible hologram is the exact snapped request that Build confirms.
+    // Easing between cells showed a different location from the authoritative preview.
+    const gx = p.x, gy = p.y;
     this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: gx, y: gy, rot: p.rot, valid: p.valid }, { z: this.ghostZ, level: p.level, tier: p.tier, rotSteps: p.rotSteps, rotFlags: pieceRotFlags(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
     { const ge = this.ghost.entity, sc = this.pieceArtScale(p.pieceKey); if (ge !== null) { if (sc !== 1) this.pieceScales.set(ge, sc); else this.pieceScales.delete(ge); } } // ADR-227
   }
+  /** A ladder covers the whole terrain face with native-size painted sections, never a stretched sprite. */
+  private syncTerrainLadders(net: World, tiles: TileMap | undefined): void {
+    const v = this.view, active = new Set<Entity>();
+    for (const e of net.query([GPiece, Transform])) {
+      const bp = net.get(e, GPiece)!; if (!gameplayDefs(net).pieces.get(bp.type)?.features.terrainLadder) continue;
+      const base = this.map.get(e); if (base === undefined || !v.has(base, VPiece)) continue;
+      active.add(e); const t = net.get(e, Transform)!;
+      const { low, high } = ladderFaceHeights(tiles, t.x, t.y, bp.rot);
+      const count = Math.max(1, Math.min(77, high - low));
+      let sections = this.ladderSections.get(e); if (!sections) this.ladderSections.set(e, (sections = []));
+      while (sections.length > count - 1) v.destroy(sections.pop()!);
+      while (sections.length < count - 1) { const part = v.create(); v.add(part, Transform).add(part, PrevTransform).add(part, VPiece); sections.push(part); }
+      for (let n = 0; n < count; n++) {
+        const part = n === 0 ? base : sections[n - 1]!;
+        const tf = { x: t.x, y: t.y, z: low + n, facing: t.facing };
+        v.set(part, Transform, tf); v.set(part, PrevTransform, tf);
+        if (n > 0) v.set(part, VPiece, v.get(base, VPiece)!);
+      }
+    }
+    for (const [e, parts] of this.ladderSections) if (!active.has(e)) { for (const part of parts) v.destroy(part); this.ladderSections.delete(e); }
+  }
+
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
     try { this.renderer.resize(w, h, safe ? 1 : dpr); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }
@@ -548,12 +573,15 @@ export class IsoView {
     if (r.vfx) this.raid.step(this.registry, r.vfx, this.raidPieces, performance.now() / 1000); this.raidPieces.length = 0; // ADR-242 (Canvas2D: no vfx layer)
     for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.movingVe.delete(ve); this.driverVe.delete(ve); this.bedOf.delete(ve); this.carriedOf.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
+    this.syncTerrainLadders(net, tiles);
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
     const pv = camE !== undefined ? this.map.get(camE) : undefined;
     let want: { x: number; y: number; z: number } | undefined;
     if (pv !== undefined) { const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t; want = this.sWant; want.x = p.x + (t.x - p.x) * alpha; want.y = p.y + (t.y - p.y) * alpha; want.z = p.z + (t.z - p.z) * alpha; }
+    // Capture the actual interpolated player before camera-follow smoothing mutates sWant.
+    this.presentedPivot = want ? { x: want.x, y: want.y, z: want.z } : undefined;
     const st = this.status;
     const why = player === undefined ? `no player entity (entities ${this.map.size}, local server ${st?.localServer ?? "?"}, snapshots ${st?.snapshots ?? 0}${st?.error ? `: ${st.error}` : ""})` : "player not mirrored into the view";
     // ADR-155: the target z is lifted onto stepped tile heights, so a step jerked the whole screen for 2-3 frames

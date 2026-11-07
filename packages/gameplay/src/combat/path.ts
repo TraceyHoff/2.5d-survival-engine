@@ -1,3 +1,4 @@
+import { terrainStepBlocked } from "../building/terrain-ladder.js";
 /**
  * Zombie pathing: deterministic A* on the tile grid at level 0, 4-neighbour moves. Crossing an edge with a blocking
  * wall or closed door (or entering a solid cell piece) is allowed at a break cost = ticks to destroy it
@@ -103,6 +104,7 @@ export function findPath(world: World, sx: number, sy: number, gx: number, gy: n
       // Task 29: inlined terrainBlocksWalker — same predicate, but the tile is fetched once and
       // gameplayDefs/TerrainRes are not re-resolved per neighbour.
       if (terrain) { const tile = terrain.tileAt(nx, ny); if (unwalk.has(tile) && waterDepthAt(terrain.tileAt, nx, ny, shallowR) !== WaterDepth.Shallow) continue; }
+      if (terrainStepBlocked(terrain, idx, x, y, nx, ny, world)) continue;
       const b = stepBlocker(idx, x, y, nx, ny);
       const step = 1 + (b ? breakTicks(b) * ai.breakCostMul : 0);
       const nk = key(nx, ny); const ng = gc + step;

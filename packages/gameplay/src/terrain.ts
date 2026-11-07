@@ -20,6 +20,7 @@ import { gameplayDefs, isAuthority } from "./config.js";
 import { ToolKind } from "./defs.js";
 import { countItem, exchangeItems } from "./inventory.js";
 import { itemIdSafe } from "./roads.js";
+import { StructureIndex, structures } from "./building/structure.js";
 import { hasPrivilege } from "./building/place.js";
 import { emit, XpActivity } from "./events.js";
 import { indexEntity } from "./spawn.js";
@@ -75,6 +76,12 @@ export function waterSurfaceAt(t: Terrain, x: number, y: number): number | undef
 }
 
 function blocked(world: World, tx: number, ty: number): boolean {
+  // ADR-266: protect the WHOLE footprint and both supporting tiles of an edge wall,
+  // not just the tile containing its Transform anchor. Terrain ladders may extend with the face.
+  const building = structures(world);
+  for (let layer = 0; layer <= 3; layer++) if (building.cell(tx, ty, 0, layer)) return true;
+  for (const [ex, ey, side] of StructureIndex.tileEdges(tx, ty)) if (building.edge(ex, ey, 0, side)) return true;
+
   const idx = installSpatialIndex(world); idx.update();
   for (const o of idx.queryRadius(tx + 0.5, ty + 0.5, 0.75)) {
     if (!world.isAlive(o) || world.has(o, Dead)) continue;

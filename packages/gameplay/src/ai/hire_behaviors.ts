@@ -1,3 +1,6 @@
+import { type Agent } from "@engine/core";
+import { aiMemoryOf, makePlan, markAiDirty } from "./planner.js";
+import { planTerrainBase } from "./terrain_base.js";
 /**
  * Task 22 hired-worker behavior: a recruited AI human is a bot whose owner is a player and whose behavior is
  * driven by its assigned job. `fillHireSensors` (called from buildAgentView after fillGoalSensors) re-anchors the
@@ -132,7 +135,7 @@ export function computeFarmSensor(world: World, self: Entity, defs: GameDefs, an
   return undefined;
 }
 
-export function fillHireSensors(world: World, self: Entity, view: AgentWorldView): void {
+export function fillHireSensors(world: World, self: Entity, view: AgentWorldView, agent?: Agent): void {
   if (!world.has(self, Worker)) return;
   const w = world.get(self, Worker)!;
   const cfg = world.getResource(GameplayConfig); if (!cfg) return; const defs = cfg.defs;
@@ -183,6 +186,27 @@ export function fillHireSensors(world: World, self: Entity, view: AgentWorldView
     if (best) view.defend = best;
   }
   if (w.job === WorkerJob.Farm) { const f = hasTarget && target === undefined ? undefined : computeFarmSensor(world, self, defs, anchor, bs, target); if (f) view.farm = f; else delete view.farm; }
+  if (w.job === WorkerJob.Maintain && agent && !hasTarget) {
+    // Maintain an explicitly anchored NEW shelter only. Never terraform an existing owner's floor.
+    const mem = aiMemoryOf(agent);
+    if (mem.hireEarth && ((mem.hireEarth.anchor?.x ?? mem.hireEarth.x) !== Math.floor(base.x) || (mem.hireEarth.anchor?.y ?? mem.hireEarth.y) !== Math.floor(base.y))) delete mem.hireEarth;
+    if (!mem.hireEarth && !bs.pieces.size) {
+      for (const [dx, dy] of [[0, 0], [2, 2], [-3, 2], [2, -3]]) {
+        const earth = planTerrainBase(world, self, { x: Math.floor(base.x) + dx!, y: Math.floor(base.y) + dy! }, (self & 1) ? "pit" : "pad");
+        if (earth) { earth.anchor = { x: Math.floor(base.x), y: Math.floor(base.y) }; mem.hireEarth = earth; break; }
+      }
+    }
+    if (mem.hireEarth && !mem.hireEarth.abandoned) {
+      const earthBase = { x: mem.hireEarth.x, y: mem.hireEarth.y };
+      const earthScan = scanBase(world, defs, earthBase);
+      view.base = earthBase; view.bs = { ...earthScan, ...(earthScan.storage ? {} : bs.storage ? { storage: bs.storage } : {}) };
+      view.plan = makePlan({ world, self, defs, base: earthBase, bs: view.bs, fails: mem.fails, earth: mem.hireEarth, shelterOnly: true });
+      view.needs = view.plan.leaves; delete view.surplus; // keep Soil and reserved ladder/build materials
+      const step = view.plan.step;
+      if (step?.k === "craft" && step.station === StationKind.None) { view.craftRecipe = step.recipe; view.craftCount = step.count; view.craftTicks = step.ticks; }
+      markAiDirty(agent, world.tick);
+    }
+  }
   if (w.job === WorkerJob.Maintain) {
     const rep = hasTarget ? target : scanBase(world, defs, anchor)?.repair;
     if (rep !== undefined) {

@@ -392,6 +392,7 @@ export class Canvas2DRenderer {
     }
   }
 
+  completeFrames = 0;
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const nowMs = performance.now(); if (this.clockAt >= 0) this.clock += Math.min(0.1, (nowMs - this.clockAt) / 1000) * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1); this.clockAt = nowMs; const time = this.clock; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
@@ -484,6 +485,7 @@ export class Canvas2DRenderer {
       this.lightmap.apply(g, this.w, this.h, { s, ox: this.w / 2 - cam.x * s, oy: this.h / 2 - cam.y * s }, a, C2D_DAYLIGHT_LIGHT_SCALE + (1 - C2D_DAYLIGHT_LIGHT_SCALE) * day.glow, time, lights);
     }
     g.globalCompositeOperation = "source-over"; void this.focus;
+    this.completeFrames++;
   }
 }
 const FLOOR_Z = floorToTerrainZ(1, 0);

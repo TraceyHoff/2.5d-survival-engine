@@ -1,3 +1,4 @@
+import { fillHireSensors } from "./hire_behaviors.js";
 /**
  * ADR-203: needs-driven autonomy for AI humans (virtual players). Sensors here pick concrete goals from the bot's own
  * view (gather node that yields a missing ingredient, water tile, a tool to hold, a damaged piece to repair); behaviors
@@ -20,7 +21,7 @@ import { StructureIndexRes } from "../building/structure.js";
 import { bumpStat } from "./planner.js";
 import { maxHpOf } from "../building/integrity.js";
 import { resolveAttachment } from "../building/links.js";
-import { armCraft, bindAgentWorld, fillPlanSensors, noteTripWanted } from "./base_behaviors.js";
+import { armCraft, goTo, bindAgentWorld, fillPlanSensors, noteTripWanted } from "./base_behaviors.js";
 
 export interface GoalSensors {
   gatherNode?: { id: number; x: number; y: number; wanted: boolean };
@@ -142,6 +143,8 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   // ADR-252: the planner owns needs / hand crafts / base pieces (needs = leaves of the first unmet goal)
   bindAgentWorld(a, world);
   { const pn = fillPlanSensors(world, self, view, a, defs, slots); if (pn) { needs.clear(); for (const x of pn) needs.add(x); if (view.food === undefined && view.bs?.stations.has(1)) for (const id of ix.foods) needs.add(id); if (needs.size) view.needs = [...needs]; else delete view.needs; } }
+  // Owner earthwork leaves must be installed BEFORE gathering is selected, not one sensor later.
+  if (world.getField(self, Worker, "owner") && world.getField(self, Worker, "job") === WorkerJob.Maintain) fillHireSensors(world, self, view, a);
   // ADR-259: employment replaces the personal building ladder, never survival food needs.
   const worker = world.get(self, Worker); const selected = Array.from(world.getArray(self, WorkerOrder, "selections") ?? []).filter(Boolean);
   const hungry = view.food === undefined && (world.getField(self, Survival, "hunger") ?? 100) < 55;
@@ -152,6 +155,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
     if (worker.job === WorkerJob.Craft && selected.length) {
       jobItems = new Set(selected.flatMap((id) => { const r = defs.recipes.get(id); return r && !have(r.output.item) ? r.ingredients.filter((g) => have(g.item) < g.count).map((g) => g.item) : []; }));
     }
+    if (worker.job === WorkerJob.Maintain && view.plan) jobItems = new Set(view.plan.leaves);
     if (jobItems) for (const id of jobItems) needs.add(id);
     if (hungry) for (const id of ix.foods) needs.add(id);
     delete view.gatherNode;
@@ -173,7 +177,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
     const foodNode = hungry && def.yields.some((y) => ix.foods.includes(y.item));
     if (worker?.owner) {
       if (jobItems && !def.yields.some((y, i) => jobItems.has(y.item) && (!bare || i === 0)) && !foodNode) continue;
-      if (worker.job !== WorkerJob.Gather && worker.job !== WorkerJob.Craft && !foodNode) continue;
+      if (worker.job !== WorkerJob.Gather && worker.job !== WorkerJob.Craft && !(worker.job === WorkerJob.Maintain && view.plan) && !foodNode) continue;
     }
     const wanted = def.yields.some((y) => needs.has(y.item));
     if (!wanted && needs.size && def.yields[0] && have(def.yields[0].item) >= 8) continue; // stocked up: explore for what the goal needs
@@ -279,10 +283,11 @@ export function autonomyBehaviors(): GameBehavior[] {
         { name: "hasWood", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.woodSlot !== undefined ? 1 : 0) }],
       run: (c, o) => {
         const f = c.world.fire; if (!f || f.lit) { c.bb.set("fireAt", c.self.tick); c.bb.set("fireStep", 0); return false; }
-        if (toward(o, c.self.x, c.self.y, f.x, f.y, 0.8) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("fireAt", c.self.tick); return false; } return; }
+        if (goTo(c, o, f.x, f.y, 0.8) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("fireAt", c.self.tick); return false; } return; }
         o.moveX = 0; o.moveY = 0; const at = c.bb.num("fireStepAt", -1e9); if (c.self.tick - at < 8) return;
         const step = c.self.tick - at > 60 ? 0 : c.bb.num("fireStep"); // a stale sequence restarts
         c.bb.set("fireStepAt", c.self.tick); c.bb.set("fireStep", step + 1);
+        if (o.actions.some((a) => /^c(open|close|deposit|withdraw)(:|$)/.test(a))) return;
         if (step === 0) o.actions.push(`copen:${f.id}`);
         else if (step === 1 && c.world.woodSlot) o.actions.push(`cdeposit:${f.id}:${c.world.woodSlot.item}:${Math.min(8, c.world.woodSlot.count)}`);
         else if (step === 2) o.actions.push(`fire:${f.id}`);
@@ -293,7 +298,7 @@ export function autonomyBehaviors(): GameBehavior[] {
         { name: "waterKnown", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.waterAt ? 1 : 0) }],
       run: (c, o) => {
         const w = c.world.waterAt; if (!w || c.self.thirst > 0.95) return false;
-        if (toward(o, c.self.x, c.self.y, w.x, w.y, 0.9) > 0.8) { if (stuckOn(c, w.x, w.y)) return false; return; }
+        if (goTo(c, o, w.x, w.y, 0.9) > 0.8) { if (stuckOn(c, w.x, w.y)) return false; return; }
         o.moveX = 0; o.moveY = 0; if (cooled(c.self.tick, c.bb.num("drankAt", -1e9), 20)) { o.actions.push(`drink:${NO_SLOT}`); c.bb.set("drankAt", c.self.tick); }
       } },
     { name: "equip", inertia: 0, considerations: [
@@ -304,7 +309,7 @@ export function autonomyBehaviors(): GameBehavior[] {
         { name: "calm", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
       run: (c, o) => {
         const r = c.world.repairTarget; if (!r) return false;
-        if (toward(o, c.self.x, c.self.y, r.x, r.y, 0.8) > 2) { if (stuckOn(c, r.x, r.y)) { c.bb.set("repairAt", c.self.tick); return false; } return; }
+        if (goTo(c, o, r.x, r.y, 0.8) > 2) { if (stuckOn(c, r.x, r.y)) { c.bb.set("repairAt", c.self.tick); return false; } return; }
         o.moveX = 0; o.moveY = 0; o.actions.push(`repair:${r.id}`); c.bb.set("repairAt", c.self.tick); if (c.world.base) bumpStat(c.agent, "repairs", c.self.tick); return false;
       } },
   ];

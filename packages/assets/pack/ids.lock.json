@@ -5370,7 +5370,9 @@
     "tree_apple_spring": 5368,
     "tree_pine_spring": 5369,
     "tree_spring": 5370,
-    "soil": 5371
+    "soil": 5371,
+    "build_ladder": 5372,
+    "ladder": 5373
   },
   "sounds": {
     "amb_rain": 1,

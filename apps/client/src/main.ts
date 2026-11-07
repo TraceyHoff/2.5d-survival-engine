@@ -372,7 +372,10 @@ function render(w: World, alpha: number): void {
     iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
     { const t = performance.now(); const dt = indoorT ? t - indoorT : 0; camZoom?.setIndoor(iso.renderer.indoor, dt); camZoom?.setBuild(buildMode.active, dt); indoorT = t; } // ADR-206: ease in under a roof; building mode zooms in further for precise placement
     try { syncUnderground(iso.renderer as { underground?: number }, w, session.player); } catch { /* never break a frame */ } // ADR-263
-    iso.corrections = session.client; fxLayer.pre(); iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac);
+    iso.corrections = session.client; fxLayer.pre();
+    const before = iso.renderer.completeFrames;
+    iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac);
+    if (iso.renderer.completeFrames !== before) camRot?.frameComplete();
     try { fxLayer.draw(dayFrac); } catch { /* effects must never break a frame */ }
     diag?.afterRender(); return;
   }
@@ -652,8 +655,8 @@ deathUi = mountDeathScreen(root, { world: () => world, player: () => session.pla
   respawn: () => { const c = session.client; if (!c?.connected) return false; try { return c.sendCommand(gameplayNet(RespawnCmd), {} as never) !== false; } catch { return false; } },
   onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); }, view: () => input.viewQuarter });
 // ADR-253: four 90° views (KBM [ / ], pad RB + D-pad ←/→ or LT + D-pad ←/→ in build mode, ⟲ / ⟳ HUD for mouse / touch)
-camRot = attachCameraRotate({ target: () => iso?.renderer, input, root, spinTarget: () => canvas,
-  pivot: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y, z: t.z ?? 0 } : undefined; },
+camRot = attachCameraRotate({ target: () => iso?.renderer, input, root, frameBoundary: true, spinTarget: () => canvas,
+  pivot: () => iso?.rotationPivot(),
   onChange: (q) => { audio.mixer.view = q; },
   hidden: () => !!document.querySelector("[data-boot=menu]") || !!deathUi?.dead || !!menus?.nav.isOpen || session.player === undefined });
 farm = mountFarmPrompt(root, {

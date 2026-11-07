@@ -1312,3 +1312,6 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
 
 /* ADR-264: dedicated soil clump, appended to the item atlas (frame 49). */
 [data-icon="soil"]{--cz-icon:url("../../../packages/assets/pack/atlases/items.png");--cz-isize:800% 700%;--cz-ipos:14.29% 100%}
+
+/* ADR-265: dedicated original ladder icon (no furniture/fence stand-in). */
+[data-icon="build_ladder"]{--cz-icon:image-set(url("../../../packages/assets/pack/building/atlases/ladder_icon.png") 1x,url("../../../packages/assets/pack/building/atlases/ladder_icon@2x.png") 2x);--cz-isize:100% 100%;--cz-ipos:0% 0%}

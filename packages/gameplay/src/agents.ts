@@ -18,7 +18,7 @@ import { fillVehicleSensors, vehicleBehaviors, type VehicleSensors } from "./ai/
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
 import { fillStanceSensors, stancePolicy, type StanceSensors } from "./ai/stance_policy.js";
-import { baseBehaviors, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
+import { baseBehaviors, goTo, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
 import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
 import { fillHireSensors, hireBehaviors, withHireDuty } from "./ai/hire_behaviors.js";
 
@@ -97,7 +97,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
   }
   const tod = timeOfDay(world);
   const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((treesOf(world, self) ?? []).some((t) => t.points > 0)) { // ADR-221: per-tree points since ADR-209 (global points is always 0)
-    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillStanceSensors(world, self, view); fillGoalSensors(world, self, view, a); fillHireSensors(world, self, view); observeSocialMemory(world, self, a);
+    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillStanceSensors(world, self, view); fillGoalSensors(world, self, view, a); fillHireSensors(world, self, view, a); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -130,7 +130,7 @@ export function referenceBehaviors(): GameBehavior[] {
       // that stays out of reach / is worked too long without depleting, and re-plan instead of re-picking it forever
       run: (c, o) => {
         instantChores(c, o); const n = gatherGoal(c); if (!n) return false;
-        const d = toward(o, c.self.x, c.self.y, n.x, n.y, 0.8);
+        const d = goTo(c, o, n.x, n.y, 0.8);
         if (d >= GATHER_STOP) { if (stuckOn(c, n.x, n.y)) { banNode(c, n.id); return false; } return; }
         o.moveX = 0; o.moveY = 0; o.actions.push("gather");
         const at = c.bb.num("gatherAt", -1), id = c.bb.num("gatherId", -1);
@@ -142,11 +142,11 @@ export function referenceBehaviors(): GameBehavior[] {
       run: (c, o) => {
         instantChores(c, o); let g = c.bb.get<{ x: number; y: number }>("exploreGoal");
         if (!g || Math.hypot(g.x - c.self.x, g.y - c.self.y) < 1.5 || stuckOn(c, g.x, g.y)) { const a = c.rng.range(-Math.PI, Math.PI), r = c.rng.range(4, 14); g = { x: c.world.home.x + Math.cos(a) * r, y: c.world.home.y + Math.sin(a) * r }; c.bb.set("exploreGoal", g); }
-        toward(o, c.self.x, c.self.y, g.x, g.y, 0.7); c.bb.set("facing", Math.atan2(o.aimY, o.aimX));
+        goTo(c, o, g.x, g.y, 0.7); c.bb.set("facing", Math.atan2(o.aimY, o.aimX));
       } },
     { name: "return_home", chatOnStart: "return_home", scheduleBonus: 0.4,
       considerations: [{ name: "farFromHome", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => (c.bb.get("trip") ? 0 : Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 30) }, { name: "evening", curve: { type: "linear", m: 0.8, b: 0.2 }, input: (c) => night(c.self.phase) }],
-      run: (c, o) => { instantChores(c, o); if (c.world.base) return baseReturnRun(c, o); if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y) < 2 || stuckOn(c, c.world.home.x, c.world.home.y, 100)) return false; } },
+      run: (c, o) => { instantChores(c, o); if (c.world.base) return baseReturnRun(c, o); if (goTo(c, o, c.world.home.x, c.world.home.y) < 2 || stuckOn(c, c.world.home.x, c.world.home.y, 100)) return false; } },
     { name: "rest", chatOnStart: "rest", scheduleBonus: 0.3,
       considerations: [{ name: "night", curve: { type: "step", at: 0.5 }, input: (c) => night(c.self.phase) }, { name: "nearHome", curve: { type: "inverse" }, input: (c) => Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 10 }],
       run: () => { /* stand still (sleep hook: Survival adds a sleep action) */ } },

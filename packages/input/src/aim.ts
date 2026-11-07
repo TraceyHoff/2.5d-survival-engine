@@ -35,7 +35,7 @@ export class AimResolver<W = unknown, E = number> {
   /** Touch: tap-to-target (world point). */
   setTouchTarget(p: { x: number; y: number } | undefined): void { this.touchTarget = p; }
   resolve(world: W, actor: E, actorPos: { x: number; y: number }): AimTarget {
-    const dev = this.input.activeDevice; const cls = dev?.deviceClass ?? "keyboardMouse"; const ctx: HookContext = { device: cls, activeDevice: dev };
+    const dev = this.input.activeDevice ?? this.input.deviceList.find((d) => d.connected && d.deviceClass === "keyboardMouse"); const cls = dev?.deviceClass ?? "keyboardMouse"; const ctx: HookContext = { device: cls, activeDevice: dev };
     const aim = this.input.vector(this.opts.aimAction ?? "Aim"), move = this.input.vector(this.opts.moveAction ?? "Move");
     if (cls === "keyboardMouse" && dev && this.opts.screenToWorld) { const p = this.opts.screenToWorld(dev.read("mouse.x"), dev.read("mouse.y")); return { x: p.x, y: p.y, mode: AimMode.WorldPoint }; }
     if (cls === "touch") {

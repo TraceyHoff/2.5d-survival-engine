@@ -4,14 +4,11 @@
  * layer (camera-relative movement / aim / pad cursor) and the audio pan, persists the choice in "engine-settings"
  * (key `view`), and shows a small ⟲ / ⟳ HUD pair for mouse and touch under the top-right menu bar.
  * Controls: KBM `[` / `]`, gamepad hold RB + D-pad ←/→ (build mode: LT + D-pad ←/→), touch/mouse the HUD buttons.
- * The view change is a 500 ms cross-fade: a screenshot of the old view is laid over the game canvas, the
- * renderer snaps to the new quarter underneath it at once, and the screenshot fades out while shrinking
- * uniformly to 0.95x, revealing the new view. The screen never goes black (the earlier fade-out did, which
- * read as a blink), and nothing is ever stretched: earlier versions spun with an anisotropic CSS matrix that
- * squashed tiles and sprites mid-turn, then faded the canvas to transparent. Uniform scale + opacity keep
- * every sprite's proportions intact, so the world looks normal throughout. Without a spin target, a usable
- * screenshot, or under prefers-reduced-motion, it snaps instantly as before. The server and simulation never
- * see the view.
+ * ADR-267: two complete player-centred frames, opacity only. Capture at the renderer's
+ * presentation boundary (WebGL default buffers may be cleared between callbacks). Keep the
+ * outgoing frame fully opaque until destination meshes and its first complete frame are ready.
+ * Reduced motion remains an instant snap. No projection tween, scaling or squashing.
+ * The server and simulation never see the view.
  */
 import { rotateScreenVec } from "@engine/input";
 
@@ -60,6 +57,8 @@ export interface CameraRotateOptions {
   /** Screenshot of the spin target for the cross-fade (tests inject a fake; production snapshots the canvas).
    * Returning undefined means the screenshot failed: the view snaps instantly rather than blinking. */
   captureTarget?: (el: HTMLElement) => HTMLCanvasElement | undefined;
+  /** Production calls frameComplete synchronously after a successful, fully prepared render. */
+  frameBoundary?: boolean;
   /** Rotation transition length in ms (default 500). */
   spinMs?: number;
 }
@@ -71,20 +70,17 @@ export interface CameraRotateControl {
   set(q: number): void;
   /** Per UI frame while gameplay / build mode owns input: reads the bound actions and syncs the HUD and renderer. */
   poll(): void;
+  /** Call immediately after presentation, before WebGL discards the default buffer. */
+  frameComplete(): void;
   dispose(): void;
 }
-/**
- * Cross-fade state of the rotation transition at normalised time `t` (0..1): the old-view screenshot starts
- * opaque and full-size and fades to transparent while shrinking uniformly to `ROTATE_CROSSFADE_MIN_SCALE`.
- * The live canvas underneath already shows the new view, so the screen never goes black and no layer is ever
- * stretched: `scale` is the same on both axes at every `t`.
- */
-export const ROTATE_CROSSFADE_MIN_SCALE = 0.95;
+/** Opacity only: the complete frames always retain their native dimensions and pivot. */
+export const ROTATE_CROSSFADE_MIN_SCALE = 1;
 /** Ease in-out cubic for the rotation transition (0 -> 1). */
 export const spinEase = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 export function rotateCrossfadeAt(t: number): { opacity: number; scale: number } {
   const p = spinEase(Math.max(0, Math.min(1, t)));
-  return { opacity: 1 - p, scale: 1 - (1 - ROTATE_CROSSFADE_MIN_SCALE) * p };
+  return { opacity: 1 - p, scale: 1 };
 }
 /** Screenshot of a canvas element for the cross-fade overlay, or undefined when it cannot be captured
  * (WebGL without preserveDrawingBuffer may already have cleared its buffer: then the caller snaps instantly
@@ -110,12 +106,14 @@ export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl 
   /** Quarter actually on the renderer (with a cross-fade it snaps to `view` at once; the overlay lags behind). */
   let shown = view;
   /** In-flight cross-fade: the old-view screenshot fading over the already-snapped live canvas. */
+  let pending = false;
+  let waiting = false;
   let spin: { from: number; to: number; start: number | undefined; overlay: HTMLCanvasElement; raf: number } | undefined;
   const reducedMotion = typeof matchMedia !== "undefined" && (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
   const finishSpin = (): void => {
     if (!spin) return; const s = spin; spin = undefined;
     try { cancelAnimationFrame(s.raf); } catch { /* no rAF */ }
-    s.overlay.remove(); shown = s.to; sync();
+    s.overlay.remove(); waiting = false; shown = s.to; sync();
   };
   /** Push the quarter actually on screen to the renderer + input (input follows what is actually on screen). */
   const sync = (): void => {
@@ -124,30 +122,43 @@ export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl 
     if (t && t.viewRotation !== q) t.setViewRotation(q, o.pivot());
     if (o.input.viewQuarter !== q) { o.input.viewQuarter = q; o.onChange?.(q); }
   };
-  const set = (q: number): void => {
-    const n = normView(q); if (n === view) { sync(); return; }
-    const prev = view; view = n; if (st) saveView(view, st);
+  const begin = (): void => {
+    pending = false;
     const el = o.spinTarget?.();
-    if (!el || reducedMotion || !o.target()) { if (spin) finishSpin(); shown = view; sync(); return; }
-    if (spin) finishSpin();
-    // Capture the old view BEFORE snapping: the live canvas shows the new view underneath the overlay.
-    const overlay = (o.captureTarget ?? snapshotCanvas)(el);
-    if (!overlay) { shown = view; sync(); return; }
-    shown = view; sync();
+    const overlay = el && (o.captureTarget ?? snapshotCanvas)(el);
+    if (!el || !overlay) { shown = view; sync(); return; }
     const r = el.getBoundingClientRect();
-    overlay.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:2;pointer-events:none;transform-origin:50% 50%`;
+    overlay.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:2;pointer-events:none;opacity:1`;
     overlay.dataset["role"] = "rotate-fade";
     (el.parentElement ?? document.body).append(overlay);
-    const ms = o.spinMs ?? 500; let start: number | undefined;
+    // Cover the canvas BEFORE changing quarter. A held / loading frame can never leak through.
+    spin = { from: shown, to: view, start: undefined, overlay, raf: 0 };
+    waiting = true; shown = view; sync();
+    if (!o.frameBoundary) reveal();
+  };
+  const reveal = (): void => {
+    if (!spin || !waiting) return;
+    waiting = false; const current = spin; const ms = Math.max(1, o.spinMs ?? 500);
     const step = (now: number): void => {
-      if (!spin) return;
-      if (start === undefined) start = now;
-      const t = Math.min(1, (now - start) / ms); const f = rotateCrossfadeAt(t);
-      spin.overlay.style.opacity = String(f.opacity); spin.overlay.style.transform = `scale(${f.scale})`;
-      if (t >= 1) finishSpin(); else spin.raf = requestAnimationFrame(step);
+      if (spin !== current) return;
+      current.start ??= now;
+      const t = Math.min(1, (now - current.start) / ms);
+      current.overlay.style.opacity = String(rotateCrossfadeAt(t).opacity);
+      if (t >= 1) finishSpin(); else current.raf = requestAnimationFrame(step);
     };
-    spin = { from: prev, to: n, start, overlay, raf: 0 };
-    spin.raf = requestAnimationFrame(step);
+    current.raf = requestAnimationFrame(step);
+  };
+  const frameComplete = (): void => {
+    if (pending) begin(); else if (waiting) reveal();
+  };
+  const set = (q: number): void => {
+    const n = normView(q); if (n === view) { sync(); return; }
+    // Ignore rapid turns until the current destination has actually rendered. Never remove its cover early.
+    if (waiting) return;
+    view = n; if (st) saveView(view, st);
+    if (spin) finishSpin();
+    if (!o.spinTarget?.() || reducedMotion || !o.target()) { pending = false; shown = view; sync(); return; }
+    if (o.frameBoundary) pending = true; else begin();
   };
   const rotate = (dir: number): void => { if (dir) set(stepView(view, dir)); };
   let box: HTMLDivElement | undefined, style: HTMLStyleElement | undefined;
@@ -172,6 +183,6 @@ export function attachCameraRotate(o: CameraRotateOptions): CameraRotateControl 
     raf = requestAnimationFrame(tick);
   }
   sync();
-  return { get view() { return view; }, rotate, set, poll,
+  return { get view() { return view; }, rotate, set, poll, frameComplete,
     dispose: () => { if (spin) finishSpin(); if (raf) cancelAnimationFrame(raf); box?.remove(); style?.remove(); } };
 }

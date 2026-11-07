@@ -5227,6 +5227,32 @@
           "amount": 1
         }
       ]
+    },
+    {
+      "key": "ladder",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 0,
+      "hp": 160,
+      "groundOnly": true,
+      "starter": true,
+      "pickup": true,
+      "solid": false,
+      "blocksPath": false,
+      "cost": [
+        {
+          "resource": "wood",
+          "amount": 4
+        },
+        {
+          "resource": "sticks",
+          "amount": 6
+        }
+      ],
+      "features": {
+        "terrainLadder": true
+      },
+      "$comment": "ADR-265: a complete terrain-face connection, any depth; no wall/deck needed."
     }
   ]
 }

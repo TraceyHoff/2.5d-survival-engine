@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /** ADR-253 client camera rotation: view persistence, camera-relative move/aim against the rendered projection, the
  *  renderer/input sync (player pivot), the ⟲ / ⟳ HUD, and the view-aware overlays / bag compass / audio pan. */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_ISO, worldToScreen } from "@engine/world";
 import { moveVector } from "@engine/gameplay";
 import { rotateScreenVec } from "@engine/input";
@@ -105,5 +105,37 @@ describe("ADR-253 view-aware overlays, compass and audio", () => {
     for (let q = 0; q < 4; q++) { const s = onScreen(4, 1, q); expect(Math.sign(pan(4, 1, 8, q))).toBe(Math.sign(Math.round(s.x * 1e6))); }
     expect(pan(4, 1)).toBe(pan(4, 1, 8, 0));
     expect(spatialize({ x: 3, y: 0 }, { x: 0, y: 0 }, { view: 2 }).pan).toBeCloseTo(-spatialize({ x: 3, y: 0 }, { x: 0, y: 0 }).pan, 9);
+  });
+});
+
+
+describe("ADR-267 complete-frame handoff", () => {
+  afterEach(() => { document.body.innerHTML = ""; vi.unstubAllGlobals(); });
+  it("captures only at the old complete-frame boundary; covers unready destination frames; never scales; preserves the pivot", () => {
+    let callbacks: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { callbacks.push(f); return callbacks.length; });
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+    const frame = (t: number) => { const fs = callbacks; callbacks = []; fs.forEach((f) => f(t)); };
+    const canvas = document.createElement("canvas"), overlay = document.createElement("canvas"); document.body.append(canvas);
+    const cam = new IsoCamera(); cam.setViewport(1280, 720, 1); cam.lookAt(10, 12);
+    const pivot = { x: 10, y: 12, z: -3 };
+    const point = () => isoToCss(cam, pivot.x, pivot.y);
+    const before = point(); let captured = 0, complete = false;
+    const target = { get viewRotation() { return cam.iso.view ?? 0; }, setViewRotation(q: number, p?: typeof pivot) { cam.setView(q, p); } };
+    const c = attachCameraRotate({ target: () => target, pivot: () => pivot, input: { viewQuarter: 0, pressed: () => false }, storage: mem(), spinTarget: () => canvas, frameBoundary: true,
+      captureTarget: () => { expect(complete).toBe(true); captured++; return overlay; }, spinMs: 100 });
+    c.rotate(1); expect(captured).toBe(0); expect(target.viewRotation).toBe(0);
+    complete = true; c.frameComplete(); expect(captured).toBe(1); expect(target.viewRotation).toBe(1);
+    expect(point().x).toBeCloseTo(before.x, 6); expect(point().y).toBeCloseTo(before.y, 6);
+    frame(0); frame(1000); expect(overlay.style.opacity).toBe("1"); // no destination frame was presented
+    expect(overlay.style.transform).toBe("");
+    c.frameComplete(); frame(1001); frame(1051); expect(overlay.style.opacity).toBe("0.5"); expect(overlay.style.transform).toBe("");
+    frame(1101); expect(overlay.isConnected).toBe(false); c.dispose();
+  });
+  it("reduced motion snaps instantly with no capture/overlay even when a frame boundary is configured", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+    let q = 0; const capture = vi.fn(); const canvas = document.createElement("canvas");
+    const c = attachCameraRotate({ target: () => ({ get viewRotation() { return q; }, setViewRotation(n: number) { q = n; } }), pivot: () => ({x:1,y:2}), input: { viewQuarter: 0, pressed: () => false }, storage: mem(), frameBoundary: true, spinTarget: () => canvas, captureTarget: capture });
+    c.rotate(1); expect(q).toBe(1); expect(capture).not.toHaveBeenCalled(); c.dispose();
   });
 });

@@ -258,6 +258,15 @@ export class TileTerrain {
     return !!t && t.stamp === this.stamp(map, c) && t.atlasVersion === atlas.version && t.art === art;
   }
 
+  /** ADR-267: synchronously prepare the destination quarter before any of it is presented. */
+  prepareView(map: TileMap, atlas: AtlasManager, activeKeys?: ReadonlySet<string>): void {
+    const q = (this.iso.view ?? 0) & 3, art = this.groundMode(atlas), cur = this.views[q]!;
+    for (const c of map.loadedChunks()) {
+      if (activeKeys && !activeKeys.has(c.key)) continue;
+      const old = cur.get(c); if (!this.fresh(map, c, atlas, old, art)) cur.set(c, this.build(map, c, atlas, old, art, q));
+    }
+  }
+
   draw(map: TileMap, atlas: AtlasManager, view: Float32Array, depth: Float32Array, rect: Rect, time: number, stats: FrameStats,
     surface: SurfaceState, perChunk: SurfaceProvider | undefined, sstyle: { puddles: number; wetDarken: number; skyRefl: readonly number[] }, activeKeys?: ReadonlySet<string>): void {
     if (!atlas.tex || !atlas.frameTex) return;

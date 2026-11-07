@@ -205,6 +205,8 @@ export interface PieceFeatures {
   readonly wardrobe?: boolean;
   /** ADR-112 wall mount: Edge piece hung on one face (rot & 2) of an existing wall; supported by (and destroyed with) it. */
   readonly mount?: boolean;
+  /** Terrain face traversal, independent of a wall mounted at this edge. */
+  readonly terrainLadder?: boolean;
   /** ADR-112 planter: placing spawns tilled soil (Crop kind 0) on the piece; crops planted there ignore the terrain tile rule. */
   readonly planter?: boolean;
   readonly contact?: { readonly dps: number; readonly radius: number; readonly slowMul: number; readonly slowSeconds: number };
