@@ -11,6 +11,8 @@ import sys, os, re, argparse
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from multiprocessing import Pool
 import v2_sleep_lie as SL, v2_sample as VS
+import cloth_mask_sleep
+cloth_mask_sleep.configure(SL)   # v1 overlays only; never rebuild or mutate the v2 sample pack
 import importlib.util as _iu
 _spec = _iu.spec_from_file_location("cz_manifest", os.path.join(HERE, "../../../packages/assets/scripts/cz_manifest.py"))
 czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)

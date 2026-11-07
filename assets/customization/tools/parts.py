@@ -748,27 +748,6 @@ def draw_acc(c, spec):
                 m = cv.mask_from([circle(p, 3.9 * max(.45, min(1, v * 1.2)), 3.2) for p, v in eyes if v > .05])
                 cv._upd(m, (1, 0), ring=False)
         c.add(hv(c) + 3, lifted(c, g))
-    elif st == "cloth_mask":   # ADR-269: face mask over nose / mouth / chin (lifted onto the face like glasses), ties behind the head
-        def mk():
-            hm = c.headmask()
-            if f < -.2:   # back facings: only the two ties across the back of the head
-                for el in (-6, -30):
-                    a, _ = c.sph(-82, el, 1.03); p0, _ = c.sph(180, el + 2, 1.03); b, _ = c.sph(82, el, 1.03); cv.line([a, p0, b], ramp("cloth_cream")[2], .7, clip=hm)
-                return
-            AZ = [az for az in range(-90, 91, 6) if c.sph(az, -30, 1.0)[1] > -.05]
-            if len(AZ) < 2: return
-            top = [c.sph(az, -14 + 5 * math.cos(math.radians(az * 2)) ** 2, 1.06)[0] for az in AZ]   # peak over the nose bridge
-            bot = [c.sph(az, -58 + 14 * abs(az) / 90, 1.05)[0] for az in reversed(AZ)]               # cupped under the chin
-            m = cv.part(top + bot, "P", lw=.9, shade=.2, hl=.1, clip=hm)
-            for el in (-26, -36, -46):   # pleats
-                pl = [c.sph(az, el, 1.07)[0] for az in AZ[1:-1]]
-                if len(pl) > 1: cv.line(pl, ramp("cloth_cream")[2], .55, clip=m)
-            nb = [c.sph(az, -15, 1.07)[0] for az in AZ if abs(az) <= 30]
-            if len(nb) > 1: cv.line(nb, ramp("iron")[1], .6, clip=m)   # nose wire
-            for sd in (-1, 1):   # ear loop on the visible side(s)
-                a, va = c.sph(sd * 86, -16, 1.03); b, _ = c.sph(sd * 86, -44, 1.03); e, ve = c.sph(sd * 92, -8, 1.02)
-                if va > -.3: cv.line([a, e, b], ramp("cloth_cream")[2], .6)
-        c.add(hv(c) + 3.2, lifted(c, mk))
     elif st == "scarf":
         def sc():
             z = K["bz"] + 7.4; nc = (K["tc"][0], K["tc"][1], z)
@@ -833,6 +812,40 @@ def draw_acc(c, spec):
                     a = i * 2 * math.pi / 5; cv.part(circle((p[0] + math.cos(a) * 2.3, p[1] + math.sin(a) * 2.0), 1.9, 1.7), "P", lw=.7, shade=.2, hl=.2)
                 cv.part(circle(p, 1.4), "S", lw=.6, shade=.2, hl=.3)
         c.add(hv(c) + 4, fl)
+    elif st == "cloth_mask":
+        # Dedicated fitted cloth panel, not the bandana neck drape. Surface points follow
+        # the head pose in every animation, including side/back straps. Eyes stay clear.
+        def mask():
+            old = c.fdy; c.fdy = NECK
+            try:
+                # Two narrow ties wrap behind the ears; only visible surface arcs draw.
+                for el in (-17, -36):
+                    for az in range(-180, 180, 12):
+                        a, va = c.sph(az, el, 1.025)
+                        b, vb = c.sph(az + 12, el, 1.025)
+                        if min(va, vb) > -.05: cv.line([a, b], "S2", 1.05, tm=(0, 1))
+                if fv(c) > -.35:
+                    # Upper edge sits over nose, lower edge cups the chin. Sample along
+                    # the head sphere so profile facings get a narrow fitted panel.
+                    edge = [(a, -10 - abs(a) * .35) for a in range(-65, 66, 13)]
+                    edge += [(a, -52 + abs(a) * .04) for a in range(65, -66, -13)]
+                    pts = [c.sph(az, el, 1.075)[0] for az, el in edge]
+                    panel = cv.part(hull(pts), "P", lw=1.05, shade=.22, hl=.13)
+                    for fraction in (.38, .68):
+                        pleat = []
+                        for az in range(-52, 53, 13):
+                            upper, lower = -10 - abs(az) * .35, -52 + abs(az) * .04
+                            p, v = c.sph(az, upper + fraction * (lower - upper), 1.09)
+                            if v > .03: pleat.append(p)
+                        if len(pleat) > 1: cv.line(pleat, "P3", .95, clip=panel, tm=(1, 0))
+                else:
+                    p, v = c.sph(180, -27, 1.045)
+                    if v > .1:
+                        cv.part(circle(p, 1.6, 1.4), "S", lw=.65, shade=.2, hl=.1)
+                        cv.line([(p[0], p[1]), (p[0] - 2, p[1] + 3)], "S2", 1.1, tm=(0, 1))
+                        cv.line([(p[0], p[1]), (p[0] + 2, p[1] + 2)], "S2", 1.1, tm=(0, 1))
+            finally: c.fdy = old
+        c.add(hv(c) + 4, mask)
     elif st == "bandana":
         def bd():
             p, _ = tsurf(c, 0, 7.5, .5) if f > -.3 else tsurf(c, 180, 7.5, .5)
@@ -856,33 +869,33 @@ def mouth(c, kind):
     if e == "sleepy":
         cv.part(circle((x, y + .2), .8 * k, .9), [ramp("berry")[2]] * 3 + [INK[3]], lw=.45, flat=True, ink=INK[3]); return
     if e in ("yell", "happy") or kind == "grin" and e not in ("dead", "ouch", "dizzy"):
-        w = 2.1 if kind == "grin" else 1.6
-        cv.part([(x - w * k, y - .8), (x + w * k, y - .8), (x + .9 * w * k, y + .3), (x, y + 1.6 + (.4 if e == "yell" else 0)), (x - .9 * w * k, y + .3)], [ramp("berry")[1], ramp("berry")[1], ramp("berry")[2], INK[3]], lw=.5, shade=.2, hl=0, ink=INK[3])
+        w = 2.6 if kind == "grin" else 2.0
+        cv.part([(x - w * k, y - .8), (x + w * k, y - .8), (x + .9 * w * k, y + .3), (x, y + 1.6 + (.4 if e == "yell" else 0)), (x - .9 * w * k, y + .3)], [ramp("berry")[1], ramp("berry")[1], ramp("berry")[2], INK[3]], lw=.8, shade=.2, hl=0, ink=INK[3])
         cv.fill([(x - w * k * .8, y - .7), (x + w * k * .8, y - .7), (x + w * k * .6, y - .1), (x - w * k * .6, y - .1)], (255, 250, 244))
     elif e == "ouch" or e == "dizzy":
-        pts = [(x - 2 * k + i * .8 * k, y + (.4 if i % 2 else -.3)) for i in range(6)]; cv.line(pts, INK[3], .6)
+        pts = [(x - 2 * k + i * .8 * k, y + (.4 if i % 2 else -.3)) for i in range(6)]; cv.line(pts, INK[3], 1.05)
     elif e == "dead":
-        cv.part(circle((x, y + .3), 1.1 * k, 1.0), [ramp("berry")[2]] * 3 + [INK[3]], lw=.5, flat=True, ink=INK[3])
+        cv.part(circle((x, y + .3), 1.1 * k, 1.0), [ramp("berry")[2]] * 3 + [INK[3]], lw=.8, flat=True, ink=INK[3])
     elif kind == "cat":
-        cv.line([(x - 1.8 * k, y - .5), (x - .9 * k, y + .5), (x, y - .2), (x + .9 * k, y + .5), (x + 1.8 * k, y - .5)], INK[3], .6)
+        cv.line([(x - 1.8 * k, y - .5), (x - .9 * k, y + .5), (x, y - .2), (x + .9 * k, y + .5), (x + 1.8 * k, y - .5)], INK[3], 1.05)
     elif kind == "tongue":
-        cv.line([(x - 1.8 * k, y - .4), (x, y + .3), (x + 1.8 * k, y - .4)], INK[3], .6)
-        cv.part(circle((x + .6 * k, y + 1.3), 1.1 * k, 1.3), "flower_pink", lw=.5, shade=.3, hl=.2, ink=INK[3])
+        cv.line([(x - 1.8 * k, y - .4), (x, y + .3), (x + 1.8 * k, y - .4)], INK[3], 1.05)
+        cv.part(circle((x + .6 * k, y + 1.3), 1.1 * k, 1.3), "flower_pink", lw=.8, shade=.3, hl=.2, ink=INK[3])
     elif e == "focus":
-        cv.line([(x - 1.3 * k, y), (x + 1.3 * k, y - .2)], INK[3], .6)
+        cv.line([(x - 1.3 * k, y), (x + 1.3 * k, y - .2)], INK[3], 1.05)
     else:
-        cv.line([(x - 1.7 * k, y - .5), (x - .6 * k, y + .45), (x + .6 * k, y + .45), (x + 1.7 * k, y - .5)], INK[3], .85)
+        cv.line([(x - 1.7 * k, y - .5), (x - .6 * k, y + .45), (x + .6 * k, y + .45), (x + 1.7 * k, y - .5)], INK[3], 1.15)
 
 def brows(c, thick=.7, lift=0, shape="arc", wide=1.0, uni=False):
     cv = c.cv; e = c.K["expr"]; inn = []
     for s in (-1, 1):
         p, v = c.sph(s * 30, 18 + lift, 1.0)
         if v <= .12: continue
-        sq = max(.4, min(1, v * 1.2)); w = 1.9 * sq * wide
+        sq = max(.4, min(1, v * 1.2)); w = 2.15 * sq * wide
         tilt = {"sleepy": -.5, "happy": -.3, "focus": .9, "yell": 1.3, "ouch": -1.0, "dizzy": -.8, "dead": -.8}.get(e, 0) * s
         inner, outer = (p[0] - s * w, p[1] + tilt * .6), (p[0] + s * w, p[1] - tilt * .2)
         mid = (p[0], p[1] - (.7 if shape == "arc" else .2))
-        cv.line([inner, mid, outer], "P3", thick + .5)
+        cv.line([inner, mid, outer], "P3", thick + .8)
         cv._upd(cv.mask_from([capsule_pts(inner[0], inner[1], mid[0], mid[1], thick, thick), capsule_pts(mid[0], mid[1], outer[0], outer[1], thick, thick)]), (1, 0), ring=False)
         if shape == "bushy":  # shaggy upper fringe
             for k in (-.6, 0, .6):
@@ -929,7 +942,7 @@ def facial_hair(c, kind):
         hm = c.headmask()
         for i, (az, el) in enumerate([(a, e) for a in range(-70, 71, 14) for e in (-40, -52, -30, -46, -35)]):
             p, v = c.sph(az + (i % 3) * 3, el, 1.0)
-            if v > .1: cv.fill(circle(p, .52), "P3", clip=hm, alpha=225, tm=(1, 0))
+            if v > .1: cv.fill(circle(p, .72), "P3", clip=hm, alpha=225, tm=(1, 0))
 
 def draw_face(c, spec):
     st = spec["style"]
@@ -939,14 +952,14 @@ def draw_face(c, spec):
         if st == "freckles":
             for i, (az, el) in enumerate([(s * a, e) for s in (-1, 1) for a, e in ((44, -18), (36, -24), (50, -26), (40, -13), (30, -18), (54, -20), (46, -30), (24, -12))]):
                 p, v = c.sph(az, el, 1.0)
-                if v > .15: c.cv.fill(circle(p, .62 if i % 3 else .74), ramp("wood")[3], clip=hm, alpha=245)
+                if v > .15: c.cv.fill(circle(p, .8 if i % 3 else .95), ramp("wood")[3], clip=hm, alpha=245)
         if st == "rosy":
             for s in (-1, 1):
                 p, v = c.sph(s * 42, -20, 1.0)
                 if v > .15:
-                    c.cv.fill(circle(p, 2.3, 1.5), ramp("flower_pink")[1], clip=hm, alpha=200)
-                    c.cv.fill(circle((p[0] - .4, p[1] - .3), 1.3, .8), ramp("flower_pink")[2], clip=hm, alpha=150)
-        brows(c, thick={"bushy": 1.75, "chops": .9}.get(st, .55), lift={"bushy": 1.4}.get(st, 0), shape="bushy" if st == "bushy" else "flat" if st in ("beard", "long_beard", "chops") else "arc",
+                    c.cv.fill(circle(p, 2.7, 1.8), ramp("flower_pink")[1], clip=hm, alpha=200)
+                    c.cv.fill(circle((p[0] - .4, p[1] - .3), 1.6, 1.0), ramp("flower_pink")[2], clip=hm, alpha=150)
+        brows(c, thick={"bushy": 1.75, "chops": .9}.get(st, .9), lift={"bushy": 1.4}.get(st, 0), shape="bushy" if st == "bushy" else "flat" if st in ("beard", "long_beard", "chops") else "arc",
               wide=1.3 if st == "bushy" else 1.0, uni=st == "bushy")
         full = c.fdy; c.fdy = 0.0   # facial hair is jaw-anchored (body nose/chin are not lifted)
         facial_hair(c, {"beard": "beard", "moustache": "moustache", "stubble": "stubble", "goatee": "goatee", "long_beard": "long_beard", "chops": "chops"}.get(st, ""))
@@ -980,7 +993,7 @@ def draw_eyes(c, spec):
                 continue
             if e == "dizzy":
                 pts = [(x + math.cos(t * .9) * t * .28 * sq, y + math.sin(t * .9) * t * .28) for t in range(0, 11)]
-                cv.line(pts, INK[3], .6); continue
+                cv.line(pts, INK[3], .9); continue
             if e == "ouch":
                 s = 1 if idx == 0 else -1
                 cv.line([(x - 1.8 * sq * s, y - 1.5), (x + 1.2 * sq * s, y), (x - 1.8 * sq * s, y + 1.5)], INK[3], .8); continue
@@ -995,11 +1008,12 @@ def draw_eyes(c, spec):
                 cv.line([(x - 2.2 * sq, y + (.3 if st != "happy" else .8)), (x, y + (1.2 if st != "happy" else -.9)), (x + 2.2 * sq, y + (.3 if st != "happy" else .8))], INK[3], .9)
                 if st == "happy":  # tinted crescent under the closed arc (eye colour)
                     cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0)); cv.line([(x - 1.9 * sq, y + 1.9), (x, y + .9), (x + 1.9 * sq, y + 1.9)], "P2", .55, tm=(0, 1))  # outer crescent -> G (eyes:color2)
-                if st == "lashes" or (st == "wink"): cv.line([(x + 2.2 * sq * (1 if az > 0 else -1), y + .3), (x + 3.0 * sq * (1 if az > 0 else -1), y - .4)], INK[3], .6)
+                if st == "lashes" or (st == "wink"): cv.line([(x + 2.2 * sq * (1 if az > 0 else -1), y + .3), (x + 3.0 * sq * (1 if az > 0 else -1), y - .4)], INK[3], .9)
                 continue
             rx, ry = {"round": (2.4, 3.1), "sparkle": (2.7, 3.4), "sleepy": (2.4, 2.9), "cat": (2.5, 3.0), "button": (1.3, 1.4), "lashes": (2.4, 3.1), "wide": (2.9, 3.3), "wink": (2.4, 3.1)}[st]
+            rx *= 1.08; ry *= 1.06
             if st == "button":
-                cv.part(circle(p, rx * sq + .7, ry + .5), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.45, flat=True, ink=INK[3])  # tinted ring
+                cv.part(circle(p, rx * sq + .7, ry + .5), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.75, flat=True, ink=INK[3])  # tinted ring
                 iris_ring(cv, p, rx * sq + .7, ry + .5)   # outer rim of the button -> G (eyes:color2)
                 cv.fill(circle(p, rx * sq * .62 + .1, ry * .62 + .1), INK[3], tm=(0, 0)); cv.fill(circle((x - .4, y - .5), .45), (255, 255, 255), tm=(0, 0)); continue
             if st == "wide":
@@ -1009,7 +1023,7 @@ def draw_eyes(c, spec):
                 cv.fill(circle((x + .2 * sq, y + .4), .8 * sq, 1.0), INK[3]); cv.fill(circle((x - .5 * sq, y - .6), .5), (255, 255, 255))
                 continue
             # iris (tinted) + pupil + shine
-            cv.part(circle(p, rx * sq, ry, wob=0), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.5, flat=True, ink=INK[3])
+            cv.part(circle(p, rx * sq, ry, wob=0), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.85, flat=True, ink=INK[3])
             iris_ring(cv, p, rx * sq, ry)
             if st == "cat":
                 cv.fill(circle((x, y + .1), .55 * sq, ry * .8), INK[3])
@@ -1025,5 +1039,5 @@ def draw_eyes(c, spec):
                 cv.line(lid, INK[3], .9)
             if st == "lashes":
                 sgn = 1 if az > 0 else -1
-                for k in range(3): cv.line([(x + sgn * (rx * sq - .3), y - 1.6 + k * .9), (x + sgn * (rx * sq + 1.2), y - 2.4 + k * 1.0)], INK[3], .55)
+                for k in range(3): cv.line([(x + sgn * (rx * sq - .3), y - 1.6 + k * .9), (x + sgn * (rx * sq + 1.2), y - 2.4 + k * 1.0)], INK[3], .9)
     c.add(hv(c) + 2.6, lifted(c, f))

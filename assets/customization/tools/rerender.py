@@ -43,6 +43,8 @@ def render_one(key, anim, i, d):
             if key.startswith("body_"):   # bodies carry the water ripple (as swim_punch_merge)
                 b, f = swimfx.ripple(FW, FH, FW / 2, WL, 12.5, 3.6, fi, s); m[f[..., 3] > 100] = 0; a = swimfx.apply_base(a, b, f)
         for arr in (a, m): arr[:p] = 0; arr[-p:] = 0; arr[:, :p] = 0; arr[:, -p:] = 0
+        # Water-ripple compositing happens after Ctx.out: harden its alpha too.
+        a[..., 3] = np.where(a[..., 3] >= 128, 255, 0)
         m[a[..., 3] == 0] = 0; fr += [a, m]
     return fr
 
@@ -77,10 +79,11 @@ def main(eng, prefixes, slots, tight, jobs):
     keys = sorted(s["key"] for s in m["sprites"] if any(s["key"].startswith(p) for p in prefixes))
     assert keys and all(k in JOBS for k in keys), [k for k in keys if k not in JOBS]
     S = {s["key"]: s for s in m["sprites"]}
-    work = [(k, [(a, len(an["frames"]) * an.get("directions", 1), an.get("directions", 1)) for a, an in S[k]["animations"].items()]) for k in keys]
+    work = [(k, [(a, len(an["frames"]) * an.get("directions", 1), an.get("directions", 1)) for a, an in S[k]["animations"].items() if not a.startswith("sleep_lie")]) for k in keys]
     body = any(k.startswith("body_") for k in keys)
     with Pool(jobs) as P:     # stream: write each sprite's temp page as soon as it is rendered (bounded memory)
         for k, out in P.imap_unordered(render_sprite, work):
+            print("rendered", k, "frames", len(out), flush=True)
             n = len(out); rows = -(-n // COLS); pk = "cz_tmp_" + k.replace("cz_", "", 1)
             o1 = np.zeros((rows * FH, COLS * FW, 4), np.uint8); ot = np.zeros((rows * FH, COLS * FW, 3), np.uint8)
             o2 = np.zeros((2 * rows * FH, 2 * COLS * FW, 4), np.uint8); t2 = np.zeros((2 * rows * FH, 2 * COLS * FW, 3), np.uint8)
@@ -96,6 +99,8 @@ def main(eng, prefixes, slots, tight, jobs):
                                  "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}})
             c = 0
             for a, an in S[k]["animations"].items():
+                # Bed-pivot lying art is painted separately by add_sleep_lie_acc.py.
+                if a.startswith("sleep_lie"): continue
                 df = []
                 for _ in range(len(an["frames"]) * an.get("directions", 1)):
                     df.append({"atlas": pk, "rect": {"x": c % COLS * FW, "y": c // COLS * FH, "w": FW, "h": FH}, "anchor": {"x": 0.5, "y": FEET / FH}}); c += 1

@@ -51,7 +51,7 @@ def frame_list(slot=None):
 
 # neutral ramp for tinted regions (engine multiplies by palette colour through the tintmask)
 NEU = [(255, 255, 255), (236, 230, 236), (196, 184, 204), (140, 122, 150)]
-NEU_INK = (96, 70, 90)
+NEU_INK = (80, 57, 76)
 BODY = {
     "male":   dict(shw=8.2, hipw=3.6, trx=8.1, try_=8.6, hr=11.5, arm=2.7, hand=2.9, leg=3.0, waist=1.0),
     "female": dict(shw=7.2, hipw=3.9, trx=7.5, try_=8.6, hr=11.5, arm=2.35, hand=2.6, leg=2.8, waist=0.92),
@@ -189,6 +189,19 @@ def hull(pts):
         up.append(p)
     return lo[:-1] + up[:-1]
 
+def cel_hair_tips(mask):
+    """Keep secondary hair colour as one solid tip band, without watercolor strands.
+    Uses the visible tinted region, so it is invariant under trim/pivot packing.
+    """
+    out = np.asarray(mask).copy(); primary = out[..., 0] >= 128
+    yy = np.nonzero(primary | (out[..., 1] >= 128))[0]
+    if len(yy):
+        split = int(yy.min() + (yy.max() - yy.min() + 1) * .72)
+        tips = primary & (np.arange(out.shape[0])[:, None] >= split)
+        out[tips, 0] = 0; out[tips, 1] = 255
+    return out
+
+
 class MCanvas(Canvas):
     """Canvas that also tracks a tint mask (R primary/skin/hair, G secondary) at 4x."""
     def __init__(s, w, h, seed):
@@ -200,16 +213,17 @@ class MCanvas(Canvas):
     pal = None
     def cel_snap(s, im):
         """cel post pass: snap every pixel to a drawn palette tone (no in-between airbrush tones) and harden alpha
-        (binary for the figure; the contact shadow stays one flat translucent tone)."""
+        (strict binary alpha; contact shadows are not baked into opaque character paint)."""
         from palette import SHADOW, SHADOW_ALPHA
         a = np.asarray(im.convert("RGBA")).astype(np.float32); P = np.array(sorted(set(s.pal)), np.float32)
         rgb = a[..., :3]; al = a[..., 3]; sh = np.array(hex2rgb(SHADOW), np.float32)
-        if len(P): d = ((rgb[..., None, :] - P[None, None]) ** 2).sum(-1); q = P[d.argmin(-1)]
-        else: q = rgb   # nothing palette-tracked drawn (empty/hidden frame): only harden alpha
         shadow = (al < 255 * (SHADOW_ALPHA + .12)) & (np.abs(rgb - sh).sum(-1) < 60) & bool(s.shadowed)   # only layers that drew a contact shadow
         out = np.zeros_like(a); fig = (al >= 128) & ~shadow
-        out[fig, :3] = q[fig]; out[fig, 3] = 255
-        sm = shadow & (al >= 255 * SHADOW_ALPHA * .5); out[sm, :3] = sh; out[sm, 3] = round(255 * SHADOW_ALPHA)
+        # Only figure texels need palette lookup (the empty canvas is usually >85%).
+        colors = rgb[fig]
+        if len(P) and len(colors): colors = P[((colors[:, None, :] - P[None, :]) ** 2).sum(-1).argmin(-1)]
+        out[fig, :3] = colors; out[fig, 3] = 255
+        sm = shadow & (al >= 255 * SHADOW_ALPHA * .5); out[sm] = 0
         return Image.fromarray(out.astype(np.uint8), "RGBA")
     shadowed = False
     cel = False     # cel look (solid fills, hard-edged shade/highlight bands, hard alpha) — set by parts.body
@@ -221,6 +235,8 @@ class MCanvas(Canvas):
         finally: toon.ImageFilter.GaussianBlur = g
     def part(s, polys, rp, tm=None, **kw):
         if s.cel:
+            # Flat cel bands and clean ink, not seed-dependent watercolor edge noise.
+            s._n1.fill(.5); s._n2.fill(.5)
             import toon; sm = toon.smooth; toon.smooth = lambda e0, e1, x: (np.asarray(x) >= (e0 + e1) / 2).astype(np.float32)
             try: return s._part(polys, rp, tm, **kw)
             finally: toon.smooth = sm
@@ -231,11 +247,12 @@ class MCanvas(Canvas):
         elif tm is None: tm = (0, 0)
         if s.cel:
             import toon; r = ramp(rp) if isinstance(rp, str) else rp
+            kw.setdefault("ink", tuple(round(v * .88) for v in toon.outline_col(r)))
             s.pal += [tuple(x) for x in r] + [tuple(kw.get("ink") or toon.outline_col(r))] + [tuple(tint_col(kw[k])) for k in ("shade_col", "base_col", "hl_col") if kw.get(k)]
         m_im = Canvas.part(s, polys, rp, **kw)
         if m_im is not None and m_im.getbbox():
             s._upd(m_im, tm, ring=kw.get("outline", True))
-            if s.detail and tuple(tm) != (0, 0): s._wear_detail(m_im, tuple(tm))
+            if s.detail and not s.cel and tuple(tm) != (0, 0): s._wear_detail(m_im, tuple(tm))
         return m_im
     no_g = False    # True while drawing parts that must stay primary-only (scalp cover)
     detail = None   # slot name while drawing hair/wearables: surface detail pass (wear_detail, mostly visible at @2x)
@@ -371,4 +388,7 @@ class Ctx:
                 A = np.asarray((im1 if sz == (FW, FH) else im2).getchannel("A")) >= 128
                 ch = [np.where((c >= 128) & A, 255, 0).astype(np.uint8) for c in ch]
             return np.stack(ch + [np.zeros_like(ch[0])], -1)
-        return im1, im2, mk((FW, FH)), mk((FW * 2, FH * 2))
+        m1, m2 = mk((FW, FH)), mk((FW * 2, FH * 2))
+        if s.cv.cel and s.cv.detail == "hair":
+            m1, m2 = cel_hair_tips(m1), cel_hair_tips(m2)
+        return im1, im2, m1, m2

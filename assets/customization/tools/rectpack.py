@@ -95,6 +95,9 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         """per anim: list of (atlas, (x,y,w,h), (ax,ay) pivot px inside the rect) in dirFrames order"""
         out = {}
         for name, an in s["animations"].items():
+            # Bed-pivot overlays use separate 96x88 art and @2x masks. Keep their
+            # dedicated pages/dirFrames intact when repacking the upright rig.
+            if name.startswith("sleep_lie"): continue
             n = an.get("directions", 1); L = []
             if "dirFrames" in an:
                 for d in an["dirFrames"]:
