@@ -1,12 +1,20 @@
 /** Cheap seed survey: the exact generator's tile and height samplers, never full chunks/entities.
- * North-up, 384 x 256 tiles around the four starter areas; not a promise that it shows the entire streamed world. */
+ * North-up, 512 x 512 tiles around the four starter areas; not a promise that it shows the entire streamed world. */
+import { northUpToWorld } from "./geography.js";
 import { ProceduralGenerator } from "./generator.js";
-export const PREVIEW = { width: 96, height: 64, stride: 4, x: -192, y: -128 } as const;
+/** Origin and stride are geographic east/south tile units, not world-grid axes.
+ * The square covers the previous 384x256 world-grid footprint after rotation, at the same sample density. */
+export const PREVIEW = { width: 128, height: 128, stride: 4, x: -256, y: -256 } as const;
 export interface WorldPreview { seed: number; tiles: Uint16Array; heights: Int8Array }
+/** World tile sampled by a thumbnail pixel; also the inverse/picking contract for preview consumers. */
+export function previewWorldAt(x: number, y: number): { x: number; y: number } {
+  const w = northUpToWorld(PREVIEW.x + x * PREVIEW.stride, PREVIEW.y + y * PREVIEW.stride);
+  return { x: Math.floor(w.x), y: Math.floor(w.y) };
+}
 export function sampleWorldPreview(seed: number): WorldPreview {
   const g = new ProceduralGenerator({ seed }); const tiles = new Uint16Array(PREVIEW.width * PREVIEW.height), heights = new Int8Array(tiles.length);
   for (let y = 0; y < PREVIEW.height; y++) for (let x = 0; x < PREVIEW.width; x++) {
-    const i = y * PREVIEW.width + x, tx = PREVIEW.x + x * PREVIEW.stride, ty = PREVIEW.y + y * PREVIEW.stride;
+    const i = y * PREVIEW.width + x, { x: tx, y: ty } = previewWorldAt(x, y);
     const sample = g.sampleAt(tx, ty); tiles[i] = sample.tile; heights[i] = sample.height;
   }
   return { seed, tiles, heights };
@@ -22,5 +30,5 @@ export function worldPreviewSvg(p: WorldPreview): string {
     const color = (palette[tile] ?? palette[3]!).map(c => Math.round(Math.min(255, c * light))).join(",");
     let path = paths.get(color); if (!path) paths.set(color, (path = [])); path.push(`M${x} ${y}h1v1h-1z`);
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PREVIEW.width} ${PREVIEW.height}" shape-rendering="crispEdges">${[...paths].map(([c, d]) => `<path fill="rgb(${c})" d="${d.join("")}"/>`).join("")}<path d="M48 30v4m-2-2h4" stroke="#fff8d5" stroke-width=".5"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PREVIEW.width} ${PREVIEW.height}" shape-rendering="crispEdges">${[...paths].map(([c, d]) => `<path fill="rgb(${c})" d="${d.join("")}"/>`).join("")}<path d="M${PREVIEW.width / 2} ${PREVIEW.height / 2 - 2}v4m-2-2h4" stroke="#fff8d5" stroke-width=".5"/></svg>`;
 }

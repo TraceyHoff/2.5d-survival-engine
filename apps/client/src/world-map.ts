@@ -1,6 +1,6 @@
 /**
  * World map (Task 9): a north-up top-down canvas of the client's known terrain, the player's position + facing, and
- * map markers. North is up (world -y), east is right (world +x). Tiles are coloured with the renderer's TILE_COLORS
+ * map markers. North is up (world -x-y), east is right (world +x-y). Tiles are coloured with the renderer's TILE_COLORS
  * by TileId; only chunks the client has received are drawn (unknown tiles stay dark), so the map never invents terrain.
  * Input: touch/mouse drag to pan, wheel to zoom, two-finger pinch to zoom on mobile (the world point under the
  * pinch midpoint stays under it, so spreading fingers zooms in on that spot and dragging both fingers pans),
@@ -15,7 +15,7 @@ import { Transform, type Entity, type World } from "@engine/core";
 import { compassOf, placeMapMarkerIntent, removeMapMarkerIntent, visibleMarkers, type MenuIntent } from "@engine/gameplay";
 import { TILE_COLORS } from "@engine/render";
 import { createIdleTracker, idleCompass } from "./compass-hud.js";
-import type { TileMap } from "@engine/world";
+import { northUpToWorld, worldToNorthUp, type TileMap } from "@engine/world";
 import { iconImg } from "./game-icons.js";
 
 export interface WorldMapSource {
@@ -30,11 +30,19 @@ export const markerPinColor = (visibility: number): string => visibility === 1 ?
 export const MARKER_VISIBILITY_LABELS = ["Private", "Party", "Clan"] as const;
 /** World tile coords of a canvas pixel. Centre = world point at canvas centre; scale = px per tile. */
 export function canvasToWorld(px: number, py: number, w: number, h: number, centre: { x: number; y: number }, scale: number): { x: number; y: number } {
-  return { x: centre.x + (px - w / 2) / scale, y: centre.y + (py - h / 2) / scale };
+  const d = northUpToWorld((px - w / 2) / scale, (py - h / 2) / scale);
+  return { x: centre.x + d.x, y: centre.y + d.y };
 }
 /** Canvas pixel of a world point (inverse of canvasToWorld). */
 export function worldToCanvas(x: number, y: number, w: number, h: number, centre: { x: number; y: number }, scale: number): { px: number; py: number } {
-  return { px: (x - centre.x) * scale + w / 2, py: (y - centre.y) * scale + h / 2 };
+  const d = worldToNorthUp(x - centre.x, y - centre.y);
+  return { px: d.x * scale + w / 2, py: d.y * scale + h / 2 };
+}
+/** Conservative world bounds of the rotated north-up viewport (including edge tiles). */
+export function mapWorldBounds(w: number, h: number, centre: { x: number; y: number }, scale: number): { x0: number; x1: number; y0: number; y1: number } {
+  const corners = [[0, 0], [w, 0], [0, h], [w, h]].map(([x, y]) => canvasToWorld(x!, y!, w, h, centre, scale));
+  return { x0: Math.floor(Math.min(...corners.map(p => p.x))) - 1, x1: Math.ceil(Math.max(...corners.map(p => p.x))) + 1,
+    y0: Math.floor(Math.min(...corners.map(p => p.y))) - 1, y1: Math.ceil(Math.max(...corners.map(p => p.y))) + 1 };
 }
 /** One pinch step (pure, for tests): zoom by the finger-distance ratio, clamped to the map's [2, 32] px/tile range,
  * and re-centre so the world point that was under the previous midpoint stays under the current midpoint — so a
@@ -42,7 +50,8 @@ export function worldToCanvas(x: number, y: number, w: number, h: number, centre
 export function pinchStep(o: { centre: { x: number; y: number }; scale: number; midPrevPx: number; midPrevPy: number; midPx: number; midPy: number; canvasW: number; canvasH: number; prevDist: number; curDist: number }): { centre: { x: number; y: number }; scale: number } {
   const scale = Math.min(32, Math.max(2, o.scale * (o.prevDist > 0 ? o.curDist / o.prevDist : 1)));
   const under = canvasToWorld(o.midPrevPx, o.midPrevPy, o.canvasW, o.canvasH, o.centre, o.scale);
-  return { centre: { x: under.x - (o.midPx - o.canvasW / 2) / scale, y: under.y - (o.midPy - o.canvasH / 2) / scale }, scale };
+  const offset = canvasToWorld(o.midPx, o.midPy, o.canvasW, o.canvasH, { x: 0, y: 0 }, scale);
+  return { centre: { x: under.x - offset.x, y: under.y - offset.y }, scale };
 }
 
 export function createWorldMap(src: WorldMapSource, doc: Document = document): { el: HTMLElement; destroy(): void } {
@@ -55,7 +64,7 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
   const mapIdle = createIdleTracker();
   const controls = doc.createElement("div"); controls.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;align-items:center";
   const btn = (t: string, fn: () => void, extra?: Record<string, string>): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; if (extra) for (const [k, v] of Object.entries(extra)) b.dataset[k] = v; b.addEventListener("click", fn); controls.append(b); return b; };
-  const pan = (dx: number, dy: number): void => { state.following = false; state.centre.x += dx; state.centre.y += dy; draw(); };
+  const pan = (dx: number, dy: number): void => { state.following = false; const d = northUpToWorld(dx, dy); state.centre.x += d.x; state.centre.y += d.y; draw(); };
   btn("↑", () => pan(0, -4), { key: "pan-up" }); btn("↓", () => pan(0, 4), { key: "pan-down" }); btn("←", () => pan(-4, 0), { key: "pan-left" }); btn("→", () => pan(4, 0), { key: "pan-right" });
   btn("Centre on me", () => { state.following = true; draw(); }, { pad: "Y", padLabel: "Centre on me" });
   btn("Mark here", () => { state.placed = { ...state.centre }; showForm(); }, { pad: "X", padLabel: "Mark here" });
@@ -112,7 +121,8 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
       const step = pinchStep({ centre: state.centre, scale: state.scale, midPrevPx: prev.px, midPrevPy: prev.py, midPx: cur.px, midPy: cur.py, canvasW: canvas.width, canvasH: canvas.height, prevDist: state.pinch.d, curDist: d });
       state.centre = step.centre; state.scale = step.scale; state.pinch = { d, mx, my }; state.following = false; draw(); return; }
     if (!state.drag) return; const r = canvas.getBoundingClientRect(); const sx = canvas.width / Math.max(1, r.width), sy = canvas.height / Math.max(1, r.height);
-    state.centre.x = state.drag.cx - (e.clientX - state.drag.px) * sx / state.scale; state.centre.y = state.drag.cy - (e.clientY - state.drag.py) * sy / state.scale; state.following = false; draw(); });
+    const d = northUpToWorld((e.clientX - state.drag.px) * sx / state.scale, (e.clientY - state.drag.py) * sy / state.scale);
+    state.centre.x = state.drag.cx - d.x; state.centre.y = state.drag.cy - d.y; state.following = false; draw(); });
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", endPointer);
   canvas.addEventListener("wheel", (e) => { e.preventDefault(); state.scale = Math.min(32, Math.max(2, state.scale * (e.deltaY < 0 ? 1.25 : 0.8))); draw(); }, { passive: false });
@@ -132,7 +142,7 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
     let tv = 0;
     if (tiles) {
       const s0 = state.scale, c0 = state.centre;
-      const tx0 = Math.floor(c0.x - canvas.width / 2 / s0) - 1, tx1 = Math.ceil(c0.x + canvas.width / 2 / s0) + 1, ty0 = Math.floor(c0.y - canvas.height / 2 / s0) - 1, ty1 = Math.ceil(c0.y + canvas.height / 2 / s0) + 1;
+      const { x0: tx0, x1: tx1, y0: ty0, y1: ty1 } = mapWorldBounds(canvas.width, canvas.height, c0, s0);
       tv = (tiles as { chunkCount?: number }).chunkCount ?? 0;
       const getChunk = (tiles as { getChunk?: (cx: number, cy: number) => { version?: number } | undefined }).getChunk;
       if (getChunk) for (let cy = Math.floor(ty0 / 32); cy <= Math.floor(ty1 / 32); cy++) for (let cx = Math.floor(tx0 / 32); cx <= Math.floor(tx1 / 32); cx++) tv += getChunk.call(tiles, cx, cy)?.version ?? 0;
@@ -143,8 +153,17 @@ export function createWorldMap(src: WorldMapSource, doc: Document = document): {
     lastSig = sig;
     const W = canvas.width, H = canvas.height, s = state.scale, c = state.centre;
     ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#1b1f1a"; ctx.fillRect(0, 0, W, H);
-    const x0 = Math.floor(c.x - W / 2 / s) - 1, x1 = Math.ceil(c.x + W / 2 / s) + 1, y0 = Math.floor(c.y - H / 2 / s) - 1, y1 = Math.ceil(c.y + H / 2 / s) + 1;
-    if (tiles) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const id = tiles.getTile(x, y); if (!id) continue; ctx.fillStyle = TILE_COLORS[id % TILE_COLORS.length]!; ctx.fillRect((x - c.x) * s + W / 2, (y - c.y) * s + H / 2, Math.ceil(s) + 0.5, Math.ceil(s) + 0.5); }
+    const { x0, x1, y0, y1 } = mapWorldBounds(W, H, c, s);
+    // Rotate terrain geometry into the same basis used by markers, picking, pan and pinch.
+    ctx.save(); ctx.translate(W / 2, H / 2);
+    const gx = worldToNorthUp(s, 0), gy = worldToNorthUp(0, s), bleed = 0.5 / s;
+    ctx.transform(gx.x, gx.y, gy.x, gy.y, 0, 0); ctx.translate(-c.x, -c.y);
+    if (tiles) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const id = tiles.getTile(x, y); if (!id) continue;
+      // Half a screen pixel of overdraw seals antialiased seams between rotated tiles.
+      ctx.fillStyle = TILE_COLORS[id % TILE_COLORS.length]!; ctx.fillRect(x - bleed, y - bleed, 1 + 2 * bleed, 1 + 2 * bleed);
+    }
+    ctx.restore();
     // Crosshair at the centre (the gamepad placement point).
     ctx.strokeStyle = "rgba(255,250,240,.8)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2 - 8, H / 2); ctx.lineTo(W / 2 + 8, H / 2); ctx.moveTo(W / 2, H / 2 - 8); ctx.lineTo(W / 2, H / 2 + 8); ctx.stroke();
     // Markers (small but visible pins).

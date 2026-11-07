@@ -1,17 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 import { fnv1a } from "@engine/core";
-import { CHUNK_SIZE, Chunk, ChunkManager, HEIGHT_MAX, PREVIEW, ProceduralGenerator, WORLD_TILE_DIAMETER, WORLD_TILE_HALF_EXTENT, computeSpawnPoints, sampleWorldPreview, waterFeatureLayout, worldPreviewSvg, worldTileFromKey, worldTileKey } from "../src/index.js";
+import { CHUNK_SIZE, Chunk, ChunkManager, HEIGHT_MAX, PREVIEW, previewWorldAt, ProceduralGenerator, WORLD_TILE_DIAMETER, WORLD_TILE_HALF_EXTENT, computeSpawnPoints, sampleWorldPreview, waterFeatureLayout, worldPreviewSvg, worldToNorthUp, worldTileFromKey, worldTileKey } from "../src/index.js";
 
-describe("ADR-273 sampled seed preview and wilderness", () => {
+describe("ADR-272 sampled seed preview and wilderness", () => {
   it.each([0, 1234, 424242, 0xffffffff])("seed %i: same thumbnail and exact playable terrain samples", seed => {
     const a = sampleWorldPreview(seed), b = sampleWorldPreview(seed); expect(a).toEqual(b); expect(worldPreviewSvg(a)).toBe(worldPreviewSvg(b));
     const g = new ProceduralGenerator({ seed }); const chunks = new Map<string, ReturnType<typeof g.load>>();
     for (let i = 0; i < a.tiles.length; i += 37) {
-      const x = PREVIEW.x + (i % PREVIEW.width) * PREVIEW.stride, y = PREVIEW.y + Math.floor(i / PREVIEW.width) * PREVIEW.stride;
+      const { x, y } = previewWorldAt(i % PREVIEW.width, Math.floor(i / PREVIEW.width));
       const cx = Math.floor(x / CHUNK_SIZE), cy = Math.floor(y / CHUNK_SIZE), key = `${cx},${cy}`;
       let c = chunks.get(key); if (!c) chunks.set(key, (c = g.load(cx, cy)));
       const lx = ((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE, ly = ((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
       expect(a.tiles[i]).toBe(c.chunk.get(lx, ly)); expect(a.heights[i]).toBe(c.chunk.getHeight(lx, ly));
+    }
+  });
+  it.each([0, 1234, 424242, 0xffffffff])("seed %i: the rotated survey still covers all starter areas", seed => {
+    const g = new ProceduralGenerator({ seed });
+    for (const p of computeSpawnPoints(g)) {
+      const map = worldToNorthUp(p.x, p.y);
+      expect(map.x).toBeGreaterThan(PREVIEW.x); expect(map.x).toBeLessThan(PREVIEW.x + PREVIEW.width * PREVIEW.stride);
+      expect(map.y).toBeGreaterThan(PREVIEW.y); expect(map.y).toBeLessThan(PREVIEW.y + PREVIEW.height * PREVIEW.stride);
     }
   });
   it("different seeds change the land, water and relief rather than just a label", () => {

@@ -39,8 +39,9 @@ describe("map pinch zoom", () => {
     const s = pinchStep({ centre: c, scale: 8, midPrevPx: 280, midPrevPy: 200, midPx: 280, midPy: 200, canvasW: W, canvasH: H, prevDist: 100, curDist: 200 });
     expect(s.scale).toBe(16);
     // The world point under the midpoint does not move.
-    expect(canvasToWorld(280, 200, W, H, s.centre, s.scale)).toEqual(canvasToWorld(280, 200, W, H, c, 8));
-    expect(s.centre).toEqual({ x: 102.5, y: 51.25 });
+    const before = canvasToWorld(280, 200, W, H, c, 8), after = canvasToWorld(280, 200, W, H, s.centre, s.scale);
+    expect(after.x).toBeCloseTo(before.x, 9); expect(after.y).toBeCloseTo(before.y, 9);
+    expect(s.centre.x).toBeCloseTo(100 + 3.75 * Math.SQRT1_2); expect(s.centre.y).toBeCloseTo(50 - 1.25 * Math.SQRT1_2);
   });
   test("pinching together zooms out; scale clamps to [2, 32]", () => {
     expect(pinchStep({ centre: c, scale: 8, midPrevPx: 240, midPrevPy: 180, midPx: 240, midPy: 180, canvasW: W, canvasH: H, prevDist: 100, curDist: 50 }).scale).toBe(4);
@@ -49,7 +50,7 @@ describe("map pinch zoom", () => {
   });
   test("dragging both fingers together pans with them", () => {
     const s = pinchStep({ centre: c, scale: 8, midPrevPx: 240, midPrevPy: 180, midPx: 280, midPy: 180, canvasW: W, canvasH: H, prevDist: 100, curDist: 100 });
-    expect(s.scale).toBe(8); expect(s.centre).toEqual({ x: 95, y: 50 });
+    expect(s.scale).toBe(8); expect(s.centre.x).toBeCloseTo(100 - 5 * Math.SQRT1_2); expect(s.centre.y).toBeCloseTo(50 + 5 * Math.SQRT1_2);
   });
   test("a pinch gesture never opens the marker form; a tap still does", () => {
     const world = new World(); const player = world.create(); world.add(player, Transform, { x: 10, y: 20, z: 0, facing: 0 });

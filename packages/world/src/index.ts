@@ -17,3 +17,4 @@ export * from "./population.js";
 export * from "./waterDepth.js";
 
 export * from "./preview.js";
+export * from "./geography.js";

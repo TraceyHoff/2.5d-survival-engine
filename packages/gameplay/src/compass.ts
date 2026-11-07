@@ -1,13 +1,11 @@
-/**
- * Compass: world facing -> compass heading.
- * World axes: +x is east-ish, +y is south-ish (packages/world iso.ts), so north is -y and east is +x.
- * A world facing angle (atan2(dy, dx), as stored on Transform) converts to a clockwise-from-north heading:
- * heading = atan2(dx, -dy). East (1, 0) -> 90°, south (0, 1) -> 180°, north (0, -1) -> 0°.
- * Pure, shared by the HUD compass strip and the world-map compass rose.
- */
+/** ADR-273: one geographic compass for every client. North is world (-1,-1), east (+1,-1).
+ * Transform.facing and wind directions remain world atan2(dy,dx) radians; grid/art axes do not change. */
+import { NORTH_FACING } from "@engine/world";
+/** World facing radians from a geographic compass heading (degrees clockwise from north). */
+export const compassFacing = (heading: number): number => NORTH_FACING + heading * Math.PI / 180;
 /** Heading in degrees, 0 = north, clockwise, in [0, 360). */
 export const compassHeading = (facing: number): number => {
-  const deg = (Math.atan2(Math.cos(facing), -Math.sin(facing)) * 180) / Math.PI;
+  const deg = (facing - NORTH_FACING) * 180 / Math.PI;
   return ((deg % 360) + 360) % 360;
 };
 /** 8-point compass label for a heading in degrees. */

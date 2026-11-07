@@ -297,7 +297,7 @@ export class BootUI {
         const chosen = document.createElement("p"); chosen.dataset["role"] = "chosen-seed"; chosen.setAttribute("aria-live", "polite");
         const preview = document.createElement("img"); preview.className = "world-preview"; preview.dataset["role"] = "world-preview";
         preview.alt = "Seeded terrain preview: blue water, green lowlands, shaded hills and cliffs";
-        const note = document.createElement("p"); note.className = "preview-note"; note.textContent = "Starter region · 384 × 256 tiles · North ↑. Shading shows relief. World streams beyond this view.";
+        const note = document.createElement("p"); note.className = "preview-note"; note.textContent = "Starter region · 512 × 512 tiles · North ↑. Shading shows relief. World streams beyond this view.";
         let previewTimer = 0;
         const draw = (value: number): void => {
           preview.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(worldPreviewSvg(sampleWorldPreview(value)))}`;

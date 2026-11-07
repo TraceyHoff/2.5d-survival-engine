@@ -8,11 +8,12 @@ describe("world-map coordinate helpers", () => {
   it("canvas centre maps to centre, and back", () => {
     const c = { x: 100, y: 50 }, s = 8, W = 480, H = 360;
     expect(canvasToWorld(W / 2, H / 2, W, H, c, s)).toEqual(c);
-    expect(canvasToWorld(W / 2 + 16, H / 2 - 8, W, H, c, s)).toEqual({ x: 102, y: 49 });
-    const p = worldToCanvas(102, 49, W, H, c, s); expect(p.px).toBeCloseTo(W / 2 + 16); expect(p.py).toBeCloseTo(H / 2 - 8);
+    const picked = canvasToWorld(W / 2 + 16, H / 2 - 8, W, H, c, s);
+    expect(picked.x).toBeCloseTo(100 + Math.SQRT1_2); expect(picked.y).toBeCloseTo(50 - 3 * Math.SQRT1_2);
+    const p = worldToCanvas(picked.x, picked.y, W, H, c, s); expect(p.px).toBeCloseTo(W / 2 + 16); expect(p.py).toBeCloseTo(H / 2 - 8);
   });
-  it("north is up: a smaller world y is a smaller canvas py", () => {
-    const c = { x: 0, y: 0 }; expect(worldToCanvas(0, -10, 480, 360, c, 8).py).toBeLessThan(worldToCanvas(0, 10, 480, 360, c, 8).py);
+  it("north is up: world (-1,-1) maps straight up", () => {
+    const c = { x: 0, y: 0 }; expect(worldToCanvas(-10, -10, 480, 360, c, 8).py).toBeLessThan(worldToCanvas(10, 10, 480, 360, c, 8).py);
   });
   it("pin colours differ per visibility", () => {
     expect(markerPinColor(0)).not.toBe(markerPinColor(1)); expect(markerPinColor(1)).not.toBe(markerPinColor(2));
@@ -47,7 +48,7 @@ describe("world-map panel (DOM, no canvas context in jsdom)", () => {
 
 describe("compass HUD", () => {
   it("text: east 90°, north 0°", () => {
-    expect(compassHudText(0)).toBe("E 90°"); expect(compassHudText(-Math.PI / 2)).toBe("N 0°");
+    expect(compassHudText(-Math.PI / 4)).toBe("E 90°"); expect(compassHudText(-3 * Math.PI / 4)).toBe("N 0°");
   });
   it("mounts, hides when no heading, shows dir + degrees when visible", () => {
     let h: { heading: number; dir: string } | undefined = { heading: 90, dir: "E" };

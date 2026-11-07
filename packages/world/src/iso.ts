@@ -1,4 +1,4 @@
-/** 2:1 dimetric isometric projection. World = float tile units (x east-ish, y south-ish), z = height in tiles. */
+/** 2:1 dimetric isometric projection. World = float tile-grid units (x, y), z = height in tiles. Geographic axes live in geography.ts. */
 export interface IsoConfig { tileW: number; tileH: number; zStep: number;
   /** ADR-253 camera view rotation in quarter turns (0..3, default 0). World (x, y) is rotated by R_view (+90° per step:
    *  (x, y) -> (-y, x)) into view space (u, v) before the 2:1 projection; painter depth is u + v. Renderer-local: the

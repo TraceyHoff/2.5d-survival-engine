@@ -684,7 +684,7 @@ const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !bu
 // Compass HUD (Task 9): top-centre strip, same visibility as the hotbar, updated with it.
 // Task 10: while the player moves the compass shows their facing; once they stand still it settles north.
 const compassIdle = createIdleTracker();
-const compassHud = mountCompassHud({ heading: () => { const p = session.player; if (p === undefined) return undefined; const t = world.get(p, Transform); if (!t) return undefined; return compassIdle.isIdle(t, performance.now()) ? idleCompass() : compassOf(t.facing); } });
+const compassHud = mountCompassHud({ view: () => input.viewQuarter, heading: () => { const p = session.player; if (p === undefined) return undefined; const t = world.get(p, Transform); if (!t) return undefined; return compassIdle.isIdle(t, performance.now()) ? idleCompass() : compassOf(t.facing); } });
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
 vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
   toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });

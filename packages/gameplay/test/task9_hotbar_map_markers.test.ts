@@ -94,10 +94,10 @@ describe("world-map markers", () => {
 
 describe("compass", () => {
   it("maps world facing to north-up headings", () => {
-    expect(G.compassHeading(0)).toBeCloseTo(90, 5); // east
-    expect(G.compassHeading(Math.PI / 2)).toBeCloseTo(180, 5); // south
-    expect(G.compassHeading(-Math.PI / 2)).toBeCloseTo(0, 5); // north
-    expect(G.compassHeading(Math.PI)).toBeCloseTo(270, 5); // west
+    expect(G.compassHeading(-Math.PI / 4)).toBeCloseTo(90, 5); // east
+    expect(G.compassHeading(Math.PI / 4)).toBeCloseTo(180, 5); // south
+    expect(G.compassHeading(-3 * Math.PI / 4)).toBeCloseTo(0, 5); // north
+    expect(G.compassHeading(3 * Math.PI / 4)).toBeCloseTo(270, 5); // west
     expect(G.compassDir(0)).toBe("N"); expect(G.compassDir(45)).toBe("NE"); expect(G.compassDir(180)).toBe("S"); expect(G.compassDir(315)).toBe("NW");
   });
 });
