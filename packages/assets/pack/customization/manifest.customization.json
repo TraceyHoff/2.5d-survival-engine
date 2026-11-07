@@ -5,8 +5,8 @@
   {
    "category": "base",
    "file": "manifest.customization.base.json",
-   "bytes": 756961,
-   "sha": "0ff2c2e594173096f90ed6f39692b067f179c54cbec004d371af5adfa239835b"
+   "bytes": 757652,
+   "sha": "a1f1c2d61a7951554cfcaa79b6b05f3061e757f931ff606d4edb518c604302b5"
   },
   {
    "category": "hair",
@@ -41,8 +41,8 @@
   {
    "category": "accessory",
    "file": "manifest.customization.accessory.json",
-   "bytes": 4285351,
-   "sha": "22835dfd9f9ff4d3b0a158c708da17a175d94c564dfecb3829444e3fb929cd39"
+   "bytes": 4576389,
+   "sha": "6284a8b0b7aec2119522887f52a2c51dc397f18cbe141ffecf670d96a574ea95"
   },
   {
    "category": "face",

@@ -748,6 +748,27 @@ def draw_acc(c, spec):
                 m = cv.mask_from([circle(p, 3.9 * max(.45, min(1, v * 1.2)), 3.2) for p, v in eyes if v > .05])
                 cv._upd(m, (1, 0), ring=False)
         c.add(hv(c) + 3, lifted(c, g))
+    elif st == "cloth_mask":   # ADR-269: face mask over nose / mouth / chin (lifted onto the face like glasses), ties behind the head
+        def mk():
+            hm = c.headmask()
+            if f < -.2:   # back facings: only the two ties across the back of the head
+                for el in (-6, -30):
+                    a, _ = c.sph(-82, el, 1.03); p0, _ = c.sph(180, el + 2, 1.03); b, _ = c.sph(82, el, 1.03); cv.line([a, p0, b], ramp("cloth_cream")[2], .7, clip=hm)
+                return
+            AZ = [az for az in range(-90, 91, 6) if c.sph(az, -30, 1.0)[1] > -.05]
+            if len(AZ) < 2: return
+            top = [c.sph(az, -14 + 5 * math.cos(math.radians(az * 2)) ** 2, 1.06)[0] for az in AZ]   # peak over the nose bridge
+            bot = [c.sph(az, -58 + 14 * abs(az) / 90, 1.05)[0] for az in reversed(AZ)]               # cupped under the chin
+            m = cv.part(top + bot, "P", lw=.9, shade=.2, hl=.1, clip=hm)
+            for el in (-26, -36, -46):   # pleats
+                pl = [c.sph(az, el, 1.07)[0] for az in AZ[1:-1]]
+                if len(pl) > 1: cv.line(pl, ramp("cloth_cream")[2], .55, clip=m)
+            nb = [c.sph(az, -15, 1.07)[0] for az in AZ if abs(az) <= 30]
+            if len(nb) > 1: cv.line(nb, ramp("iron")[1], .6, clip=m)   # nose wire
+            for sd in (-1, 1):   # ear loop on the visible side(s)
+                a, va = c.sph(sd * 86, -16, 1.03); b, _ = c.sph(sd * 86, -44, 1.03); e, ve = c.sph(sd * 92, -8, 1.02)
+                if va > -.3: cv.line([a, e, b], ramp("cloth_cream")[2], .6)
+        c.add(hv(c) + 3.2, lifted(c, mk))
     elif st == "scarf":
         def sc():
             z = K["bz"] + 7.4; nc = (K["tc"][0], K["tc"][1], z)

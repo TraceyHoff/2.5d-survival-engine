@@ -206,7 +206,7 @@ export class IsoRenderer implements Renderer {
     const s = this.sprites; return { characters: s.characters, layerInstances: s.layerInstances, resolves: s.layerCache?.resolves ?? 0, cached: s.layerCache?.size ?? 0 };
   }
   /** Character layer options: outline "union" (all layers) | "body"; minor layers (accessory/shoes/face/eyes) skipped below this zoom. */
-  setCharacterOptions(o: Partial<{ outline: "union" | "body"; minorLayerMinZoom: number }>): void { Object.assign(this.sprites.characterOpts, o); }
+  setCharacterOptions(o: Partial<{ outline: "union" | "body"; minorLayerMinZoom: number; outlineWidthPx: number; outlineColor: [number, number, number, number] }>): void { Object.assign(this.sprites.characterOpts, o); }
   private lights: LightPass;
   private composite: CompositePass;
   private weather: WeatherPass;

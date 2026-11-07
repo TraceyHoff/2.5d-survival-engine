@@ -1024,6 +1024,33 @@
    "masksKtx2": {
     "tintmask": "atlases/cz_sleep_acc_sunglasses.tintmask.ktx2"
    }
+  },
+  {
+   "key": "cz_sleep_acc_cloth_mask",
+   "image": "atlases/cz_sleep_acc_cloth_mask.png",
+   "frameW": 76,
+   "frameH": 100,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_cloth_mask@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_cloth_mask@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_cloth_mask.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_cloth_mask.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_cloth_mask.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_cloth_mask.tintmask.ktx2"
+   }
   }
  ],
  "sprites": [

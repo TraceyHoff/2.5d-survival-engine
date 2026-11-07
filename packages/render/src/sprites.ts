@@ -104,6 +104,9 @@ export function occluderFade(fade: number, occT: number): number {
 }
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
+/** ADR-269: default character-only silhouette outline (union of body + worn layers): 1 atlas texel of dark plum, a
+ *  little darker / more defined than the baked line art alone. Independent of the global StyleConfig.outline (off). */
+export const CHARACTER_OUTLINE = { widthPx: 1, color: [0.08, 0.05, 0.09, 0.72] as const };
 /** Render-internal instance flag: face/eyes paper-doll layer (mip bias, small contrast lift, partial darkness bypass; see characterOpts.face*). */
 export const FACE_LAYER = 512;
 /** Render-internal instance flag (ADR-145): crisp pixel-art sampling (sharp bilinear: texel-snapped UVs, 1 device px AA seam) when magnified. */
@@ -263,7 +266,7 @@ uniform highp sampler2DArray uAtlas, uPoolTex, uEmis, uSheenM, uSwayM, uTintM; u
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
 uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate, uFaceBias, uFaceContrast, uFaceUnlit;
-uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
+uniform vec4 uOutlineColor, uCharOutlineColor; uniform float uCharOutline; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
 uniform int uOccMode, uSilhouette; uniform float uOccAlpha, uOccRadius; uniform vec2 uFocusScr; uniform vec4 uSilColor;
 const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 layout(location=0) out vec4 oColor;
@@ -309,14 +312,15 @@ vec3 layerTint(vec3 c, vec3 tc, int mode, float k, float sat) {
   r = clamp(r, 0.0, 1.0);
   return sat == 1.0 ? r : clamp(mix(vec3(dot(r, vec3(0.299, 0.587, 0.114))), r, mix(1.0, sat, k)), 0.0, 1.0);
 }
-float ringAt(vec2 uv) {
-  float o = 0.0; vec2 d = vec2(uOutline * uTexel);
+float ringW(vec2 uv, float w) {
+  float o = 0.0; vec2 d = vec2(w * uTexel);
   o = max(o, alphaAt(uv + vec2(d.x, 0.0))); o = max(o, alphaAt(uv - vec2(d.x, 0.0)));
   o = max(o, alphaAt(uv + vec2(0.0, d.y))); o = max(o, alphaAt(uv - vec2(0.0, d.y)));
   o = max(o, alphaAt(uv + d * 0.7071)); o = max(o, alphaAt(uv - d * 0.7071));
   o = max(o, alphaAt(uv + vec2(d.x, -d.y) * 0.7071)); o = max(o, alphaAt(uv + vec2(-d.x, d.y) * 0.7071));
   return o;
 }
+float ringAt(vec2 uv) { return ringW(uv, uOutline); }
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   vec2 cw = fwidth(vUvRaw.xy); // uniform control flow: crispUv's footprint (ADR-145)
@@ -353,9 +357,11 @@ void main() {
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
   }
   if ((vFlags & 256) != 0) { // outline-only pass of a character layer (drawn just behind the body: union silhouette outline)
-    if (t.a >= 0.5 || uOutline <= 0.0 || ringAt(vUv.xy) <= 0.5) discard;
-    float oa = uOutlineColor.a * vAlpha * uAlphaMul * (uOccMode == 0 ? mix(1.0, uOccAlpha, vOcc) : 1.0);
-    oColor = vec4(uOutlineColor.rgb, oa); oEmissive = vec4(0.0, 0.0, 0.0, oa); return;
+    // ADR-269: the character-only outline (characterOpts.outline*) when the global sprite outline is off
+    bool gOut = uOutline > 0.0; float ow2 = gOut ? uOutline : uCharOutline; vec4 oc4 = gOut ? uOutlineColor : uCharOutlineColor;
+    if (t.a >= 0.5 || ow2 <= 0.0 || ringW(vUv.xy, ow2) <= 0.5) discard;
+    float oa = oc4.a * vAlpha * uAlphaMul * (uOccMode == 0 ? mix(1.0, uOccAlpha, vOcc) : 1.0);
+    oColor = vec4(oc4.rgb, oa); oEmissive = vec4(0.0, 0.0, 0.0, oa); return;
   }
   vec3 col; float a = t.a;
   if (vLT.y > 0.5) { // character layer: tintmask R <- primary (vTint), G <- secondary (vTint2); no mask = whole frame primary
@@ -534,6 +540,9 @@ export class SpriteBatch {
   layerCache: LayerCache | null = null;
   /** Character layers: outline mode ("union" = one outline around body+layers, "body" = body only); crowd LOD zoom. */
   characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75,
+    /** ADR-269: character-only union silhouette outline (atlas texels; 0 = off) + RGBA colour, drawn even with the global
+     *  sprite outline off so survivors / AI humans / zombies read a little darker and more defined against the world. */
+    outlineWidthPx: CHARACTER_OUTLINE.widthPx, outlineColor: [...CHARACTER_OUTLINE.color] as [number, number, number, number],
     /** face/eyes layers (FACE_LAYER): LOD bias (negative = sharper when minified), contrast around mid-grey, darkness bypass 0..1 */
     faceMipBias: -0.75, faceContrast: 1.12, faceUnlit: 0.3 };
   /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
@@ -695,7 +704,7 @@ export class SpriteBatch {
     const apData = ap ? ap.data as Record<string, ArrayLike<number>> : null; const apLen = ap ? (ap as unknown as { lengths: Record<string, number> }).lengths : {};
     const apVer = apData?.version ?? null;
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
-    const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
+    const outlineOn = (cx.style.outline.enabled || this.characterOpts.outlineWidthPx > 0) && this.characterOpts.outline === "union";
     this.streamPlaceholders = 0; this.streamBodyFallbacks = 0; this.characters = 0; this.layerInstances = 0; this.nearN = 0;
     // nearest-N cutoff from last frame's candidate distances (one frame lag, no per-frame sort of all sprites)
     this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
@@ -1283,6 +1292,7 @@ export class SpriteBatch {
     gl.uniform2f(u.uShadowDir!, shadowDir[0], shadowDir[1]); gl.uniform1f(u.uShadowAlpha!, shadowAlpha);
     gl.uniform1f(u.uOutline!, style.outline.enabled ? style.outline.widthPx : 0);
     gl.uniform4fv(u.uOutlineColor!, style.outline.color);
+    gl.uniform1f(u.uCharOutline ?? null, this.characterOpts.outlineWidthPx); gl.uniform4fv(u.uCharOutlineColor ?? null, this.characterOpts.outlineColor);
     const oc = style.occlusion;
     gl.uniform1i(u.uOccMode!, oc.mode === "dither" ? 1 : 0); gl.uniform1f(u.uOccAlpha!, oc.alpha); gl.uniform1f(u.uOccRadius!, oc.radiusPx);
     gl.uniform2f(u.uFocusScr!, this.focusScr[0], this.focusScr[1]); gl.uniform1i(u.uSilhouette!, 0); gl.uniform4fv(u.uSilColor!, oc.silhouetteColor);

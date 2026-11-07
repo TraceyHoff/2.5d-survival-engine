@@ -74,6 +74,8 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
             for x in o: walk(x, acc)
         return acc
     W = {w["key"]: sorted(set(walk(w, []))) for w in m["wearables"] if slots is None or w["slot"] in slots}
+    only = [k for k in os.environ.get("CZ_ONLY_WEARABLES", "").split(",") if k]   # ADR-269: repack just these wearables (others untouched)
+    if only: W = {k: v for k, v in W.items() if k in only}
     sel = sorted({k for ks in W.values() for k in ks})
     assert not any(k.startswith("body") for k in sel)
     TIGHT = {k for w in m["wearables"] if w["slot"] in tight for k in walk(w, [])}

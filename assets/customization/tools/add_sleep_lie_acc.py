@@ -29,13 +29,14 @@ def kind_of(sprite_key):
 def job(a): return SL.frame_job(a)
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--jobs", type=int, default=os.cpu_count()); A = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--jobs", type=int, default=os.cpu_count()); ap.add_argument("--only", default="", help="comma kinds to (re)render; others untouched"); A = ap.parse_args()
     m = czm.load(MP); W = {w["key"]: w for w in m["wearables"]}
     targets = {}
     for w in m["wearables"]:
         if w.get("slot") not in ("accessory", "hands"): continue
         for b in w["bodies"].values():
             k = kind_of(b["sprite"]); assert k, b["sprite"]; targets[b["sprite"]] = k
+    if A.only: targets = {sk: k for sk, k in targets.items() if k in A.only.split(",")}
     kinds = sorted(set(targets.values()))
     with Pool(A.jobs) as pool:
         RS = pool.map(job, [(r, fi, (k,)) for k in kinds for fi in range(SL.NF) for r in range(SL.ROTS)])

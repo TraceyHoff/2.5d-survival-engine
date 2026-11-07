@@ -1,7 +1,11 @@
 /** Random server-side character looks (replicated via Appearance). The old starter camp seeding was removed (ADR-106). */
 import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, SLOT_PALETTE, defaultAppearance, setAppearance, validateAppearance, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
 
-/** Random valid look from the catalog (server-side; replicated via Appearance). */
+/** ADR-269: slots a spawn look may fill: body features only (as the creator's CREATOR_SLOTS). Clothing (hat, accessory,
+ * top, bottom, shoes, hands) comes only from items the survivor crafts / loots and wears (Worn -> wear_cosmetics). */
+export const SPAWN_LOOK_SLOTS: readonly string[] = ["hair", "face", "eyes"];
+/** Random valid look from the catalog (server-side; replicated via Appearance). Body features only: a fresh player or AI
+ * human starts undressed (ADR-269), like a creator survivor. */
 export function randomAppearance(cat: CosmeticCatalogLike, rnd: () => number): ReturnType<typeof defaultAppearance> {
   const bt = Math.floor(rnd() * BODY_TYPES.length); const body = BODY_TYPES[bt]!;
   const a = defaultAppearance(cat, bt); a.skinTone = Math.floor(rnd() * Math.max(1, cat.skinTones.length));
@@ -10,7 +14,9 @@ export function randomAppearance(cat: CosmeticCatalogLike, rnd: () => number): R
   const optional = new Set(["hat", "accessory", "face"]);
   for (let i = 0; i < SLOT_COUNT; i++) {
     const slot = WEARABLE_SLOTS[i]!; const l = bySlot.get(slot) ?? [];
-    if (l.length && !(optional.has(slot) && rnd() < 0.5)) a.parts[i] = l[Math.floor(rnd() * l.length)]!;
+    // the roll is still consumed for clothing slots so an AI human's hair / face / eyes / colours keep their ADR-252 values
+    if (l.length && !(optional.has(slot) && rnd() < 0.5)) { const id = l[Math.floor(rnd() * l.length)]!; a.parts[i] = SPAWN_LOOK_SLOTS.includes(slot) ? id : 0; }
+    else if (!SPAWN_LOOK_SLOTS.includes(slot)) a.parts[i] = 0;
     const n = Math.max(1, cat[SLOT_PALETTE[slot]].length); a.primary[i] = Math.floor(rnd() * n);
     // Task 26: hair/face secondary follows the primary — a random black secondary (palette index 0)
     // turns the hair's highlight regions into black bars across the face in the world. Other slots

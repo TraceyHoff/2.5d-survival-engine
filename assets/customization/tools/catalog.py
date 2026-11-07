@@ -128,3 +128,5 @@ for k, st, ph, sp in [("fur_cloak", "cape", "acc_cape", {"remap": {"P": "fur_bro
                       ("frame_pack", "backpack", "acc_backpack", {"remap": {"P": "oilskin", "S": "leather"}, "frame": True}),
                       ("tactical_pack", "backpack", "acc_backpack", {"remap": {"P": "composite", "S": "slate"}, "pouches": True})]:
     gear137("acc_gear_" + k, "accessory", dict(sp, style=st), ph, tint=2, layer=30)
+# ADR-269: the cloth mask's own face-worn art (was a bandana stand-in); face-feature layer like the eyepatch, nothing while streaming
+gear137("acc_gear_cloth_mask", "accessory", {"style": "cloth_mask", "remap": {"P": "cloth_cream"}}, None, tint=0, layer=36)

@@ -55,6 +55,7 @@ for _m in ("leather", "fur_brown", "reed", "hide", "oilskin", "composite", "slat
            "steel", "metal_teal"):
     _c = [_hex(h) for h in _R[_m]]; ROLE[_m] = (_c[0], _c[1], _c[2], _c[3], (0, 0))   # untinted gear materials
 ROLE["L"] = ((150, 140, 162), (70, 58, 80), (52, 42, 62), NEU_INK, (0, 0))   # sunglass lens (untinted, as v1 "ink")
+_c = [_hex(h) for h in _R["cloth_cream"]]; ROLE["cloth_cream"] = (_c[0], _c[1], _c[2], _c[3], (0, 0))   # ADR-269 cloth mask (untinted)
 RID = {k: i + 1 for i, k in enumerate(ROLE)}
 LIGHT = np.array([-.55, -.15, .82]); LIGHT /= np.linalg.norm(LIGHT)
 Z_MAT, Z_BL, Z_PIL = 14, 16, 19   # reference bed (main pack `bed`): mattress, blanket, pillow tops
@@ -252,7 +253,7 @@ def figure(br, r=0):
 TIER_CUFF = {t: ("S" if t == "composite" else "P") for t in ("bone", "bronze", "iron", "steel", "composite")}
 ACC = {
     "round_glasses": (36, "glasses", {}), "sunglasses": (36, "sunglasses", {}), "eyepatch": (36, "eyepatch", {}),
-    "earrings": (36, "earrings", {}), "flower": (45, "flower", {}), "scarf": (30, "scarf", {}), "bandana": (30, "bandana", {}),
+    "earrings": (36, "earrings", {}), "cloth_mask": (36, "cloth_mask", {}), "flower": (45, "flower", {}), "scarf": (30, "scarf", {}), "bandana": (30, "bandana", {}),
     "cape": (30, "cape", {}), "fur_cloak": (30, "cape", {"remap": {"P": "fur_brown", "S": "leather"}, "furcollar": True}),
     "bag": (30, None, {}),
     # gloves: (main, cuff, cuff length t, cuff radius +, hand radius +, extras) = parts.GLOVES
@@ -289,6 +290,15 @@ def acc_prims(kinds):
                         out[(np.abs(v - .06) < .04) & (np.abs(u) > .55) & (np.abs(u) < .97) & (f > -.25)] = RID["P"]          # temples
                     return out
                 P.append(Ell(c, (HR + .45,) * 3, kind, clip=HC, deco=deco, cut=lambda p, n, a, deco=deco: deco(p, n, a) > 0, name=kind))
+            elif st == "cloth_mask":   # ADR-269: cream face mask over nose / mouth / chin on the sleeper's face
+                def mdeco(p, n, a):
+                    u, v, f = fq(p); out = np.zeros(p.shape[:-1], int)
+                    on = (f > .05) & (np.abs(u) < .82) & (v > .24 - .1 * (1 - np.abs(u))) & (v < .98 - .25 * np.abs(u))
+                    out[on] = RID["cloth_cream"]
+                    for pv in (.46, .62, .78): out[on & (np.abs(v - pv) < .035)] = RID["bone"]   # pleats
+                    out[(f > -.3) & (f <= .05) & (np.abs(v - .3) < .05)] = RID["cloth_cream"]     # ear loops round the sides
+                    return out
+                P.append(Ell(c, (HR + .45,) * 3, kind, clip=HC, deco=mdeco, cut=lambda p, n, a: mdeco(p, n, a) > 0, name=kind))
             elif st == "earrings":
                 for sx in (-1, 1):
                     e = c + rg * sx * (HR + .4) - cr * .6

@@ -42,6 +42,7 @@ def main(eng, jobs):
                 for suf in ([""] + (["_sleeves"] if build_all.split(slot, spec) else [])):
                     s = copy.deepcopy(S[f"cz_{t}_{bt}{suf}"]); s["key"] = f"cz_{key}_{bt}{suf}"; s.pop("placeholder", None)
                     for an in s["animations"].values(): an.pop("frameMeta", None)
+                    for an in ("sleep_lie", "sleep_lie_under"): s["animations"].pop(an, None)   # ADR-269: bed anims come from add_sleep_lie_acc.py (rerender has no rig pose)
                     m["sprites"].append(s)
         sp = os.path.join(D, "strings", "en.json"); st = json.load(open(sp))
         for w in new: st[f"cosmetic.{w[0]}"] = build_all.STR[f"cosmetic.{w[0]}"]

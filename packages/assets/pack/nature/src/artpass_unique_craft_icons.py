@@ -178,17 +178,23 @@ def medicated_bandage(c):
 
 
 def cloth_mask(c):
-    """Tied cloth face mask."""
+    """ADR-269: contoured face mask (nose-bridge peak, chin cup, pleats, ear loops) - reads as a mask, not a cloth strip."""
     sh(c, 10)
-    col = '#e8e0d0'
-    c.poly([(6, 14), (26, 14), (24.5, 22), (7.5, 22)], col, shade=.3)
-    c.poly([(8, 14.2), (16, 12.4), (24, 14.2), (22.5, 20.8), (9.5, 20.8)], lt(col, .08), ol=False)
-    # ear loops
-    c.stroke([(6.2, 15.5), (3.2, 13), (3.6, 20), (7.2, 20.5)], 1.15, dk(col, .15))
-    c.stroke([(25.8, 15.5), (28.8, 13), (28.4, 20), (24.8, 20.5)], 1.15, dk(col, .15))
-    # center seam
-    c.line([(16, 13.2), (16, 21)], .45, dk(col, .3), 160)
-    c.shine(10, 15.5, .7, 160)
+    col = '#e9e2d2'
+    # ear loops first (behind the cup)
+    c.stroke([(7.4, 13.2), (3.4, 12.6), (2.8, 18.2), (4.4, 22.4), (8.2, 21.6)], 1.2, dk(col, .35))
+    c.stroke([(24.6, 13.2), (28.6, 12.6), (29.2, 18.2), (27.6, 22.4), (23.8, 21.6)], 1.2, dk(col, .35))
+    # cup: peaked over the nose, rounded under the chin
+    cup = [(7, 13.6), (12, 11.2), (16, 9.6), (20, 11.2), (25, 13.6), (25, 18.6), (22.4, 22.6), (16, 24.6), (9.6, 22.6), (7, 18.6)]
+    c.poly(cup, col, shade=.18)
+    c.poly([(9, 14), (16, 11.2), (23, 14), (22.4, 17.4), (9.6, 17.4)], lt(col, .1), ol=False)
+    # pleats
+    for y in (15.4, 18.2, 21):
+        c.line([(8.6, y), (23.4, y)], .8, dk(col, .45), 230)
+    # nose wire + centre seam
+    c.line([(12.4, 11.9), (16, 10.6), (19.6, 11.9)], .7, '#8e96a0', 220)
+    c.line([(16, 10.8), (16, 24)], .4, dk(col, .25), 120)
+    c.shine(11, 14.2, .8, 170)
 
 
 def waterskin(c):

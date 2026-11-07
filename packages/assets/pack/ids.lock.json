@@ -5372,7 +5372,9 @@
     "tree_spring": 5370,
     "soil": 5371,
     "build_ladder": 5372,
-    "ladder": 5373
+    "ladder": 5373,
+    "cz_acc_gear_cloth_mask_female": 5374,
+    "cz_acc_gear_cloth_mask_male": 5375
   },
   "sounds": {
     "amb_rain": 1,
