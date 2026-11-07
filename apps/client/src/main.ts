@@ -42,6 +42,7 @@ import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
 import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, WorkerEventEvt, gameplayNet, installDemoWorld, onGameplayRejected } from "@engine/server/protocol";
+import { terrainRejectText } from "./terrain-reject.js";
 import { inventoryOpRejectText } from "./inventory-reject.js";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, moveSlotIntent, hotbarConsumes, gameplayDefs, BuildPiece, compassOf } from "@engine/gameplay";
@@ -236,8 +237,8 @@ function wireChat(): void {
   c.onEvent(PetEventEvt, (e) => { const t = petEventText(world, e.pet as never, e.result, e.value); if (t) farm?.toast(t); if (e.result === 1 && e.pet) menus?.openPet(e.pet); else menus?.refresh(); });
   // Task 22 worker feedback (owner only): hired / job set / released -> toast + panel refresh
   c.onEvent(WorkerEventEvt, (e) => { const t = workerEventText(world, e.worker as never, e.result, e.value); if (t) farm?.toast(t); menus?.refresh(); });
-  // ADR-205: split / move / to-hotbar rejected by the server -> specific friendly text in the panel status line + toast
-  onGameplayRejected(c, (r) => { const t = inventoryOpRejectText(r.command, r.reason); if (t) { menus?.notice(t); farm?.toast(t); } });
+  // ADR-205 / ADR-264: inventory ops and shovel edits rejected by the server -> specific panel text + toast
+  onGameplayRejected(c, (r) => { const t = inventoryOpRejectText(r.command, r.reason) ?? terrainRejectText(r.command, r.reason); if (t) { menus?.notice(t); farm?.toast(t); } });
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */

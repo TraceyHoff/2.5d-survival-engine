@@ -18,7 +18,8 @@ import { flowWaterRaw, installSpatialIndex, isWaterId, renderTileHeight, terrain
 import { BuildPiece, Crop, Dead, Equipment, ResourceNode, TerrainEdit, Worker } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { ToolKind } from "./defs.js";
-import { countItem } from "./inventory.js";
+import { countItem, exchangeItems } from "./inventory.js";
+import { itemIdSafe } from "./roads.js";
 import { hasPrivilege } from "./building/place.js";
 import { emit, XpActivity } from "./events.js";
 import { indexEntity } from "./spawn.js";
@@ -26,11 +27,12 @@ import { TerrainRes, type Terrain } from "./world.js";
 import { editAt, editIndex, invalidateTerrainIndex, LEVEL_MAX, LEVEL_MIN, terrainDigAt, TERRAIN, tkey, untkey } from "./terrain_depth.js";
 export { LEVEL_MAX, LEVEL_MIN, TERRAIN, terrainDigAt, undergroundDepthAt, isUnderground, invalidateTerrainIndex } from "./terrain_depth.js";
 
-export const enum TerrainFail { None = 0, NoShovel = 1, Limit = 2, NoPrivilege = 3, Occupied = 4, NotLoaded = 5, TooFar = 6, BadTile = 7 }
-export const TERRAIN_FAIL_REASONS = ["", "no_shovel", "limit", "no_privilege", "occupied", "not_loaded", "too_far", "bad_tile"] as const;
+export const enum TerrainFail { None = 0, NoShovel = 1, Limit = 2, NoPrivilege = 3, Occupied = 4, NotLoaded = 5, TooFar = 6, BadTile = 7, NoSoil = 8, InventoryFull = 9 }
+export const TERRAIN_FAIL_REASONS = ["", "no_shovel", "limit", "no_privilege", "occupied", "not_loaded", "too_far", "bad_tile", "no_soil", "inventory_full"] as const;
 export const TERRAIN_FAIL_TEXT: Readonly<Record<number, string>> = {
   [TerrainFail.NoShovel]: "Hold a shovel to dig or raise ground", [TerrainFail.Limit]: "Can't dig or build the ground any further here",
   [TerrainFail.NoPrivilege]: "Inside someone else's claim", [TerrainFail.Occupied]: "Something is in the way",
+  [TerrainFail.NoSoil]: "Need soil to raise ground", [TerrainFail.InventoryFull]: "Inventory full — no room for soil",
   [TerrainFail.NotLoaded]: "Too far away", [TerrainFail.TooFar]: "Too far away", [TerrainFail.BadTile]: "Can't dig open water — raise it to fill",
 };
 
@@ -101,6 +103,13 @@ export function editTerrain(world: World, e: Entity, tx: number, ty: number, dir
   const nextDig = water ? dig : dig + (up ? 1 : -1); const nextLevel = water ? level : level + (up ? 1 : -1);
   // ±25 around the generated ground; LEVEL_MIN..LEVEL_MAX keeps every level storable as flowing water too
   if (Math.abs(nextDig) > TERRAIN.maxLevels || nextLevel < LEVEL_MIN || nextLevel > LEVEL_MAX) return TerrainFail.Limit;
+  // ADR-264: one unit of earth per edit, including filling water and undoing earlier edits.
+  // exchangeItems validates on scratch slots: previews never mutate inventory, and a full bag never loses dug soil.
+  const soil = itemIdSafe(world, "soil");
+  const fail = up ? TerrainFail.NoSoil : TerrainFail.InventoryFull;
+  if (soil === undefined) return fail;
+  const unit = [{ item: soil, count: 1 }];
+  if (!exchangeItems(world, e, up ? unit : [], up ? [] : unit, dryRun)) return fail;
   if (dryRun) return TerrainFail.None;
   if (water) { t.setTile(tx, ty, TERRAIN.earthTile); t.setRawHeight(tx, ty, level); }
   else { t.setRawHeight(tx, ty, nextLevel); if (id !== TERRAIN.earthTile) t.setTile(tx, ty, TERRAIN.earthTile); setDig(world, tx, ty, nextDig); }

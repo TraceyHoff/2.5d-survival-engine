@@ -45,7 +45,7 @@ describe("economy data", () => {
   it("asserts no vendor sources: every item has a gather or craft source", () => {
     expect(ECONOMY.noVendorSources).toBe(true);
     const crafted = new Set([...d.recipes.values()].map((r) => r.output.item));
-    const gathered = new Set<number>();
+    const gathered = new Set<number>([id("soil")]); // ADR-264: terrain digging, covered by task36_terrain.test.ts
     for (const r of d.resources.values()) for (const y of (r as unknown as { yields?: { item: number }[] }).yields ?? []) gathered.add(y.item);
     for (const a of mod.animalDefs()) for (const l of a.loot) gathered.add(d.itemId(l.item)); // ADR-110: hunting yields
     const raw = JSON.stringify(DEFAULT_RAW_DEFS.resources);

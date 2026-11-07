@@ -132,8 +132,8 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
   const roadBtn = mkBtn("Road", "tool", "road", () => road(), "Road tool (G): path, gravel, paved, off", "ic_road.png");
   const signBtn = mkBtn("Sign", "tool", "sign", () => { if (!editNearestSign()) placeSign(); }, "Place a sign you carry (N), or edit the sign next to you", "ic_sign.png");
   // ADR-263: shovel Raise / Dig (context-only: visible while a shovel is in the main hand)
-  const raiseBtn = mkBtn("⬆ Raise", "tool", "raise", () => { shovel(1); }, "Raise the ground here one level (Y / LT + D-pad ↑)");
-  const digBtn = mkBtn("⬇ Dig", "tool", "dig", () => { shovel(-1); }, "Dig the ground here one level (H / LT + D-pad ↓)");
+  const raiseBtn = mkBtn("⬆ Raise", "tool", "raise", () => { shovel(1); }, "Raise the ground here one level — costs 1 Soil (Y / LT + D-pad ↑)");
+  const digBtn = mkBtn("⬇ Dig", "tool", "dig", () => { shovel(-1); }, "Dig the ground here one level — gains 1 Soil (H / LT + D-pad ↓)");
   bar.append(roadBtn, signBtn, raiseBtn, digBtn);
   const confirmBar = document.createElement("div"); confirmBar.id = "road-confirm"; confirmBar.style.display = "none";
   confirmBar.append(mkBtn("✓ Lay road", "role", "confirm", () => confirmRoad(), "Lay the planned road"), mkBtn("✕ Cancel", "role", "cancel", () => cancelRoad(), "Cancel the planned road"));

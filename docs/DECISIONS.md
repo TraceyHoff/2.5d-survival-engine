@@ -3105,3 +3105,16 @@ Server bridge / bandwidth expectations updated for the appended command and comp
   pits uses the existing height rules.
 - Underground darkness is a per-viewer ambient (the player's own depth); a surface viewer looking into a pit sees it
   lit by daylight.
+
+
+## ADR-264: Shovel edits conserve Soil (amends ADR-263)
+
+SurVivaZ terrain editing now moves a first-class **Soil** resource: every successful one-level dig grants one Soil, and every successful raise costs one Soil. This includes digging a mound back down, filling a pit back up, and the existing raise-on-water fill operation. Soil stacks to 50 and weighs 0.7; its append-only gameplay ID is 490. Hired AI humans using a shovel in their bag obey exactly the same inventory rules as players.
+
+Inventory exchange uses the existing atomic `exchangeItems` scratch-slot path before terrain mutation. Validation / `dryRun` checks affordability and capacity without granting or consuming anything. A missing Soil rejects raising with “Need soil to raise ground”; no available pack slot or carry weight rejects digging with “Inventory full — no room for soil”. Refusal leaves terrain and inventory unchanged: dug Soil is never discarded or lost to gathering overflow. Terrain command reject codes are appended (existing codes stay stable), and authoritative failures now produce client toasts across input devices. Raise / Dig tooltips explain the one-unit cost / yield.
+
+Art is a dedicated `soil()` painter in `assets/tools/items.py`: an irregular dark-brown earth clump, cracks, root detail and loose crumbs, not reused or recolored clay/sand/gravel/farm_soil. It is appended to `ITEMS` at atlas frame 49 (old frames and grid unchanged). Rebuilt source + runtime item PNG/TexturePacker JSON, regenerated the runtime KTX2 with the existing `ktx2.py` encoder, registered both manifests, and appended locked sprite ID 5371. The DOM inventory icon selects this exact frame; no sprite fallback is used. The normal `build_all.py` item loop reproduces the source atlas via `_icon` / `write_atlas`.
+
+Coverage: one-for-one dig/raise and mound/pit round trips; missing soil; water filling; read-only previews; slot-full and weight-full refusal; bag-shovel AI; unchanged ±25 bounds, water flow, underground lighting, 60°F and crop growth. No new recipes or unrelated features. Existing ADR-263 leftovers (AI autonomous digging policy and non-draining water) remain unchanged.
+
+Validation: `pnpm typecheck` passes with lockfile TypeScript 5.9.3. The broad regression rerun passes **493 files / 2,902 tests** (2 files / 3 tests already skipped), excluding only the existing zombie/AI cases in `adr202_zombies_hunt_ai_humans.test.ts` and `adr252_ai_humans_live.test.ts`. Both failures were reproduced on an untouched ADR-263 (`d617f77b`) worktree; they are not changed by this amendment. Economy / reachability source audits now account for Soil from the shovel action. Dedicated art checks pass; all 49 prior icon frames remain pixel-identical and the Soil pixels differ from every prior icon.

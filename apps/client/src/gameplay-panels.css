@@ -1309,3 +1309,6 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
    Existing Cozy Camp button plates/fonts remain shared; no nested fixed-height scroller. */
 .gm-modal .gm-panel [data-role=worker-detail-choices]{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
 .gm-modal .gm-panel [data-role=worker-detail-choices] button{min-width:0;white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px;text-align:left}
+
+/* ADR-264: dedicated soil clump, appended to the item atlas (frame 49). */
+[data-icon="soil"]{--cz-icon:url("../../../packages/assets/pack/atlases/items.png");--cz-isize:800% 700%;--cz-ipos:14.29% 100%}

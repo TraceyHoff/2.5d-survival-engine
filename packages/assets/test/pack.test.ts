@@ -24,6 +24,18 @@ describe("art pack", () => {
     for (const c of CATEGORIES) expect(registry.byCategory(c).length).toBeGreaterThan(0);
     expect(lock).toEqual(lockFile);
   });
+  it("ADR-264: Soil owns a dedicated item frame, not an existing resource fallback", () => {
+    const soil = pack.sprites.find((s: { key: string }) => s.key === "soil");
+    expect(soil).toMatchObject({ category: "item", atlas: "items", animations: { idle: { frames: [49] } } });
+    expect(soil.placeholder).toBeUndefined();
+    for (const key of ["clay", "sand"]) {
+      const other = pack.sprites.find((s: { key: string }) => s.key === key);
+      expect(other.animations.idle.frames).not.toEqual(soil.animations.idle.frames);
+    }
+    expect(registry.byKey("soil").id).toBe(lockFile.sprites.soil);
+    const tp = JSON.parse(readFileSync(dir + "atlases/items.json", "utf8"));
+    expect(tp.frames.soil).toMatchObject({ index: 49, frame: { x: 32, y: 192, w: 32, h: 32 } });
+  });
   it("keeps every sample key and id stable", () => {
     for (const [ns, keys] of Object.entries(sampleLock as Record<string, Record<string, number>>))
       for (const [k, id] of Object.entries(keys)) expect((lock as Record<string, Record<string, number>>)[ns]![k]).toBe(id);

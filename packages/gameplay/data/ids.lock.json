@@ -488,7 +488,8 @@
     "rice_seeds": 486,
     "salad": 487,
     "truffle": 488,
-    "truffle_stew": 489
+    "truffle_stew": 489,
+    "soil": 490
   },
   "resources": {
     "fallen_branches": 1,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { defaultDefs, ItemCategory } from "../src/index.js";
+import { defaultDefs, ItemCategory, ToolKind } from "../src/index.js";
 import ai from "../data/ai.json";
 
 const d = defaultDefs();
@@ -17,6 +17,10 @@ function baseSources(): Set<number> {
 function reachable(): Set<number> {
   const have = baseSources(); let grew = true;
   while (grew) { grew = false; for (const r of recipes) if (!have.has(r.output.item) && r.ingredients.every((i) => have.has(i.item))) { have.add(r.output.item); grew = true; }
+    // ADR-264: Soil is obtained by digging once a shovel is obtainable (not a recipe / node yield).
+    if (!have.has(d.itemId("soil")) && [...d.items.values()].some((it) => it.tool?.kind === ToolKind.Shovel && have.has(it.id))) {
+      have.add(d.itemId("soil")); grew = true;
+    }
     // Task 13: boiling is a container-preserving transform, not a recipe — a boiled variant is
     // reachable whenever its raw form is (use a filled container at a lit campfire).
     for (const it of d.items.values()) if (it.boilSource && have.has(it.boilSource) && !have.has(it.id)) { have.add(it.id); grew = true; } }

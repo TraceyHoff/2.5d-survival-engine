@@ -9549,6 +9549,23 @@
     }
    },
    "rotationArt": "unique4"
+  },
+  {
+   "key": "soil",
+   "category": "item",
+   "atlas": "items",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
   }
  ],
  "sounds": [

@@ -242,6 +242,18 @@ def clay(cv):
     P(cv, C(16, 19, 10, 7.5, wob=0.08, seed=2), "clay", gloss=[(12, 15, 3, 1.3)])
     for k in range(2): cv.line([(10 + k * 4, 20 + k), (14 + k * 4, 22 + k)], ramp("clay")[2], 0.6)
 
+def soil(cv):
+    """Dedicated crumbly earth clump, with roots and loose crumbs (not clay / sand geometry)."""
+    icon_shadow(cv)
+    P(cv, [(5, 23), (7, 17), (10, 16), (10, 12), (15, 9), (20, 11),
+           (21, 15), (25, 16), (28, 23), (24, 26), (10, 26)], "bark",
+      base_col=(91, 59, 37), shade_col=(49, 31, 23), hl_col=(131, 90, 54), lw=1.1)
+    for pts in [[(11, 16), (14, 18), (13, 22)], [(20, 15), (18, 19), (22, 22)]]:
+        cv.line(pts, (48, 30, 22), 0.8)
+    cv.line([(12, 12), (15, 14), (18, 13)], (162, 123, 77), 0.65)
+    for x, y, r in [(6, 26, 1.3), (28, 27, 1), (16, 24, 0.9), (23, 18, 0.7), (11, 19, 0.6)]:
+        cv.fill(C(x, y, r, r * 0.8, n=7, wob=0.1, seed=7), (112, 76, 46))
+
 def sand(cv):
     icon_shadow(cv)
     P(cv, [(4, 25), (11, 14), (16, 10), (22, 14), (28, 25)], "sand")
@@ -396,7 +408,7 @@ ITEMS += [("hardwood", logs_icon("wood_dark", "leaf_autumn")), ("sticks", sticks
           ("gold_ore", ore_icon("gold")), ("rope", rope), ("cloth", cloth), ("leather", leather), ("stone_brick", brick_icon("stone")), ("clay_brick", brick_icon("brick")),
           ("mortar", mortar), ("charcoal", charcoal), ("copper_ingot", ingot_icon("copper")), ("tin_ingot", ingot_icon("slate")), ("bronze_ingot", ingot_icon("leaf_autumn")),
           ("steel_ingot", ingot_icon("metal_teal")), ("gold_ingot", ingot_icon("gold")), ("nails", nails), ("iron_plate", plate_icon("iron")), ("steel_plate", plate_icon("metal_teal")),
-          ("glass", glass), ("dye", dye), ("raw_meat", raw_meat), ("rot", rot), ("pumpkin", pumpkin), ("blueberries", blueberries), ("herbs", herbs), ("arrow", arrow)]
+          ("glass", glass), ("dye", dye), ("raw_meat", raw_meat), ("rot", rot), ("pumpkin", pumpkin), ("blueberries", blueberries), ("herbs", herbs), ("arrow", arrow), ("soil", soil)]
 EQUIPMENT += [("stone_shovel", shovel), ("stone_knife", knife), ("bronze_axe", lambda c: axe(c, "iron") if False else _bronze(axe, c)),
               ("bronze_pickaxe", lambda c: _bronze(pickaxe, c)), ("bronze_sword", sword_of("copper")), ("iron_sword", sword_of("iron")),
               ("bow", bow_icon), ("torch", torch_item)]

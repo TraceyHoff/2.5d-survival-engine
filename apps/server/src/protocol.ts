@@ -125,6 +125,7 @@ export const COMMAND_REJECT_REASONS = [
   /* appended (Task 22): AI-human hire (not_found / too_far / no_item / not_owner keep their earlier codes above) */ ...WORKER_REJECT_REASONS,
   /* appended (Task 25): dye (no_brush / no_dye / no_wearable / bad_palette / not_dyeable / bad_dye_kind) */ ...DYE_REJECT_REASONS,
   /* appended (ADR-263 Task 36): shovel terrain edits (no_privilege / occupied / too_far keep their earlier codes above) */ "no_shovel", "limit", "not_loaded", "bad_tile",
+  /* ADR-264: soil economy */ "no_soil", "inventory_full",
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }

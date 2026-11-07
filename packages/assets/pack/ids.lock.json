@@ -5369,7 +5369,8 @@
     "road_paved_spring": 5367,
     "tree_apple_spring": 5368,
     "tree_pine_spring": 5369,
-    "tree_spring": 5370
+    "tree_spring": 5370,
+    "soil": 5371
   },
   "sounds": {
     "amb_rain": 1,
