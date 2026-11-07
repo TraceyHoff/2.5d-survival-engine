@@ -102,6 +102,7 @@ export * from "./skills/husbandry.js";
 export * from "./clutter.js";
 export * from "./sprite-fallback.js";
 export * from "./roads.js";
+export * from "./terrain.js";
 export * from "./signs.js";
 export * from "./hordes.js";
 export * from "./pets.js"; // ADR-145

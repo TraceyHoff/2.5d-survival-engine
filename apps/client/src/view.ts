@@ -100,7 +100,8 @@ export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: num
   if (gz.tiles !== tiles || gz.cx !== cx || gz.cy !== cy) { gz.tiles = tiles; gz.cx = cx; gz.cy = cy; gz.c = tiles.getChunk(cx, cy); }
   const c = gz.c;
   if (!c) return z; const i = tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx);
-  return Math.max(z, renderTileHeight((c.tiles as Uint16Array | undefined)?.[i] ?? 0, c.height[i] ?? 0)); // ADR-182: swimmers sit on the flat water surface
+  const h = renderTileHeight((c.tiles as Uint16Array | undefined)?.[i] ?? 0, c.height[i] ?? 0); // ADR-182: swimmers sit on the flat water surface
+  return h < 0 ? z + h : Math.max(z, h); // ADR-263: sim z is clamped >= 0, so a shovel pit (negative height) lowers the body
 }
 /** ADR-162: groundZ for a build piece; a lift above its level floor (decor on a table) is kept on top of a terrain step. */
 export function pieceGroundZ(tiles: TileMap | undefined, x: number, y: number, z: number, lh: number): number {

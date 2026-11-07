@@ -17,8 +17,10 @@ import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
 import { populationTile } from "./population.js";
 import { nearWater } from "./systems/vitals.js";
-import { ambientTemperature } from "./systems/environment.js";
+import { surfaceTemperature } from "./systems/environment.js";
 import { isRaining } from "./realism.js";
+import { isUnderground } from "./terrain_depth.js";
+import { lightAt } from "./systems/lights.js";
 
 export type PlantType = "crop" | "bush" | "tree";
 export interface Plantable { seed: string; key: string; type: PlantType; growSeconds: number; stages: number; becomes: string; tiles: number[];
@@ -143,6 +145,17 @@ export function growthMul(world: World, c: { waterUntilTick: number; fertilized:
   const wet = c.waterUntilTick > world.tick || isRaining(world.env(Weather).kind);
   return (wet ? FARMING.wateredMul : FARMING.unwateredMul) * (c.fertilized ? FARMING.fertilizerMul : 1);
 }
+/**
+ * ADR-263 (Task 36): growth multiplier for a crop underground (dug >= 3 levels below ground). Rain does not reach it and
+ * there is no sun, so it grows only while BOTH a light reaches it (held torch / lantern, campfire, lamp…: checked every
+ * crop tick, so the light must stay on) AND it has water (watering can, or flowing / standing water beside it);
+ * otherwise 0. Season dormancy and frost do not apply underground (a constant 60°F).
+ */
+export function undergroundGrowthMul(world: World, c: { waterUntilTick: number; fertilized: number }, x: number, y: number): number {
+  if (lightAt(world, x, y, 0) === undefined) return 0;
+  if (!(c.waterUntilTick > world.tick || nearWater(world, x, y))) return 0;
+  return FARMING.wateredMul * (c.fertilized ? FARMING.fertilizerMul : 1);
+}
 export const CROP_EVERY = Math.round(FARMING.tickSeconds * DEFAULT_TICK_HZ);
 /** Task 28 seasonal crop death: growth pauses in the final LATE_FALL_DAYS days of fall, and all winter.
  * Seasons are 15 in-game days (environment.json lengthDays, ADR-261); N stays 1: the last day of fall is the dormant
@@ -175,21 +188,24 @@ export function cropGrowthSystem(world: World): void {
   // Task 28: below 40°F ambient, outdoor crops/plants die (fruit trees die; ordinary trees and berry bushes survive).
   // The kill pass runs even while dormant — a frost kills a field that stopped growing. A killed crop reverts to
   // empty tilled soil (kind 0) so the player can replant; a killed wild node is depleted (amount 0, regrows later).
-  if (ambientTemperature(world) < FROST_KILL_C) {
+  if (surfaceTemperature(world) < FROST_KILL_C) { // ADR-263: the open-air reading (a pit at 0,0 must not stop frost)
     const defs = gameplayDefs(world);
     for (const e of [...world.query([Crop, Transform])].sort((a, b) => a - b)) {
-      const c = world.get(e, Crop)!; const p = plantableOf(c.kind);
-      if (p && p.type === "crop") world.set(e, Crop, { kind: 0, stage: 0, growth: 0 });
+      const c = world.get(e, Crop)!; const p = plantableOf(c.kind); const t = world.get(e, Transform)!;
+      if (p && p.type === "crop" && !isUnderground(world, t.x, t.y)) world.set(e, Crop, { kind: 0, stage: 0, growth: 0 }); // ADR-263: 60°F underground
     }
     for (const e of [...world.query([ResourceNode])].sort((a, b) => a - b)) {
       const n = world.get(e, ResourceNode)!; const key = defs.resources.get(n.kind)?.key ?? "";
       if (frostKillsNode(key)) world.set(e, ResourceNode, { amount: 0 });
     }
   }
-  if (isCropDormant(world)) return;
+  const dormant = isCropDormant(world);
   for (const e of [...world.query([Crop, Transform])].sort((a, b) => a - b)) {
     const c = world.get(e, Crop)!; const p = plantableOf(c.kind); if (!p) continue;
-    const growth = Math.min(1, c.growth + (dt / p.growSeconds) * growthMul(world, c));
+    const tf = world.get(e, Transform)!; const under = isUnderground(world, tf.x, tf.y); // ADR-263: no seasons underground
+    if (dormant && !under) continue;
+    const mul = under ? undergroundGrowthMul(world, c, tf.x, tf.y) : growthMul(world, c); if (!(mul > 0)) continue;
+    const growth = Math.min(1, c.growth + (dt / p.growSeconds) * mul);
     if (growth >= 1) { const t = world.get(e, Transform)!; const targetId = world.getField(e, WorkerTarget, "id");
       world.destroy(e); const node = spawnResourceNode(world, p.becomes, t.x, t.y);
       if (targetId) world.add(node, WorkerTarget, { id: targetId }); // a selected plot stays selected through maturity

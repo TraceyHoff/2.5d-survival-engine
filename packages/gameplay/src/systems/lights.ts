@@ -16,6 +16,7 @@ import { gameplayDefs } from "../config.js";
 import { EmitterKind, STATION_LIGHT_RADIUS } from "../realism.js";
 import { WearSlot, type GameDefs } from "../defs.js";
 import { headlightsOn } from "../vehicles.js";
+import { isUnderground } from "../terrain_depth.js";
 
 export interface ActiveLight { readonly e: Entity; readonly x: number; readonly y: number; readonly r: number; readonly vehicle: boolean; /** ADR-217 held light: follows the bearer between rebuilds */ readonly held?: boolean }
 /** ADR-217: extra bucketing pad (tiles) for held lights, covering how far a bearer can move between grid rebuilds. */
@@ -103,3 +104,16 @@ export function nearestLight(world: World, x: number, y: number, range: number):
   for (const l of lightGrid(world).lights) { const d = Math.hypot(x - l.x, y - l.y); if (d <= bd) { bd = d; best = l; } }
   return best;
 }
+
+/**
+ * ADR-263 (Task 36): underground light level at (x,y), 0..1. Above ground (dug < 3 levels below ground) = 1 (normal
+ * day / night lighting applies). Underground it is 0 (pitch dark) unless an active light — held torch / lantern /
+ * candle, lit campfire or station, lamp, headlights — reaches the point (margin 0: inside the light's own radius).
+ * Shared by the renderer darkness (client), crop growth and tests.
+ */
+export function undergroundLightAt(world: World, x: number, y: number): number {
+  if (!isUnderground(world, x, y)) return 1;
+  return lightAt(world, x, y, 0) !== undefined ? 1 : 0;
+}
+/** True when (x,y) is underground with no light reaching it. */
+export function isDarkUnderground(world: World, x: number, y: number): boolean { return undergroundLightAt(world, x, y) === 0; }

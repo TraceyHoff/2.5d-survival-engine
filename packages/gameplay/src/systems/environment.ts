@@ -22,6 +22,7 @@ import { waterproofOf } from "../combat/arms.js";
 import { pendingReady } from "../ready.js";
 import { HEAT_DAMAGE_ABOVE_C } from "./vitals.js";
 import { inWater } from "./movement.js";
+import { isUnderground, TERRAIN } from "../terrain_depth.js";
 
 export const EXPOSURE_EVERY = 4;
 export const SURFACE_EVERY = 20;
@@ -189,8 +190,14 @@ export function gameplayClimateModel(env: EnvironmentTuning, world?: World): Cli
   };
 }
 
-/** Air temperature (deg C) at a position: world climate if installed, else baseTemp through the same model. */
+/** Air temperature (deg C) at a position: world climate if installed, else baseTemp through the same model.
+ * ADR-263: underground (dug >= 3 levels below ground) is a constant 60°F, independent of season / weather / time of day. */
 export function ambientTemperature(world: World, x = 0, y = 0): number {
+  if (isUnderground(world, x, y)) return TERRAIN.undergroundTempC; // ADR-263: 60°F year-round >= 3 levels below ground
+  return surfaceTemperature(world, x, y);
+}
+/** ADR-263: open-air (surface) temperature at a position, ignoring the underground override (world-wide frost checks). */
+export function surfaceTemperature(world: World, x = 0, y = 0): number {
   if (world.getResource(ClimateRes)) return climateAt(world, x, y).temperature;
   const env = gameplayDefs(world).environment; const w = world.env(Weather); const time = timeOfDay(world);
   return seasonalTemperature(env, worldSeason(world, env, time), time, w);
@@ -317,7 +324,7 @@ export function exposureSystem(world: World, dt: number): void {
     else if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
-    const ambient = ambient0 ?? ambientTemperature(world, x, y);
+    const ambient = isUnderground(world, x, y) ? TERRAIN.undergroundTempC : ambient0 ?? ambientTemperature(world, x, y); // ADR-263
     // Task 23: clothing insulation pulls felt toward the comfort band — it warms in the cold and shades in the heat
     // (a fur coat no longer cooks its wearer in a heat wave); higher tiers insulate more (items.json).
     // Task 31: wet clothing insulates less (effectiveInsulation); the cold-damage block below still uses the dry total.

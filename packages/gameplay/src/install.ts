@@ -1,6 +1,7 @@
 import { wearSystem } from "./combat/arms.js";
 import { installVehicleCraft, VEHICLE_CRAFT_HASH } from "./vehicle_craft.js";
 import { CROP_EVERY, cropGrowthSystem, farmUseSystem } from "./farming.js";
+import { TERRAIN, terrainFlowSystem } from "./terrain.js";
 import { HUSBANDRY_EVERY, husbandrySystem, husbandryUseSystem } from "./skills/husbandry.js";
 import { installProgression, progressionMigrateSystem, xpTravelSystem } from "./skills/progression.js";
 import { installPets, petSystem } from "./pets.js";
@@ -70,6 +71,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.consume"],
   ["simulation", "gameplay.farmUse"], // ADR-110
   ["simulation", "gameplay.crops", CROP_EVERY], // ADR-110
+  ["simulation", "gameplay.terrainFlow", TERRAIN.flowEveryTicks], // ADR-263: water flows into shovel-dug channels (authority)
   ["simulation", "gameplay.husbandryUse"], // ADR-113
   ["simulation", "gameplay.husbandry", HUSBANDRY_EVERY], // ADR-113
   ["simulation", "gameplay.pets"], // ADR-145 (after animal AI)
@@ -129,7 +131,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.recruitment": recruitmentSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
-    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.terrainFlow": terrainFlowSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
     "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.progressionMigrate": progressionMigrateSystem, "gameplay.equip": equipSystem, "gameplay.stance": stanceSystem, "gameplay.pets": petSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };

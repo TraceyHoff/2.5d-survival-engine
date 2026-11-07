@@ -53,7 +53,9 @@
    {
     "action": "ToggleCharacter",
     "control": "pad.rs",
-    "modifiers": ["pad.lb"]
+    "modifiers": [
+     "pad.lb"
+    ]
    },
    {
     "action": "Crouch",
@@ -250,6 +252,20 @@
     "control": "pad.dright",
     "modifiers": [
      "pad.rb"
+    ]
+   },
+   {
+    "action": "Terrain.Raise",
+    "control": "pad.dup",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Terrain.Lower",
+    "control": "pad.ddown",
+    "modifiers": [
+     "pad.lt"
     ]
    }
   ],

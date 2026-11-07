@@ -333,6 +333,10 @@ export const Tamed = defineComponent("Tamed", { kind: "u8", owner: "u32", fedUnt
  *  (1 N, 2 E, 4 S, 8 W) recomputed on place/remove; owner = placer PlayerId. Networked + persistent (chunk codec, like Crop). */
 export const Road = defineComponent("Road", { surface: "u8", mask: "u8", owner: "u32" }, { networked: true, persistent: true });
 export const enum RoadSurface { None = 0, Path = 1, Gravel = 2, Paved = 3 }
+/** ADR-263 (Task 36) shovel terrain edit: standalone entity at a tile centre (like Road). dig = levels raised (+) or dug
+ * (-) relative to the generated ground there, clamped to ±25. Networked (client depth / darkness / HUD temperature) and
+ * persistent (the chunk height byte is saved with the chunk; this keeps the "how far below ground" reference). */
+export const TerrainEdit = defineComponent("TerrainEdit", { dig: "i8" }, { networked: true, persistent: true });
 export const SIGN_TEXT_MAX = 48;
 /** ADR-120 sign (signs.ts). kind = signs.json index + 1; rot = quarter turns; owner = PlayerId, clan = owner's clan at
  *  placement (edit rights); text = sanitized ASCII bytes, len used. Networked (rendered as a world label) + persistent. */
@@ -476,4 +480,5 @@ export const GAMEPLAY_COMPONENTS = [
   SlotDye, // append-only (Task 25: per-inventory-slot dye colour for held tools/weapons — packed 0xRRGGBB, 0 = undyed)
   RecentCrafts, RecentBuilds, // append-only (Task 33: most-recently crafted recipes / placed pieces, most recent first)
   WorkerOrder, WorkerTarget, // append-only (ADR-259: detailed hired-human orders)
+  TerrainEdit, // append-only (ADR-263: shovel terrain edits)
 ] as const;

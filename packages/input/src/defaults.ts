@@ -35,6 +35,9 @@ export const DEFAULT_ACTIONS: readonly ActionDef[] = [
   ...["Send", "Cancel", "SwitchChannel", "QuickPhrase"].map((n) => btn(`Chat.${n}`)),
   ...["Invite", "Kick", "Promote", "Demote", "Leave", "SetPermissions", "ContextMenu"].map((n) => btn(`Social.${n}`)),
   ...["Confirm", "Cancel"].map((n) => btn(`Dialog.${n}`)),
+  /** ADR-263 (Task 36) shovel terrain edit (Gameplay, only while a shovel is in the main hand): KBM Y raise / H lower,
+   * pad LT + D-pad ↑ raise / LT + D-pad ↓ lower, touch the HUD ⬆ Raise / ⬇ Dig buttons. Appended. */
+  btn("Terrain.Raise"), btn("Terrain.Lower"),
 ];
 /** Context stack defaults. Building keeps movement (non-consuming); menus block movement; chat blocks gameplay except movement on gamepad. */
 export const DEFAULT_CONTEXTS: readonly ContextDef[] = [

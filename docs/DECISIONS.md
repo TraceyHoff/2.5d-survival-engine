@@ -3042,3 +3042,66 @@ spawn guarantee on Art & Assets landing painted pack sheets.
 - **Portrait loading layout.** Under `@media (orientation:portrait),(max-width:480px)` the `.boot .lane` (bar + zombie walker) gets auto side margins and `.boot .lbl` takes the bar's width (`min(420px,76vw)`) with `text-align:center`, so both centre in the screen on the first boot screen and the "Loading world…" screen. The landscape rules are unchanged.
 
 **Validation:** `adr262_torch_cooking` (torch boil, NoFire without fire/torch, lantern does not count, cooked meat queued + crafted with a torch away from fire, bread still needs a campfire, cooked meat at a campfire), `adr262_portrait_loading_center`; locked TypeScript 5.9.3 typecheck.
+
+## ADR-263: Shovel terrain editing, flowing water and underground bases (Task 36)
+
+**Context.** Task 35 (ADR-254) gave seeded heights (0..12) with visible ledges, ADR-255 lakes / rivers / ponds, and
+ADR-217 held lights. Task 36 asks for players and hired AI humans to raise / lower terrain with a shovel (±25 levels),
+water that flows through player-dug channels, and underground bases that are dark until lit, a constant 60°F below 3
+levels, and able to grow crops with continuous light + water.
+
+**Decision.**
+
+- **Height field is signed.** `Chunk.height` is now an `Int8Array` (was `Uint8Array`). The chunk codec still writes one
+  byte per tile (two's complement), so every existing save (0..12) reads back unchanged; net tile runs write
+  `h & 0xff`. A height edit sets `Chunk.heightEdited` and joins the TileMap change set; `TileSync` resends a chunk whose
+  drained set is flagged `heights` in full, the same tick, to every subscriber holding an older version (heights have no
+  delta stream). Renderer `tileHeight` uses `NO_TILE_HEIGHT = -99` (was -1) for missing tiles so pits are real heights.
+- **Shovel = terrain editor (`gameplay/src/terrain.ts`).** `editTerrain(world, e, tx, ty, ±1)` raises or lowers one
+  level per use with any shovel (items.json `tool.kind: "shovel"`) in the main hand; a hired AI human (Worker) may use one
+  from its bag. Reach 3 tiles, claim privilege, blocked by a build piece / resource node / crop on the tile. A
+  networked + persistent `TerrainEdit {dig: i8}` entity (like Road) records the offset from the generated ground and is
+  clamped to ±25 (`TERRAIN.maxLevels`); levels stay within -30..47 so they are storable as flowing water too. Dug / piled
+  ground becomes earth (tile 4, farmable). Writes go through `TerrainRes` (new optional `rawHeightAt` / `loaded` /
+  `setTile` / `setRawHeight`), so ADR-254 cliff faces, dim far faces and ledge lips redraw from the same field.
+  Input-queued command `gameplay.terrain {x, y, dir}` (append-only registry + net bridge; reject reasons `no_shovel`,
+  `limit`, `not_loaded`, `bad_tile` appended).
+- **Controls (context-only, no new HUD element while no shovel is held).** Holding a shovel shows **⬆ Raise / ⬇ Dig**
+  buttons in the existing right-hand world-tool column (no new overlap), a dashed diamond on the target tile, and a
+  one-line prompt for 4 s. Keyboard **Y raise / H dig** (mouse aims: the hovered tile when within reach, else the faced
+  tile); gamepad **LT + D-pad ↑ raise / LT + D-pad ↓ dig** (shadows Hotbar 1 / 3 only while LT is held; faced tile);
+  touch the buttons (faced tile). Hidden in build mode / menus / driving like the road tool. Actions `Terrain.Raise` /
+  `Terrain.Lower` are appended to the input defaults.
+- **Flowing water.** Every 8 ticks (`gameplay.terrainFlow`, authority) each frontier tile that is dry, dug (dig < 0)
+  and next to a water surface at or above its bed floods (WATER_TILE); flooded tiles wake their neighbours, so water
+  advances one tile per step down a channel (≤ 64 floods per step; frontier re-seeded from dug tiles every 200 ticks so
+  channels resume after a restart). Natural water's surface is the flat ADR-182 level (0): a channel fills from a lake
+  only once it is dug down to the lake's surface. Undug and raised ground never floods, so raised bases and berms stay
+  dry, and an isolated pit stays dry until a channel reaches it. Flowed water keeps its own level: it is stored as
+  `level + 80` on the water tile (`flowWaterRaw` / `isFlowWater` / `terrainLevel`; generated water never stores ≥ 50), and
+  `renderTileHeight` draws it at that level while natural lakes stay flat. Swim / wade (ADR-107 / ADR-181), shore tint,
+  seasonal water art and drinking read it as ordinary water tile 1. Lowering water is refused; raising a water tile
+  fills it with earth at its level.
+- **Underground (dig ≤ -3, `terrain_depth.ts` leaf module).** `ambientTemperature` returns 60°F (15.6°C) there in every
+  season / weather / hour (the exposure system and HUD both use it; world-wide frost uses the new `surfaceTemperature`).
+  `undergroundLightAt` / `isDarkUnderground` (systems/lights.ts) report darkness unless an ADR-108/216/217 light reaches
+  the point. The client eases `renderer.underground` from the player's depth (0.15 per level, full at 3) and both
+  renderers blend ambient / sky / fog to `UNDERGROUND_DARK`, fade daylight / shadows and raise `glow`, so the existing
+  light pass (held torch, lanterns, campfires, lamps) is what lights a base. Crops underground ignore season dormancy and
+  frost, but grow only while a light reaches them (checked every crop tick) AND they are watered (can, or water beside
+  them); rain does not reach them.
+
+**Tests.** `packages/gameplay/test/task36_terrain.test.ts` (shovel required, ±25 clamps, AI bag shovel, signed codec,
+deterministic flow down a dug channel one tile per step + dry berm / bank / pit / uphill channel, fill by raising,
+dark vs torch / campfire lit, 60°F at depth 3 and 25 in all seasons / weather, underground crop light + water vs
+failure, heights change set), `packages/render/test/task36_underground_light.test.ts`, `apps/client/test/task36_shovel_ui.test.ts`.
+Server bridge / bandwidth expectations updated for the appended command and component (28 B delta).
+
+**Limits / leftovers.**
+- AI humans can dig through `editTerrain` (bag shovel), but no planner goal orders terraforming yet.
+- Water does not drain or recede when its source is removed, and a pit fills to its bed level (the surface is drawn at
+  the bed, not pooled up to the source level). Digging costs / yields no soil items.
+- Sim `Transform.z` is still clamped ≥ 0; pits lower bodies in the client view (`groundZ`), and build-piece leveling in
+  pits uses the existing height rules.
+- Underground darkness is a per-viewer ambient (the player's own depth); a surface viewer looking into a pit sees it
+  lit by daylight.

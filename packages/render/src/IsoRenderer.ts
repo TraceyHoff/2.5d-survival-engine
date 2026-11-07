@@ -36,7 +36,7 @@ import { SpriteBatch, type GameplayBindings } from "./sprites.js";
 import { LightPass } from "./lighting.js";
 import { CompositePass } from "./composite.js";
 import { WeatherPass, WeatherState, weatherTargets } from "./weather.js";
-import { computeDayLighting, dimWeatherInto, newDayLighting, type DayLighting } from "./timeOfDay.js";
+import { computeDayLighting, dimWeatherInto, newDayLighting, undergroundInto, type DayLighting } from "./timeOfDay.js";
 import { isoZDepthFactor } from "./depth.js";
 import { assertFramebuffer, createTexture, newStats, RenderGLError, setFragmentMediump, type FrameStats } from "./gl/util.js";
 import { clampDrawingBuffer, detectCapabilities, parseGlFlags, type GlFlag, type RenderCapabilities, type RenderError } from "./gl/capabilities.js";
@@ -150,6 +150,8 @@ export class IsoRenderer implements Renderer {
   style: StyleConfig;
   stats: FrameStats = newStats();
   lighting: DayLighting = computeDayLighting(0.5, undefined, newDayLighting());
+  /** ADR-263 (Task 36): 0..1 underground darkness around the camera focus (the client eases it from the player's depth). */
+  underground = 0;
   private mixFog(a: readonly number[], b: readonly number[]): [number, number, number] { const o = this.fogScratch; o[0] = (a[0]! + b[0]!) / 2; o[1] = (a[1]! + b[1]!) / 2; o[2] = (a[2]! + b[2]!) / 2; return o; }
   private clearScratch = new Float32Array(4);
   private ambScratch: [number, number, number] = [0, 0, 0]; private fogScratch: [number, number, number] = [0, 0, 0];
@@ -520,6 +522,7 @@ export class IsoRenderer implements Renderer {
     // the LUTs/shadow tint and are folded into ambient at GRADING_AMBIENT_MIX so the curve still drives the transitions.
     const day = this.lighting; computeDayLighting(dayFrac, readDayNumber(world), day); dimWeatherInto(day, Math.max(ws.rain, ws.fog, ws.snow * 0.7), ws.storm, day); // in place: no per-frame allocation
     if (kf) { const m = GRADING_AMBIENT_MIX; for (let k = 0; k < 3; k++) day.ambient[k] = day.ambient[k]! * (1 - m) + (kf.ambient[k]! + kf.sun[k]!) * m; }
+    undergroundInto(day, this.underground); // ADR-263: dark underground until local lights (the light pass below) reach it
     this.sprites.shadowColor.set(kf ? kf.shadowTint : style.shadowTint);
     // wind: Weather.windDir/windSpeed when set, else the configured default (scaled by weather wind level)
     const wenv = readWind(world);

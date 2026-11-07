@@ -23,7 +23,7 @@ import { DEFAULT_STYLE } from "./style.js";
 import { SpriteFlag } from "./ids.js";
 import { GroundArt, groundHash, groundLayers, GroundLayerKind, type GroundLayer } from "./groundArt.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
-import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
+import { computeDayLighting, dimForWeather, undergroundInto } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
 import { SEASON_GROUND, SeasonArt, seasonGroundRgb, seasonSpritePixels, seasonVisual, SUMMER_VISUAL, type SeasonVisual } from "./season.js";
 import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js";
@@ -64,6 +64,8 @@ export function spriteIsDirectional(reg: AssetRegistry, sid: number): boolean {
   for (const a of s.animList) if (a && (a.directions > 1 || (a.rotations?.length ?? 0) > 1)) return true; return false;
 }
 export class Canvas2DRenderer {
+  /** ADR-263 (Task 36): 0..1 underground darkness around the camera focus. */
+  underground = 0;
   readonly kind = "canvas2d" as const;
   readonly ctx: CanvasRenderingContext2D;
   readonly camera = new IsoCamera({ ...DEFAULT_ISO });
@@ -393,7 +395,7 @@ export class Canvas2DRenderer {
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const nowMs = performance.now(); if (this.clockAt >= 0) this.clock += Math.min(0.1, (nowMs - this.clockAt) / 1000) * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1); this.clockAt = nowMs; const time = this.clock; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
-    const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
+    const day = undergroundInto(dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm }), this.underground); // ADR-263
     this.sv = seasonVisual(world); this.seasonBuilds = 0; // ADR-239
     this.syncGrazedBinding(world); // ADR-256
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;

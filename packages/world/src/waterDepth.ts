@@ -28,8 +28,20 @@ export function waterDepthAt(tileAt: (tx: number, ty: number) => number, tx: num
  * Gameplay heights and depth rules are unchanged.
  */
 export const WATER_SURFACE_HEIGHT = 0;
-/** Height a renderer should draw tile `id` at (stored height `h`; water is flattened). */
-export function renderTileHeight(id: number, h: number): number { return isWaterId(id) ? WATER_SURFACE_HEIGHT : h; }
+/**
+ * ADR-263 (Task 36): water that flowed into a shovel-dug channel keeps its own surface level instead of the flat
+ * ADR-182 lake surface. It is stored on the water tile as `level + FLOW_WATER_OFFSET` (raw >= FLOW_WATER_MIN_RAW);
+ * generated water never stores a height that high (HEIGHT_MAX 12), so natural lakes still draw flat.
+ */
+export const FLOW_WATER_OFFSET = 80, FLOW_WATER_MIN_RAW = 50;
+/** True when a water tile's stored height marks player-made flowing water. */
+export function isFlowWater(id: number, raw: number): boolean { return isWaterId(id) && raw >= FLOW_WATER_MIN_RAW; }
+/** Stored height for a flowing-water tile whose bed / surface sits at `level` (-30..47). */
+export function flowWaterRaw(level: number): number { return Math.max(FLOW_WATER_MIN_RAW, Math.min(127, Math.round(level) + FLOW_WATER_OFFSET)); }
+/** Terrain level of a tile (decodes flowing water; natural water = its stored height). */
+export function terrainLevel(id: number, raw: number): number { return isFlowWater(id, raw) ? raw - FLOW_WATER_OFFSET : raw; }
+/** Height a renderer should draw tile `id` at (stored height `h`; natural water is flattened, flowing water keeps its level). */
+export function renderTileHeight(id: number, h: number): number { return isWaterId(id) ? (h >= FLOW_WATER_MIN_RAW ? h - FLOW_WATER_OFFSET : WATER_SURFACE_HEIGHT) : h; }
 /** ADR-184: shore tint reaches this many tiles out (was 3, stepped per tile). */
 export const SHORE_TINT_RANGE = 6;
 /**

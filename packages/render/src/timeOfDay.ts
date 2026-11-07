@@ -117,3 +117,16 @@ export function dimWeatherInto(day: DayLighting, overcast: number, storm: number
   dimRgb(day.ambient, out.ambient, d, grey); dimRgb(day.sky, out.sky, d, grey); dimRgb(day.fog, out.fog, d, grey);
   out.shadowAlpha = day.shadowAlpha * (1 - 0.6 * overcast); out.glow = Math.min(1, day.glow + 0.25 * Math.max(overcast, storm) * day.daylight); return out;
 }
+
+/** ADR-263 (Task 36): ambient / sky / fog an underground base falls to with no light (near-black, faintly cool). */
+export const UNDERGROUND_DARK: readonly [number, number, number] = [0.035, 0.035, 0.05];
+/**
+ * ADR-263: blend a lighting result toward underground darkness by `u` (0 = surface, 1 = fully underground), in place.
+ * Daylight, sun shadows and haze fade out; `glow` rises so local lights (held torch, lanterns, campfires) draw at their
+ * full night strength — the existing light pass is what lights an underground base. Both renderers call this.
+ */
+export function undergroundInto(day: DayLighting, u: number): DayLighting {
+  const k = Math.max(0, Math.min(1, u)); if (k <= 0) return day;
+  for (let j = 0; j < 3; j++) { const d = UNDERGROUND_DARK[j]!; day.ambient[j] = day.ambient[j]! + (d - day.ambient[j]!) * k; day.sky[j] = day.sky[j]! + (d - day.sky[j]!) * k; day.fog[j] = day.fog[j]! + (d - day.fog[j]!) * k; }
+  day.daylight *= 1 - k; day.shadowAlpha *= 1 - k; day.haze *= 1 - k; day.glow = Math.max(day.glow, k); return day;
+}

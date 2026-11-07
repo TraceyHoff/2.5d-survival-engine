@@ -3,7 +3,7 @@
  * nodes on load (authority) and despawn them on unload, and the terrain lookup used by building validation.
  */
 import { defineResource, entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { chunkKeyOf, tileToChunk, tileToLocal, type ChunkKey, type ChunkManager, type NodePlacement, type ProceduralOptions, type TileMap } from "@engine/world";
+import { chunkKeyOf, terrainLevel, tileToChunk, tileToLocal, type ChunkKey, type ChunkManager, type NodePlacement, type ProceduralOptions, type TileMap } from "@engine/world";
 import { ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import type { GameDefs } from "./defs.js";
@@ -14,12 +14,19 @@ export function worldgenBands(defs: GameDefs): NonNullable<ProceduralOptions["ba
   return defs.worldgen.bands.map((b) => ({ max: b.max, tile: b.tile, nodeKinds: [...b.nodes], nodeChance: b.nodeChance }));
 }
 
-export interface Terrain { tileAt(tx: number, ty: number): number; heightAt(tx: number, ty: number): number }
+export interface Terrain { tileAt(tx: number, ty: number): number; heightAt(tx: number, ty: number): number;
+  /** ADR-263 (authority, optional): raw stored height (flowing water keeps its offset encoding). */ rawHeightAt?(tx: number, ty: number): number;
+  /** ADR-263: whether (tx,ty) is in a loaded chunk (terrain edits / water flow only touch loaded ground). */ loaded?(tx: number, ty: number): boolean;
+  /** ADR-263: write a tile id / raw height (shovel edits, flowing water). */ setTile?(tx: number, ty: number, id: number): void; setRawHeight?(tx: number, ty: number, h: number): void }
 export const TerrainRes = defineResource<Terrain>("gameplay.Terrain");
 export function terrainFromTileMap(map: TileMap): Terrain {
   return {
     tileAt: (tx, ty) => map.getTile(tx, ty),
-    heightAt: (tx, ty) => map.getChunk(tileToChunk(tx), tileToChunk(ty))?.getHeight(tileToLocal(tx), tileToLocal(ty)) ?? 0,
+    heightAt: (tx, ty) => { const c = map.getChunk(tileToChunk(tx), tileToChunk(ty)); if (!c) return 0; const lx = tileToLocal(tx), ly = tileToLocal(ty); return terrainLevel(c.get(lx, ly), c.getHeight(lx, ly)); },
+    rawHeightAt: (tx, ty) => map.getChunk(tileToChunk(tx), tileToChunk(ty))?.getHeight(tileToLocal(tx), tileToLocal(ty)) ?? 0,
+    loaded: (tx, ty) => map.getChunk(tileToChunk(tx), tileToChunk(ty)) !== undefined,
+    setTile: (tx, ty, id) => { map.getChunk(tileToChunk(tx), tileToChunk(ty))?.set(tileToLocal(tx), tileToLocal(ty), id); },
+    setRawHeight: (tx, ty, h) => { map.getChunk(tileToChunk(tx), tileToChunk(ty))?.setHeight(tileToLocal(tx), tileToLocal(ty), h); },
   };
 }
 

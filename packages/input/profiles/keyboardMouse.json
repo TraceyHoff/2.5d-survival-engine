@@ -207,6 +207,14 @@
    {
     "action": "Camera.RotateCW",
     "control": "key.BracketRight"
+   },
+   {
+    "action": "Terrain.Raise",
+    "control": "key.KeyY"
+   },
+   {
+    "action": "Terrain.Lower",
+    "control": "key.KeyH"
    }
   ],
   "Building": [

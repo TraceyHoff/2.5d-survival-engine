@@ -11,8 +11,8 @@
  *    2 Delta: varuint n, n bytes core encodeTileDelta (u32 version, u16 count, count x (u16 index, u16 tile))
  *    3 Leave:                                          (client moves the chunk into its LRU cache)
  *  TilesCtl (c->s): u2 kind (0 Evict: dropped from cache, 1 Nack: resend full), chunkKey.
- * Heights travel only in Full (core records no height edit stream; a height edit bumps the chunk version, so the
- * next entry restreams it).
+ * Heights travel only in Full (core records no height edit stream). ADR-263: a drained set flagged `heights` (shovel
+ * terrain edit) is resent as Full to every subscriber holding an older version, the same tick.
  */
 import { CHUNK_SIZE, Chunk, TileMap, applyTileDelta, encodeTileDelta, parseChunkKey, type ChunkKey } from "@engine/world";
 import { BitReader, BitWriter } from "./bits.js";
@@ -24,12 +24,12 @@ export const TileSection = { Full: 0, Hit: 1, Delta: 2, Leave: 3 } as const;
 export const TileCtl = { Evict: 0, Nack: 1 } as const;
 
 interface Blob { bytes: Uint8Array; bits: number }
-function runs(w: BitWriter, a: Uint16Array | Uint8Array): void {
+function runs(w: BitWriter, a: Uint16Array | Uint8Array | Int8Array): void {
   let n = 0; for (let i = 0; i < a.length;) { let j = i + 1; while (j < a.length && a[j] === a[i]) j++; n++; i = j; }
   w.writeVarUint(n);
-  for (let i = 0; i < a.length;) { let j = i + 1; while (j < a.length && a[j] === a[i]) j++; w.writeVarUint(j - i); w.writeVarUint(a[i]!); i = j; }
+  for (let i = 0; i < a.length;) { let j = i + 1; while (j < a.length && a[j] === a[i]) j++; w.writeVarUint(j - i); w.writeVarUint(a instanceof Int8Array ? a[i]! & 0xff : a[i]!); i = j; } // ADR-263: signed heights as bytes
 }
-function readRuns(r: BitReader, a: Uint16Array | Uint8Array): void {
+function readRuns(r: BitReader, a: Uint16Array | Uint8Array | Int8Array): void {
   const n = r.readVarUint(); let o = 0;
   for (let k = 0; k < n; k++) { const len = r.readVarUint(), v = r.readVarUint(); if (o + len > a.length) throw new RangeError("tile runs overflow"); a.fill(v, o, o + len); o += len; }
   if (o !== a.length) throw new RangeError("tile runs short");
@@ -73,7 +73,9 @@ export class TileSync {
     const tiles = this.opts.tiles; this.stats.lastTickBytes = 0;
     // 1. drain once; encode each chunk's delta once for every subscriber
     const deltas = new Map<ChunkKey, { version: number; blob: Blob }>();
+    const heightKeys = new Set<ChunkKey>(); // ADR-263: shovel height edits -> full resend to subscribers holding an older version
     for (const set of tiles.tileChanges()) {
+      if (set.heights) { heightKeys.add(set.key); continue; }
       const bytes = encodeTileDelta(set); const w = new BitWriter(); w.writeVarUint(bytes.length); w.writeBytes(bytes);
       deltas.set(set.key, { version: set.version, blob: { bytes: w.finish(), bits: w.bitLength } });
       this.stats.deltaChunks++; this.stats.deltaBytesEncoded += bytes.length;
@@ -95,6 +97,10 @@ export class TileSync {
       for (const [key, d] of deltas) {
         const have = s.subs.get(key); if (have === undefined || have >= d.version) continue;
         section(TileSection.Delta, key); w.appendBits(d.blob.bytes, d.blob.bits); s.subs.set(key, d.version); s.deltas++;
+      }
+      for (const key of heightKeys) {
+        const have = s.subs.get(key); const c = tiles.getChunkByKey(key); if (have === undefined || !c || have >= c.version) continue;
+        const b = this.full(c); section(TileSection.Full, key); w.appendBits(b.bytes, b.bits); s.subs.set(key, c.version); s.fulls++;
       }
       // entries: Hit from cache, else full sends closest first under the budget
       const want: ChunkKey[] = [];

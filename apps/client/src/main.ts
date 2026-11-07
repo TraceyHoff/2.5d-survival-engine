@@ -26,6 +26,7 @@ import { mountBuildHud, onTouchControl } from "./build-hud.js";
 import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountStationHint } from "./station-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
+import { syncUnderground } from "./underground.js";
 import { mountVehicleControls, type VehicleControls } from "./vehicle-controls.js";
 import { mountTouchOverlay, syncTouchHidden, touchLabel, type TouchCtx } from "./touch-overlay.js";
 import { stanceMode, StanceMode, liftableNear, bedNear } from "@engine/gameplay";
@@ -369,6 +370,7 @@ function render(w: World, alpha: number): void {
   if (iso) {
     iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
     { const t = performance.now(); const dt = indoorT ? t - indoorT : 0; camZoom?.setIndoor(iso.renderer.indoor, dt); camZoom?.setBuild(buildMode.active, dt); indoorT = t; } // ADR-206: ease in under a roof; building mode zooms in further for precise placement
+    try { syncUnderground(iso.renderer as { underground?: number }, w, session.player); } catch { /* never break a frame */ } // ADR-263
     iso.corrections = session.client; fxLayer.pre(); iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac);
     try { fxLayer.draw(dayFrac); } catch { /* effects must never break a frame */ }
     diag?.afterRender(); return;

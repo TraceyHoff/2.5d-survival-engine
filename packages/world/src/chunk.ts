@@ -9,7 +9,11 @@ export type ChunkKey = string;
 /** Tile ids are u16 numeric ids into a tile registry (0 = empty). */
 export class Chunk {
   readonly tiles = new Uint16Array(CHUNK_AREA);
-  readonly height = new Uint8Array(CHUNK_AREA);
+  /** Terrain height level per tile. ADR-263: signed (Int8) so a shovel can dig below level 0 (Task 36: ±25 around ground).
+   * Binary codecs still write one byte per tile (two's complement), so stored 0..127 saves are unchanged. */
+  readonly height = new Int8Array(CHUNK_AREA);
+  /** ADR-263: height edits since the last drain (heights have no delta stream; TileSync resends the chunk in full). */
+  heightEdited = false;
   /** Set when tiles change; cleared by whoever persists/streams the chunk. */
   dirty = false; version = 0;
   /** Tile edits since the last drain: flat triples (index, old, new). Only recorded when old !== new. */
@@ -25,7 +29,10 @@ export class Chunk {
     this.tileChanges.push(i, old, id); this.changeSink?.add(this);
   }
   getHeight(lx: number, ly: number): number { return this.height[ly * CHUNK_SIZE + lx]!; }
-  setHeight(lx: number, ly: number, h: number): void { this.height[ly * CHUNK_SIZE + lx] = h; this.dirty = true; this.version++; }
+  setHeight(lx: number, ly: number, h: number): void {
+    const i = ly * CHUNK_SIZE + lx; if (this.height[i] === h) return;
+    this.height[i] = h; this.dirty = true; this.version++; this.heightEdited = true; this.changeSink?.add(this);
+  }
 }
 const I32 = (n: number): number => n | 0;
 export const chunkKey = (cx: number, cy: number): ChunkKey => `${I32(cx)},${I32(cy)}`;
@@ -39,7 +46,8 @@ export const chunkOf = (pos: { x: number; y: number }): { cx: number; cy: number
 export const chunkKeyOf = (x: number, y: number): ChunkKey => chunkKey(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE));
 
 /** Plain chunk container (no streaming). ChunkManager builds on it. */
-export interface TileChangeSet { key: ChunkKey; chunk: Chunk; version: number; /** flat (index, old, new) triples in edit order */ changes: number[] }
+export interface TileChangeSet { key: ChunkKey; chunk: Chunk; version: number; /** flat (index, old, new) triples in edit order */ changes: number[];
+  /** ADR-263: heights changed too (no delta encoding: replicate the whole chunk). */ heights?: boolean }
 export class TileMap {
   protected chunks = new Map<ChunkKey, Chunk>();
   protected changed = new Set<Chunk>();
@@ -47,7 +55,11 @@ export class TileMap {
   /** Drain per-chunk tile edits recorded since the last drain (call once per tick, e.g. in net's network phase). */
   tileChanges(): TileChangeSet[] {
     const out: TileChangeSet[] = [];
-    for (const c of this.changed) { if (!c.tileChanges.length || this.chunks.get(c.key) !== c) { c.tileChanges.length = 0; continue; } out.push({ key: c.key, chunk: c, version: c.version, changes: c.tileChanges.splice(0) }); }
+    for (const c of this.changed) {
+      const heights = c.heightEdited; c.heightEdited = false;
+      if ((!c.tileChanges.length && !heights) || this.chunks.get(c.key) !== c) { c.tileChanges.length = 0; continue; }
+      out.push({ key: c.key, chunk: c, version: c.version, changes: c.tileChanges.splice(0), ...(heights ? { heights: true } : {}) });
+    }
     this.changed.clear(); return out.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   }
   getChunk(cx: number, cy: number): Chunk | undefined { return this.chunks.get(chunkKey(cx, cy)); }

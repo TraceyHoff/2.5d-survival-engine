@@ -5,6 +5,7 @@
  * is processed in order over consecutive ticks, identically on server and predicting client).
  */
 import { ROAD_COMMANDS } from "./roads.js";
+import { TERRAIN_COMMANDS } from "./terrain.js";
 import { slotItem } from "./inventory.js";
 import { gameplayDefs } from "./config.js";
 import { SIGN_COMMANDS } from "./signs.js";
@@ -115,6 +116,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of ANIMAL_SKILL_COMMANDS) reg.register(d); // append-only (Task 15): animal skill purchase
   for (const d of WORKER_COMMANDS) reg.register(d); // append-only (Task 22): AI-human hire / job / dismiss
   for (const d of DYE_COMMANDS) reg.register(d); // append-only (Task 25): dye hair / worn / held (brush + dye)
+  for (const d of TERRAIN_COMMANDS) reg.register(d); // append-only (ADR-263 / Task 36): shovel raise / lower
   return reg;
 }
 

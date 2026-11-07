@@ -11,12 +11,14 @@ import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/
 import type { Rect } from "./camera.js";
 import { TileId, isWaterTile } from "./ids.js";
 
-/** Height of tile (tx,ty) or -1 when the tile is missing/empty. */
+/** ADR-263: tileHeight's "missing / empty" value (heights may now be negative: shovel pits go to -25 and below). */
+export const NO_TILE_HEIGHT = -99;
+/** Height of tile (tx,ty) or NO_TILE_HEIGHT when the tile is missing/empty. */
 export function tileHeight(map: TileMap, tx: number, ty: number): number {
   const c = map.getChunk(tileToChunk(tx), tileToChunk(ty));
-  if (!c) return -1;
+  if (!c) return NO_TILE_HEIGHT;
   const i = tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx);
-  return c.tiles[i] === 0 ? -1 : renderTileHeight(c.tiles[i]!, c.height[i]!); // ADR-182: water is one flat level
+  return c.tiles[i] === 0 ? NO_TILE_HEIGHT : renderTileHeight(c.tiles[i]!, c.height[i]!); // ADR-182: water is one flat level
 }
 
 // Base palette (sRGB 0..255) per TileId: Art & Assets palette.json base tones (used under/without the tile atlas).
@@ -164,7 +166,7 @@ export class TilemapRenderer {
         idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
       } else {
         // ADR-254: per-corner ledge lip — darken top-face vertices that sit on a height drop so far-side ledges stay readable
-        const low0 = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h < 0 ? -1 : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
+        const low0 = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h <= NO_TILE_HEIGHT ? NO_TILE_HEIGHT : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
         const drop = (nx: number, ny: number): boolean => low0(nx, ny) <= zt - 1;
         const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
         // corner (x,y) touches -x/-y; (x+1,y) +x/-y; (x+1,y+1) +x/+y; (x,y+1) -x/+y
@@ -183,7 +185,7 @@ export class TilemapRenderer {
       }
       // Cliff faces on every side whose neighbour is lower (ADR-253/254): far faces keep a dim silhouette (CLIFF_HIDDEN_SHADE).
       const side = SIDE[id] ?? pal;
-      const low = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h < 0 ? -1 : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
+      const low = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h <= NO_TILE_HEIGHT ? NO_TILE_HEIGHT : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
       const bx = low(x + 1, y), by = low(x, y + 1), bnx = low(x - 1, y), bny = low(x, y - 1);
       if (bx < zt) quad([[x + 1, y, zt], [x + 1, y + 1, zt], [x + 1, y + 1, bx], [x + 1, y, bx]], side[0], side[1], side[2], CLIFF_PX);
       if (by < zt) quad([[x, y + 1, zt], [x + 1, y + 1, zt], [x + 1, y + 1, by], [x, y + 1, by]], side[0], side[1], side[2], CLIFF_PY);

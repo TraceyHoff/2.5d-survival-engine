@@ -8,6 +8,10 @@
  *   virtual control are ignored.
  * - gamepad: HUD buttons via the Build panel (D-pad + A); a tile cursor on the right stick with button prompts:
  *   A start / end, RT lay, B cancel (B again leaves), Y next surface, X place sign at the cursor.
+ * ADR-263 shovel terrain editing (Task 36), shown only while a shovel is in the main hand (same right-hand column, so
+ * nothing new overlaps the HUD): ⬆ Raise / ⬇ Dig buttons (touch / mouse), keyboard Y raise / H dig, gamepad LT + D-pad ↑
+ * raise / LT + D-pad ↓ dig. Target: the tile under the mouse when it is within reach, else the tile the player faces
+ * (touch / gamepad always use the faced tile); a dashed diamond marks it. `#world-tool-bar [data-tool=raise|dig]`.
  * DOM hooks: `#world-labels`, `.sign-label[data-sign]`, `#settlement-label[data-kind]`, `#horde-toast[data-phase]`,
  * `#road-tool[data-surface][data-device]`, `#world-tool-bar [data-tool=road|sign]`, `#road-confirm [data-role=confirm|cancel]`,
  * `#road-preview`, `#road-cursor`.
@@ -18,7 +22,7 @@ import { Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen, DEFAULT_ISO, type IsoConfig } from "@engine/world";
 import {
   Sign, HordeStatus, HordePhase, PlaceRoadCmd, PlaceSignCmd, SetSignTextCmd, SIGNS, ROADS, countItem, gameplayDefs,
-  signText, signDef, homesteads, classifySettlements, settlementNear, type MenuIntent,
+  signText, signDef, homesteads, classifySettlements, settlementNear, TerrainCmd, TERRAIN, holdingShovel, type MenuIntent,
 } from "@engine/gameplay";
 import { RoadTool, lineTiles, type RoadDevice, type RoadLine, type Tile } from "./road-tool.js";
 import { buildSignEditor } from "./sign-editor.js";
@@ -55,6 +59,20 @@ export function roadPrompt(device: RoadDevice, state: { start: boolean; pending:
   if (device === "touch") return state.pending ? "Confirm ✓ or Cancel ✕" : "Drag (or tap start, tap end) to plan a road";
   return "Drag to lay · G next / off · Esc exit";
 }
+/** ADR-263: shovel prompt line per device. */
+export function shovelPrompt(device: RoadDevice): string {
+  if (device === "gamepad") return "Shovel: LT + D-pad ↑ raise · LT + D-pad ↓ dig";
+  if (device === "touch") return "Shovel: ⬆ Raise / ⬇ Dig the marked tile";
+  return "Shovel: Y raise · H dig (aim with the mouse)";
+}
+/**
+ * ADR-263: which tile a shovel use targets. Keyboard/mouse: the hovered tile when its centre is within reach of the body,
+ * else the faced tile; touch / gamepad: the faced tile (no precise aim needed).
+ */
+export function shovelTarget(device: RoadDevice, body: { x: number; y: number; facing: number }, hovered: Tile | undefined, reach: number = TERRAIN.reach): Tile {
+  if (device === "keyboardMouse" && hovered && Math.hypot(hovered.x + 0.5 - body.x, hovered.y + 0.5 - body.y) <= reach) return hovered;
+  return { x: Math.floor(body.x + Math.cos(body.facing)), y: Math.floor(body.y + Math.sin(body.facing)) };
+}
 export const HORDE_TEXT = { warning: "A zombie horde is gathering — prepare your defenses!", active: "The horde is here!", defeated: "The horde has been defeated." } as const;
 const CSS = `#world-labels{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden}
 #world-labels .sign-label{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:text;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -68,7 +86,7 @@ font:600 12px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;bord
 #road-confirm{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sab,0px));z-index:6;display:flex;gap:10px}
 #road-confirm [data-role=confirm]{background:#bfe3a6}#road-confirm [data-role=cancel]{background:#f1b3a8}
 #road-preview{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible}
-#road-preview polygon{fill:rgba(255,212,90,.35);stroke:#ffd45a;stroke-width:1.5}#road-preview polygon.start{fill:rgba(120,220,120,.45)}
+#road-preview polygon{fill:rgba(255,212,90,.35);stroke:#ffd45a;stroke-width:1.5}#road-preview polygon.dig{fill:rgba(255,255,255,.12);stroke:#fff;stroke-dasharray:4 3}#road-preview polygon.start{fill:rgba(120,220,120,.45)}
 #road-cursor{position:absolute;z-index:5;pointer-events:none;width:0;height:0}
 #road-cursor::before{content:"";position:absolute;left:-14px;top:-8px;width:28px;height:16px;border:2px solid #fff;border-radius:3px;transform:scaleY(.6) rotate(45deg) scaleY(1.4);box-shadow:0 0 0 2px #3B2433}
 #horde-toast{position:absolute;left:50%;top:calc(26% + var(--sat,0px));transform:translateX(-50%);z-index:6;font:700 15px Fredoka,system-ui,sans-serif;color:#FFE0D8;background:rgba(110,20,20,.88);border:2px solid #3B2433;border-radius:12px;padding:6px 14px;transition:opacity .4s;pointer-events:none}`;
@@ -113,7 +131,10 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
   const setBtnLabel = (b: HTMLButtonElement, v: string): void => { const s = b.querySelector("span"); if (s && s.textContent !== v) s.textContent = v; };
   const roadBtn = mkBtn("Road", "tool", "road", () => road(), "Road tool (G): path, gravel, paved, off", "ic_road.png");
   const signBtn = mkBtn("Sign", "tool", "sign", () => { if (!editNearestSign()) placeSign(); }, "Place a sign you carry (N), or edit the sign next to you", "ic_sign.png");
-  bar.append(roadBtn, signBtn);
+  // ADR-263: shovel Raise / Dig (context-only: visible while a shovel is in the main hand)
+  const raiseBtn = mkBtn("⬆ Raise", "tool", "raise", () => { shovel(1); }, "Raise the ground here one level (Y / LT + D-pad ↑)");
+  const digBtn = mkBtn("⬇ Dig", "tool", "dig", () => { shovel(-1); }, "Dig the ground here one level (H / LT + D-pad ↓)");
+  bar.append(roadBtn, signBtn, raiseBtn, digBtn);
   const confirmBar = document.createElement("div"); confirmBar.id = "road-confirm"; confirmBar.style.display = "none";
   confirmBar.append(mkBtn("✓ Lay road", "role", "confirm", () => confirmRoad(), "Lay the planned road"), mkBtn("✕ Cancel", "role", "cancel", () => cancelRoad(), "Cancel the planned road"));
   const SVGNS = "http://www.w3.org/2000/svg";
@@ -146,6 +167,16 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
     let best: Entity | undefined, bd = 2.5; for (const e of w.query([Sign, Transform])) { const t = w.get(e, Transform)!; const dd = Math.hypot(t.x - pt.x, t.y - pt.y); if (dd <= bd) { bd = dd; best = e; } }
     return best;
   };
+  const shovelHeld = (): boolean => { const p = d.player(); return p !== undefined && holdingShovel(d.world(), p); };
+  const shovelTile = (): Tile | undefined => {
+    const p = d.player(); const t = p !== undefined ? d.world().get(p, Transform) : undefined; if (!t) return undefined;
+    return shovelTarget(device(), { x: t.x, y: t.y, facing: t.facing ?? 0 }, aimTile());
+  };
+  function shovel(dir: 1 | -1): boolean {
+    if (d.hidden() || rt.active || !shovelHeld()) return false; const at = shovelTile(); if (!at) return false;
+    d.sound?.("ui.click"); return d.send({ cmd: TerrainCmd, args: { x: at.x, y: at.y, dir } } as unknown as MenuIntent);
+  }
+  let shovelHintUntil = 0, wasShovel = false;
   const editNearestSign = (): boolean => { const e = nearestSign(); if (e === undefined) return false; editSign(e); return true; };
   let editor: { close(): void } | undefined;
   const editSign = (e: Entity): void => {
@@ -163,6 +194,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
   const onKey = (e: KeyboardEvent): void => {
     if (d.input || e.repeat || typing(e) || d.hidden()) return; // with an input system the actions drive this in update()
     if (e.code === "KeyG") road(); else if (e.code === "KeyN") placeSign(); else if (e.code === "Escape" && rt.active) cancelRoad();
+    else if (e.code === "KeyY") shovel(1); else if (e.code === "KeyH") shovel(-1);
   };
   const target = d.canvas ?? document;
   const down = (e: Event): void => {
@@ -182,7 +214,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
   document.addEventListener("keydown", onKey); target.addEventListener("pointerdown", down); target.addEventListener("pointermove", move); target.addEventListener("pointerup", up);
   const update = (dt = 1 / 60): void => {
     const i = d.input; if (!i || d.hidden()) return;
-    if (!rt.active) { if (i.pressed("RoadTool")) road(); if (i.pressed("PlaceSign")) placeSign(); return; }
+    if (!rt.active) { if (i.pressed("RoadTool")) road(); if (i.pressed("PlaceSign")) placeSign(); if (i.pressed("Terrain.Raise")) shovel(1); else if (i.pressed("Terrain.Lower")) shovel(-1); return; }
     if (i.pressed("Road.Next")) road();
     if (!rt.active) return;
     if (i.pressed("Road.Cancel")) { cancelRoad(); return; }
@@ -201,10 +233,14 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
     try {
       const w = d.world(), p = d.player(), cam = d.camera(); const hide = d.hidden() || p === undefined || !cam;
       layer.style.display = hide ? "none" : "";
-      { const vis = worldToolBarState({ active: rt.active, nearSign: !hide && nearestSign() !== undefined, hidden: hide }); bar.style.display = vis.bar ? "" : "none"; roadBtn.style.display = vis.road ? "" : "none"; signBtn.style.display = vis.sign ? "" : "none"; }
-      const dev = device();
+      const dig = !hide && !rt.active && shovelHeld(); const dev = device();
+      { const vis = worldToolBarState({ active: rt.active, nearSign: !hide && nearestSign() !== undefined, hidden: hide }); bar.style.display = vis.bar || dig ? "" : "none"; roadBtn.style.display = vis.road ? "" : "none"; signBtn.style.display = vis.sign ? "" : "none";
+        raiseBtn.style.display = dig ? "" : "none"; digBtn.style.display = dig ? "" : "none"; }
+      if (dig && !wasShovel) shovelHintUntil = performance.now() + 4000; wasShovel = dig;
       setAttr(roadBtn, "aria-pressed", String(rt.active)); setBtnLabel(roadBtn, rt.active ? `${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "Road");
-      tool.style.display = rt.active && !hide ? "" : "none";
+      const hint = dig && performance.now() < shovelHintUntil;
+      tool.style.display = (rt.active || hint) && !hide ? "" : "none";
+      if (hint && !rt.active) { tool.dataset["device"] = dev; const txt = shovelPrompt(dev); if (tool.textContent !== txt) tool.textContent = txt; }
       if (rt.active) { tool.dataset["surface"] = String(rt.surface); tool.dataset["device"] = dev; tool.textContent = `Road tool: ${ROADS.surfaces[rt.surface - 1]!.name} — ${roadPrompt(dev, { start: !!rt.start, pending: !!rt.pending })}`; }
       confirmBar.style.display = rt.active && rt.pending && !hide && dev !== "gamepad" ? "flex" : "none";
       // preview + gamepad cursor
@@ -213,6 +249,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       svg.replaceChildren();
       if (line && cam) { svg.style.display = ""; lineTiles(line).forEach((t, k) => svg.append(diamond(cam, t, k === 0 ? "start" : ""))); }
       else if (rt.active && rt.start && cam && !hide) { svg.style.display = ""; svg.append(diamond(cam, rt.start, "start")); }
+      else if (dig && cam) { const at = shovelTile(); if (at) { svg.style.display = ""; svg.append(diamond(cam, at, "dig")); } else svg.style.display = "none"; } // ADR-263 shovel target
       else svg.style.display = "none";
       const ct = rt.cursorTile();
       if (rt.active && dev === "gamepad" && ct && cam && !hide) { const c = isoToCss(cam, ct.x + 0.5, ct.y + 0.5); cursorEl.style.display = ""; cursorEl.style.left = `${c.x.toFixed(1)}px`; cursorEl.style.top = `${c.y.toFixed(1)}px`; }
