@@ -15,6 +15,7 @@
  */
 import { CHUNK_SIZE, VIEW_COS, VIEW_SIN, viewRect, renderTileHeight, waterShoreTint, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { SEASON_GROUND_GLSL } from "./season.js";
+import { terrainDropEdges, DROP_EDGE_GLSL } from "./dropEdges.js";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
@@ -28,7 +29,7 @@ precision highp float; precision highp int;
 layout(location=0) in vec4 aA; // x, y, z, entry
 layout(location=1) in vec4 aB; // count, fps, skirtMask (1 = +x side, 2 = +y side), phase
 layout(location=2) in vec4 aC; // ax, ay, water, art (ADR-246: 0 legacy tile, 1 gt land, 2 gt decal: ice / leaves / shore)
-layout(location=3) in vec4 aD; // ADR-184: water corner tints (x,y), (x+1,y), (x+1,y+1), (x,y+1)
+layout(location=3) in vec4 aD; // water: corner tints; land: ADR-276 drop depths (+u,+v,-u,-v), same 16-float stride
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform vec3 uIso; uniform float uZFactor, uTime;
@@ -65,6 +66,7 @@ float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 ${SEASON_GROUND_GLSL}
+${DROP_EDGE_GLSL}
 // Sharp bilinear, same as the sprite shader's crispUv (ADR-145): ground was the one world surface with no
 // crisp path at all -- plain LINEAR magnification of a 68x52 cell at ~3x phone scale is the smeared ground
 // in the screenshot, on every preset. Minified (>= 1 texel/px) it is a no-op, so zoomed-out ground is unchanged.
@@ -118,6 +120,13 @@ void main() {
       c = mix(c, uSkyRefl * (0.85 + 0.15 * ripple), pud * 0.65);
     }
     c = seasonSnow(c, vWorld, m, art == 1 ? uArtSnow : max(uSnow, uSeason.z)); // weather snow + ADR-239 winter snowpack (ADR-246: turned down on gt art)
+  }
+  // ADR-276: the old mesh lip is UNDER this opaque art. Shade the actual textured high surface,
+  // after snow / puddles so the rim survives weather. vCorn is depths only on land, never water / ice.
+  if (inDiamond && vInfo.w == 0.0 && any(greaterThan(vCorn, vec4(0.5)))) {
+    vec2 cell = vView - vOrg;
+    if (all(greaterThanEqual(cell, vec2(0.0))) && all(lessThanEqual(cell, vec2(1.0))))
+      c = terrainDropRelief(c, cell, vCorn);
   }
   oColor = vec4(c, 1.0); oEmissive = vec4(0.0);
 }`;
@@ -215,20 +224,22 @@ export class TileTerrain {
       const tx = ox + lx, ty = oy + ly; const water = isWaterTile(id); // world tile
       const x = q === 0 ? tx : q === 1 ? -ty - 1 : q === 2 ? -tx - 1 : ty, y = q === 0 ? ty : q === 1 ? tx : q === 2 ? -ty - 1 : -tx - 1; // its view cell
       const z = renderTileHeight(id, c.height[i]!) - (water ? 0.25 : 0); // ADR-182: one flat water surface
-      const mask = (hAt(x + 1, y) < z ? 1 : 0) | (hAt(x, y + 1) < z ? 2 : 0);
+      const pu = hAt(x + 1, y), pv = hAt(x, y + 1);
+      const drops = water ? [0, 0, 0, 0] : terrainDropEdges(z, pu, pv, hAt(x - 1, y), hAt(x, y - 1));
+      const mask = (pu < z ? 1 : 0) | (pv < z ? 2 : 0);
       if (art && g) { // ADR-246: gt_ layers (base, edges by priority, shore/bank | water or ice, leaves)
         const grazed = this.grazedAt ? (X: number, Y: number): boolean => this.grazedAt!(wx(X, Y), wy(X, Y)) : undefined;
         groundLayers(tileAt, x, y, art - 1, tintAt, L, groundHash(tx, ty), grazed); let n = 0;
         for (const l of L) {
           const e = EI(g.id(l.key)); if (!e) continue; const wl = l.kind === GroundLayerKind.Water;
           const mode = l.kind === GroundLayerKind.Ice || l.kind === GroundLayerKind.Leaves ? 2 : 1;
-          data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, wl ? 1 : l.kind === GroundLayerKind.Ice ? -1 : 0, mode, ...(wl ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0])); n++;
+          data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, wl ? 1 : l.kind === GroundLayerKind.Ice ? -1 : 0, mode, ...(wl ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : l.kind === GroundLayerKind.Ice ? [0, 0, 0, 0] : drops)); n++;
         }
         // ADR-251: gt_side faces where a +x / +y neighbour is lower, one per level of drop (left half +y, right half +x;
         // the shader's skirt rule keeps the half whose mask bit is set). Drawn over the polygon-offset mesh cliff, which
         // stays the fallback (no gt_side art, void neighbours, drops deeper than GROUND_SIDE_MAX_LEVELS).
         const mat = water ? undefined : groundMaterial(id);
-        if (n && mat && mat !== "water" && mask) for (const sl of groundSideLevels(z, hAt(x + 1, y), hAt(x, y + 1), SL)) {
+        if (n && mat && mat !== "water" && mask) for (const sl of groundSideLevels(z, pu, pv, SL)) {
           const e = EI(g.id(groundSideKey(mat, art - 1, sl.level))); if (!e) break;
           data.push(x + 0.5, y + 0.5, z - sl.level, e.first, e.count, e.fps, sl.mask, 0, e.ax, e.ay, 0, 1, 0, 0, 0, 0); n++;
           minZ = Math.min(minZ, z - sl.level);
@@ -244,7 +255,7 @@ export class TileTerrain {
       let e = key ? E(key) : null;
       if (!e) e = E(variants[hsh % variants.length]!) ?? E(variants[0]!);
       if (!e) continue;
-      data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, water ? 1 : 0, 0, ...(water ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0]));
+      data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, water ? 1 : 0, 0, ...(water ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : drops));
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
     const vao = old?.vao ?? gl.createVertexArray()!; const vbo = old?.vbo ?? gl.createBuffer()!;
