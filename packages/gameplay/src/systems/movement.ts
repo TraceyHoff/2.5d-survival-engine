@@ -1,4 +1,5 @@
-import { terrainMoveBlocked } from "../building/terrain-ladder.js";
+import { applyDamage } from "../combat/combat.js";
+import { ladderBetween, terrainMoveBlocked } from "../building/terrain-ladder.js";
 /**
  * Player movement (moved from apps/server protocol.ts). Same function on the server and in client prediction:
  * screen-aligned iso directions from action bits (GameplayActions MoveUp/Down/Left/Right/Sprint occupy bits 0..4,
@@ -9,7 +10,7 @@ import { terrainMoveBlocked } from "../building/terrain-ladder.js";
 import { roadSpeedMul } from "../roads.js";
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
 import { diseaseMoveMul } from "../diseases.js";
-import { Anim, AnimState, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
+import { Anim, AnimState, DamageCause, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { skillMul } from "../skills/tree.js";
 import { GameplayHoldBits as A, INPUT } from "../input_hooks.js";
@@ -180,6 +181,28 @@ export function settleStandZ(world: World, e: Entity, dt: number): void {
   world.set(e, Transform, { z: Math.abs(target - z) <= step ? target : z + Math.sign(target - z) * step });
 }
 
+/** Three tiles are safe; each extra tile costs 4 HP, with a gentle quadratic increase.
+ * 4 / 6 / 10 / 14-tile falls cost 4 / 15 / 49 / 99 HP. Armor does not cushion gravity. */
+export function terrainFallDamage(tiles: number): number {
+  const extra = Math.max(0, tiles - 3); return extra * (extra + 7) / 2;
+}
+/** Ground height is rendered separately from Transform.z (the building floor). Apply each crossed face once,
+ * on the authority only via applyDamage; a full-height ladder protects both ascent and descent. */
+export function applyTerrainFall(world: World, e: Entity, x: number, y: number, nx: number, ny: number): void {
+  const terrain = world.getResource(TerrainRes); if (!terrain) return;
+  let tx = Math.floor(x), ty = Math.floor(y); const ux = Math.floor(nx), uy = Math.floor(ny);
+  const idx = world.getResource(StructureIndexRes);
+  const cross = (bx: number, by: number): void => {
+    if (!ladderBetween(idx, tx, ty, bx, by)) {
+      const damage = terrainFallDamage(terrain.heightAt(tx, ty) - terrain.heightAt(bx, by));
+      if (damage > 0) applyDamage(world, e, damage, 0 as Entity, DamageCause.Fall);
+    }
+    tx = bx; ty = by;
+  };
+  while (tx !== ux) cross(tx + Math.sign(ux - tx), ty);
+  while (ty !== uy) cross(tx, ty + Math.sign(uy - ty));
+}
+
 /** Applies one tick of movement input (server authority + client prediction). Writes PlayerIntent.moving/sprint. */
 export function applyMovementInput(world: World, e: Entity, actions: number, dt: number, analog?: { x?: number | undefined; y?: number | undefined }): void {
   const t = world.get(e, Transform); if (!t) return;
@@ -201,10 +224,15 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
     const sp = gameplayDefs(world).movement.walkSpeed * speedMultiplier(world, e, sprint === 1) * (swim ? swimSpeedMulAt(world, t.x, t.y) : 1) * dt;
     let x = t.x, y = t.y;
     x = bodyAxisMove(world, x, y, x + dx * sp, 0, level, swim);
+    if (level === 0) applyTerrainFall(world, e, t.x, t.y, x, y);
+    const beforeY = y;
     y = bodyAxisMove(world, x, y, y + dy * sp, 1, level, swim);
+    if (level === 0) applyTerrainFall(world, e, x, beforeY, x, y);
     // ADR-212 doorway assist: pushing straight into a wall beside an opening slides the body toward the opening's centre
+    const assistX = x, assistY = y;
     if (x === t.x && dx && !dy) y = doorAssist(world, x, y, dx, 0, sp, level, swim);
     else if (y === t.y && dy && !dx) x = doorAssist(world, x, y, dy, 1, sp, level, swim);
+    if (level === 0) applyTerrainFall(world, e, assistX, assistY, x, y);
     if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: turnFacing(t.facing ?? 0, Math.atan2(dy, dx), dt) });
   }
   settleStandZ(world, e, dt); // ADR-212: decks are walked on at deck-top height

@@ -27,7 +27,7 @@ describe("ADR-265 full-height face-mounted ladders", () => {
   it("places on a pit face with no deck/socket; players and pathfinders traverse in both directions, any depth", () => {
     const { w, p, d } = setup();
     for (const [x,y] of [[0,0],[1,0],[0,1],[1,1]]) G.setTerrainDig(w, x!, y!, -25);
-    expect(G.movementBlocked(w, .5, 2.5, .5, 1.5, 0)).toBe(true);
+    expect(G.movementBlocked(w, .5, 1.5, .5, 2.5, 0)).toBe(true); // uphill needs a ladder; downhill now falls
     const r = G.tryPlace(w, p, req(d)); expect(r.ok).toBe(true);
     expect(G.structures(w).ladder(0, 2, G.EdgeSide.North)).toBe(r.ok ? r.piece : 0);
     expect(G.movementBlocked(w, .5, 2.5, .5, 1.5, 0)).toBe(false);
@@ -71,11 +71,12 @@ describe("ADR-265 full-height face-mounted ladders", () => {
     const zone=w.create(); w.add(zone,Transform,{x:1.5,y:1.5}).add(zone,G.PrivilegeZone,{radius:1,tribe:99}); G.indexEntity(w,zone);
     expect(G.tryPlace(w,p,req(d,1.5))).toEqual({ok:false,reason:G.BuildFail.NoPrivilege});
   });
-  it("preserves natural surface walking, but routes around an unladdered shovel pit on an otherwise empty map",()=>{
+  it("allows three-tile natural and edited steps, but AI routes around dangerous unladdered drops",()=>{
     const {w,p}=setup();w.resource(G.TerrainRes).setRawHeight!(0,1,-3);
-    expect(G.movementBlocked(w,.5,2.5,.5,1.5,0)).toBe(false); // existing generated terrain contract
-    w.resource(G.TerrainRes).setRawHeight!(0,1,0);G.setTerrainDig(w,0,1,-3);
-    expect(G.movementBlocked(w,.5,2.5,.5,1.5,0)).toBe(true);
+    expect(G.movementBlocked(w,.5,1.5,.5,2.5,0)).toBe(false);
+    w.resource(G.TerrainRes).setRawHeight!(0,1,0);G.setTerrainDig(w,0,1,-4);
+    expect(G.movementBlocked(w,.5,1.5,.5,2.5,0)).toBe(true);
+    expect(G.movementBlocked(w,.5,2.5,.5,1.5,0)).toBe(false); // player may choose to drop
     const next=walkerWaypoint(w,p,.5,2.5,.5,.5);expect(next).toBeDefined();
     expect(next).not.toMatchObject({x:.5,y:.5});
   });

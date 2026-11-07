@@ -33,7 +33,7 @@ export const Survival = defineComponent("Survival", {
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9, Turret = 10, Trap = 11, Disease = 12 }
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9, Turret = 10, Trap = 11, Disease = 12, Fall = 13 }
 export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
 /** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
 export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }

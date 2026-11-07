@@ -97,7 +97,7 @@ function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: nu
   const m = nav(world); const gtx = Math.floor(gx), gty = Math.floor(gy); const now = world.tick;
   let st = m.get(e);
   if (st && !st.clear && st.reached && st.ver === idx.version && now < st.until && now >= st.strict && Math.abs(gtx - st.gtx) + Math.abs(gty - st.gty) === 1 && enterable(idx, gtx, gty, level, blocked)
-    && (level !== 0 || !terrainMoveBlocked(world, st.gtx, st.gty, gtx, gty))
+    && (level !== 0 || !terrainMoveBlocked(world, st.gtx, st.gty, gtx, gty, true))
     && !(gtx !== st.gtx ? idx.edgeBlocker(Math.max(gtx, st.gtx), gty, level, EdgeSide.West) : idx.edgeBlocker(gtx, Math.max(gty, st.gty), level, EdgeSide.North))) {
     // goal stepped one open edge on (a pet's walking owner): extend the route instead of searching again
     const p = st.path; const k = p.length;
@@ -183,7 +183,7 @@ function ray(idx: StructureIndex, x0: number, y0: number, x1: number, y1: number
 }
 /** One tile-boundary crossing of a sight ray (terrain veto optional). */
 function crossOk(idx: StructureIndex, ax: number, ay: number, bx: number, by: number, level: number, blocked: TileBlocked | undefined): boolean {
-  if (level === 0 && terrainMoveBlocked(idx.world, ax, ay, bx, by)) return false;
+  if (level === 0 && terrainMoveBlocked(idx.world, ax, ay, bx, by, true)) return false;
   if (blocked && blocked(bx, by)) return false;
   if (bx !== ax ? idx.edgeBlocker(Math.max(ax, bx), ay, level, EdgeSide.West) : idx.edgeBlocker(ax, Math.max(ay, by), level, EdgeSide.North)) return false;
   return !solidCell(idx, bx, by, level);
@@ -231,7 +231,7 @@ function route(idx: StructureIndex, sx: number, sy: number, gx: number, gy: numb
       const nx = cx + (k === 0 ? 1 : k === 1 ? -1 : 0), ny = cy + (k === 2 ? 1 : k === 3 ? -1 : 0);
       if (!inWin(nx, ny)) continue; const nid = (ny - oy) * W + (nx - ox); if (CLOSED[nid] === stamp) continue;
       const g = G[cur]! + 1; if (g + h(nx, ny) > fMax) continue;
-      if (level === 0 && terrainMoveBlocked(idx.world, cx, cy, nx, ny)) continue;
+      if (level === 0 && terrainMoveBlocked(idx.world, cx, cy, nx, ny, true)) continue;
       if (nx !== cx ? idx.edgeBlocker(Math.max(cx, nx), cy, level, EdgeSide.West) : idx.edgeBlocker(cx, Math.max(cy, ny), level, EdgeSide.North)) continue;
       if (ENTER[nid] !== stamp) { ENTER[nid] = stamp; ENTER_OK[nid] = enterable(idx, nx, ny, level, blocked) ? 1 : 0; }
       if (!ENTER_OK[nid]) continue;
