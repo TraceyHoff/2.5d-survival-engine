@@ -813,37 +813,47 @@ def draw_acc(c, spec):
                 cv.part(circle(p, 1.4), "S", lw=.6, shade=.2, hl=.3)
         c.add(hv(c) + 4, fl)
     elif st == "cloth_mask":
-        # Dedicated fitted cloth panel, not the bandana neck drape. Surface points follow
-        # the head pose in every animation, including side/back straps. Eyes stay clear.
+        # Fitted nose/mouth panel on the FRONT of the head only. Ear loops stay
+        # near the ears; back views show a small high knot, never a nape band.
         def mask():
             old = c.fdy; c.fdy = NECK
             try:
-                # Two narrow ties wrap behind the ears; only visible surface arcs draw.
-                for el in (-17, -36):
-                    for az in range(-180, 180, 12):
-                        a, va = c.sph(az, el, 1.025)
-                        b, vb = c.sph(az + 12, el, 1.025)
-                        if min(va, vb) > -.05: cv.line([a, b], "S2", 1.05, tm=(0, 1))
-                if fv(c) > -.35:
-                    # Upper edge sits over nose, lower edge cups the chin. Sample along
-                    # the head sphere so profile facings get a narrow fitted panel.
-                    edge = [(a, -10 - abs(a) * .35) for a in range(-65, 66, 13)]
-                    edge += [(a, -52 + abs(a) * .04) for a in range(65, -66, -13)]
-                    pts = [c.sph(az, el, 1.075)[0] for az, el in edge]
-                    panel = cv.part(hull(pts), "P", lw=1.05, shade=.22, hl=.13)
-                    for fraction in (.38, .68):
-                        pleat = []
-                        for az in range(-52, 53, 13):
-                            upper, lower = -10 - abs(az) * .35, -52 + abs(az) * .04
-                            p, v = c.sph(az, upper + fraction * (lower - upper), 1.09)
-                            if v > .03: pleat.append(p)
-                        if len(pleat) > 1: cv.line(pleat, "P3", .95, clip=panel, tm=(1, 0))
-                else:
-                    p, v = c.sph(180, -27, 1.045)
-                    if v > .1:
-                        cv.part(circle(p, 1.6, 1.4), "S", lw=.65, shade=.2, hl=.1)
-                        cv.line([(p[0], p[1]), (p[0] - 2, p[1] + 3)], "S2", 1.1, tm=(0, 1))
-                        cv.line([(p[0], p[1]), (p[0] + 2, p[1] + 2)], "S2", 1.1, tm=(0, 1))
+                face = fv(c)
+                # Ear loops: side arcs around the ears only, not a 360° wrap.
+                for el in (-18, -36):
+                    for az0, az1 in ((-118, -74), (74, 118)):
+                        for az in range(az0, az1, 10):
+                            a, va = c.sph(az, el, 1.03)
+                            b, vb = c.sph(az + 10, el, 1.03)
+                            if min(va, vb) > 0.04:
+                                cv.line([a, b], "S2", 0.8, tm=(0, 1))
+                if face > -0.28:
+                    # Keep only front-facing samples so hull() cannot swing onto the nape.
+                    edge = [(a, -9 - abs(a) * .16) for a in range(-58, 59, 13)]
+                    edge += [(a, -52 + abs(a) * .04) for a in range(58, -59, -13)]
+                    pts = []
+                    for az, el in edge:
+                        p, v = c.sph(az, el, 1.075)
+                        if v > 0.14:
+                            pts.append(p)
+                    if len(pts) >= 4:
+                        panel = cv.part(hull(pts), "P", lw=1.05, shade=.22, hl=.13)
+                        for fraction in (.38, .68):
+                            pleat = []
+                            for az in range(-50, 51, 13):
+                                upper, lower = -9 - abs(az) * .16, -52 + abs(az) * .04
+                                p, v = c.sph(az, upper + fraction * (lower - upper), 1.09)
+                                if v > 0.16:
+                                    pleat.append(p)
+                            if len(pleat) > 1:
+                                cv.line(pleat, "P3", .95, clip=panel, tm=(1, 0))
+                elif face < -0.45:
+                    # Straight back: small knot at the occiput (above the nape).
+                    p, v = c.sph(180, 6, 1.035)
+                    if v > 0.22:
+                        cv.part(circle(p, 1.15, 1.0), "S", lw=.55, shade=.2, hl=.1)
+                        cv.line([(p[0], p[1]), (p[0] - 1.3, p[1] + 1.7)], "S2", 0.7, tm=(0, 1))
+                        cv.line([(p[0], p[1]), (p[0] + 1.3, p[1] + 1.3)], "S2", 0.7, tm=(0, 1))
             finally: c.fdy = old
         c.add(hv(c) + 4, mask)
     elif st == "bandana":

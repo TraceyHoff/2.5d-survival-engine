@@ -27,8 +27,8 @@ def configure(sl):
 
             def cut(p, n, a):
                 u, v, f = fq(p)
-                panel = (np.abs(u) < .76) & (v > .02 + np.abs(u) * .09) & (v < .66 - np.abs(u) * .12) & (f > .2)
-                straps = ((np.abs(v - .18) < .045) | (np.abs(v - .48) < .045)) & (f < .45)
+                panel = (np.abs(u) < .76) & (v > .02 + np.abs(u) * .09) & (v < .66 - np.abs(u) * .12) & (f > .28)
+                straps = ((np.abs(v - .18) < .04) | (np.abs(v - .48) < .04)) & (np.abs(u) > .42) & (f < .5) & (f > -.1)
                 return panel | straps
 
             def deco(p, n, a):
