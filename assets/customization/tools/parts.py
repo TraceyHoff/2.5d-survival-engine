@@ -857,6 +857,8 @@ def draw_acc(c, spec):
             finally: c.fdy = old
         c.add(hv(c) + 4, mask)
     elif st == "bandana":
+        # Neckerchief: big downward flap on the CHEST, small knot at the nape.
+        # Back views must not show a second scarf or long hanging tails.
         def bd():
             Z = K["B"]["try_"] - .7; tc = K["tc"]
             def npt(az, dz, r):
@@ -864,20 +866,19 @@ def draw_acc(c, spec):
             def vis(az):
                 a = math.radians(az); return c.nv(math.sin(a), math.cos(a))
             def flap():
-                l, rr, t = npt(-48, .3, 6.2), npt(48, .3, 6.2), npt(0, -5.6, 6.9)
+                l, rr, t = npt(-40, .3, 6.2), npt(40, .3, 6.2), npt(0, -5.6, 6.9)
                 cv.part([l, rr, t], "P", lw=1.0, shade=.22, hl=.12)
                 for dx, dy in ((-1.7, -.3), (1.7, -.3), (0, 1.9)):
                     q = npt(0 + dx * 9, -1.6 - dy, 6.8)
                     cv.fill(circle(q, .55), "S0", tm=(0, 1))
             def knot():
-                k = npt(180, .6, 6.0)
+                k = npt(180, .5, 6.0)
+                cv.part(circle(k, 1.45, 1.2), "P", lw=.85, shade=.25, hl=.15)
                 for s_ in (-1, 1):
-                    e = npt(180 + s_ * 14, -4.6, 6.6)
-                    cv.part(c.tube(c.off(tc, math.sin(math.radians(180)) * 6, -6 * .8, Z + .4), c.off(tc, math.sin(math.radians(180 + s_ * 16)) * 6.6, math.cos(math.radians(180 + s_ * 16)) * 6.6 * .8, Z - 4.4), 1.25, .7), "P", lw=.9, shade=.22, hl=.1)
-                cv.part(circle(k, 1.7, 1.35), "P", lw=.9, shade=.25, hl=.15)
+                    cv.line([npt(180 + s_ * 16, .15, 6.05), npt(180 + s_ * 22, -1.05, 6.15)], "P2", .8, tm=(0, 1))
             cv.part(c.solid([(c.off(tc, 0, 0, Z - 1.1), 6.4), (c.off(tc, 0, 0, Z + 1.1), 5.6)]), "P", lw=1.0, shade=.22, hl=.12)
-            if vis(0) > -.35: flap()
-            if vis(180) > -.25: knot()
+            if vis(0) > -.08: flap()
+            if vis(180) > -.08: knot()
         c.add(K["tv"] + .3, bd)
     elif st == "earrings":
         def er():
